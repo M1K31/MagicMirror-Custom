@@ -1,0 +1,50 @@
+{
+	"LOADING": "טוען...",
+
+	"DAYBEFOREYESTERDAY": "שלשום",
+	"YESTERDAY": "אתמול",
+	"TODAY": "היום",
+	"TOMORROW": "מחר",
+	"DAYAFTERTOMORROW": "בעוד יומיים",
+	"RUNNING": "מסתיים ב",
+	"EMPTY": "אין ארועים",
+	"WEEK": "{weekNumber} שבוע",
+
+	"N": "צ",
+	"NNE": "צ-צ-מז",
+	"NE": "צ-מז",
+	"ENE": "מז-צ-מז",
+	"E": "מז",
+	"ESE": "מז-ד-מז",
+	"SE": "ד-מז",
+	"SSE": "ד-ד-מז",
+	"S": "ד",
+	"SSW": "ד-ד-מע",
+	"SW": "ד-מע",
+	"WSW": "מע-ד-מע",
+	"W": "מע",
+	"WNW": "מע-ז-מע",
+	"NW": "ז-מע",
+	"NNW": "צ-צ-מע",
+
+	"FEELS": "מרגיש כמו {DEGREE}",
+	"PRECIP_POP": "משקעים",
+	"PRECIP_AMOUNT": "כמות משקעים",
+
+	"MODULE_CONFIG_CHANGED": "אפשרויות התצורה עבור מודול {MODULE_NAME} השתנו.\nאנא בדוק את התיעוד.",
+	"MODULE_CONFIG_ERROR": "שגיאה במודול {MODULE_NAME}. {ERROR}",
+	"MODULE_ERROR_MALFORMED_URL": "כתובת אתר לא תקינה.",
+	"MODULE_ERROR_NO_CONNECTION": "אין חיבור לאינטרנט.",
+	"MODULE_ERROR_UNAUTHORIZED": "הזדהות נכשלה.",
+	"MODULE_ERROR_UNSPECIFIED": "בדוק את היומנים לפרטים נוספים.",
+
+	"NEWSFEED_NO_ITEMS": "אין חדשות כרגע.",
+
+	"UPDATE_NOTIFICATION": "עדכון זמין ל-MagicMirror²",
+	"UPDATE_NOTIFICATION_MODULE": "עדכון זמין ב-{MODULE_NAME} מודול",
+	"UPDATE_INFO_SINGLE": "ההתקנה הנוכחית נמצאת מאחור הענף {BRANCH_NAME} ב-{COMMIT_COUNT} מופע",
+	"UPDATE_INFO_MULTIPLE": "ההתקנה הנוכחית נמצאת מאחור הענף {BRANCH_NAME} ב-{COMMIT_COUNT} מופעים",
+	"UPDATE_NOTIFICATION_DONE": "העדכון הסתיים עבור מודול {MODULE_NAME}",
+	"UPDATE_NOTIFICATION_ERROR": "שגיאת עדכון עבור מודול {MODULE_NAME}",
+	"UPDATE_NOTIFICATION_NEED-RESTART": "יש צורך לאתחל את ה-MagicMirror"
+}
