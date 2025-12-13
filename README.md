@@ -19,6 +19,37 @@ MagicMirror² focuses on a modular plugin system and uses [Electron](https://www
 
 For the full documentation including **[installation instructions](https://docs.magicmirror.builders/getting-started/installation.html)**, please visit our dedicated documentation website: [https://docs.magicmirror.builders](https://docs.magicmirror.builders).
 
+## Optional Dependencies
+
+The custom modules work out of the box, but some features require additional software for full functionality. **The application will not crash or cause issues if these are missing** — it gracefully falls back to simpler methods.
+
+### Network Module Dependencies
+
+| Dependency | Required | Purpose | Fallback Behavior |
+|------------|----------|---------|-------------------|
+| `arp-scan` | Optional | Fast, accurate network device discovery | Falls back to `nmap` or `arp` |
+| `nmap` | Optional | Secondary network scanning method | Falls back to built-in `arp` command |
+| `speedtest-cli` | Optional | Accurate internet speed testing | Uses simple download test |
+
+**Installation (Debian/Ubuntu/Raspberry Pi):**
+```bash
+# Full network monitoring capabilities
+sudo apt install arp-scan nmap speedtest-cli
+
+# Allow arp-scan without password (optional, for better scanning)
+sudo visudo
+# Add: username ALL=(ALL) NOPASSWD: /usr/sbin/arp-scan
+```
+
+### Security Module Dependencies
+
+| Dependency | Required | Purpose |
+|------------|----------|---------|
+| [OpenEye](https://github.com/M1K31/OpenEye-OpenCV_Home_Security) | Required | AI-powered surveillance backend |
+| Docker & Docker Compose | Recommended | Easy OpenEye deployment |
+
+**Without OpenEye:** The Security module will show "Connecting..." and retry periodically. No errors or memory issues will occur.
+
 ### Custom Modules
 
 This fork includes additional custom modules with Apple HIG design principles:
@@ -37,6 +68,41 @@ This fork includes additional custom modules with Apple HIG design principles:
 | Security | OpenEye AI surveillance integration |
 
 📖 **[Full Custom Modules Documentation](docs/CUSTOM_MODULES.md)** - Hardware requirements, provider setup, configuration options, and troubleshooting.
+
+### 🏠 Smart Home Security Ecosystem
+
+This MagicMirror fork is designed to work seamlessly with **[OpenEye](https://github.com/M1K31/OpenEye-OpenCV_Home_Security)** — an AI-powered home surveillance system. Together, they provide an intuitive interface for securing, monitoring, and controlling your smart home.
+
+**OpenEye Features:**
+- 🎥 Multi-camera support (USB, IP, RTSP)
+- 🧠 AI-powered face recognition
+- 🔔 Motion detection with configurable zones
+- 📹 Continuous and event-based recording
+- 🌐 Real-time WebSocket updates
+
+**MagicMirror Integration:**
+- Live camera feeds displayed on your mirror
+- Real-time motion and face detection alerts
+- Event timeline with recent security activity
+- Seamless notification system
+
+#### Quick Setup
+
+```bash
+# 1. Clone and start OpenEye
+git clone https://github.com/M1K31/OpenEye-OpenCV_Home_Security.git
+cd OpenEye-OpenCV_Home_Security
+docker-compose up -d
+
+# 2. Configure MagicMirror (in .env file)
+OPENEYE_HOST=http://localhost:8000
+OPENEYE_TOKEN=your-jwt-token
+
+# 3. Add security module to config/config.js
+# (Already included in default config)
+```
+
+See the [Security Module Documentation](docs/CUSTOM_MODULES.md#security-module) for full configuration options.
 
 ### For Developers
 

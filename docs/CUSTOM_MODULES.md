@@ -926,16 +926,24 @@ Monitor your local network with device discovery, speed testing, and connectivit
 
 ### Requirements
 
-For full network scanning, install:
+For full network scanning capabilities, install the optional dependencies below. **The module works without them** — it gracefully falls back to simpler methods with reduced accuracy.
+
+| Dependency | Purpose | Without It |
+|------------|---------|------------|
+| `arp-scan` | Fast, accurate device discovery | Falls back to `nmap` or basic `arp` |
+| `nmap` | Secondary scanning method | Falls back to basic `arp` command |
+| `speedtest-cli` | Accurate speed testing | Uses simple HTTP download test |
 
 ```bash
-# Debian/Ubuntu/Raspberry Pi
+# Debian/Ubuntu/Raspberry Pi - Full capabilities
 sudo apt install arp-scan nmap speedtest-cli
 
-# Allow arp-scan without password
+# Allow arp-scan without password (recommended)
 sudo visudo
 # Add: username ALL=(ALL) NOPASSWD: /usr/sbin/arp-scan
 ```
+
+> ⚠️ **Note:** Without `arp-scan` or `nmap`, device discovery uses the system `arp` cache, which only shows recently-active devices. The module will still function but may not discover all network devices.
 
 ### Options
 
@@ -965,7 +973,9 @@ sudo visudo
 
 ## Security Module
 
-Integrate with OpenEye AI-powered surveillance system for home security monitoring.
+Integrate with **[OpenEye](https://github.com/M1K31/OpenEye-OpenCV_Home_Security)** AI-powered surveillance system for home security monitoring.
+
+> 🏠 **Part of the Smart Home Ecosystem**: MagicMirror and OpenEye are designed to complement each other, providing an intuitive interface for securing, monitoring, and controlling your smart home.
 
 ### Features
 
@@ -977,14 +987,18 @@ Integrate with OpenEye AI-powered surveillance system for home security monitori
 
 ### Prerequisites
 
+**Required:** [OpenEye](https://github.com/M1K31/OpenEye-OpenCV_Home_Security) surveillance system must be running.
+
+> ⚠️ **Without OpenEye:** The module will display "Connecting to OpenEye..." and retry periodically. No errors, crashes, or memory issues will occur — it simply waits for OpenEye to become available.
+
 1. **Install OpenEye** surveillance system:
    ```bash
-   git clone https://github.com/YOUR_USERNAME/OpenEye-OpenCV_Home_Security.git
+   git clone https://github.com/M1K31/OpenEye-OpenCV_Home_Security.git
    cd OpenEye-OpenCV_Home_Security
    docker-compose up -d
    ```
 
-2. **Get JWT Token** from OpenEye authentication
+2. **Get JWT Token** from OpenEye authentication (see OpenEye documentation)
 
 3. **Configure environment**:
    ```bash
@@ -997,7 +1011,7 @@ Integrate with OpenEye AI-powered surveillance system for home security monitori
 
 ```javascript
 {
-	module: "security",
+	module: "default/security",
 	position: "middle_center",
 	config: {
 		openeyeHost: process.env.OPENEYE_HOST || "http://localhost:8000",
