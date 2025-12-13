@@ -7,9 +7,9 @@
 WeatherProvider.register("pirateweather", {
 
 	/*
-	 * Set the name of the provider.
-	 * Not strictly required, but helps for debugging.
-	 */
+   * Set the name of the provider.
+   * Not strictly required, but helps for debugging.
+   */
 	providerName: "pirateweather",
 
 	// Set the default config properties that is specific to this provider
@@ -25,7 +25,11 @@ WeatherProvider.register("pirateweather", {
 	fetchCurrentWeather () {
 		this.fetchData(this.getUrl())
 			.then((data) => {
-				if (!data || !data.currently || typeof data.currently.temperature === "undefined") {
+				if (
+					!data
+					|| !data.currently
+					|| typeof data.currently.temperature === "undefined"
+				) {
 					// No usable data?
 					return;
 				}
@@ -47,7 +51,9 @@ WeatherProvider.register("pirateweather", {
 					return;
 				}
 
-				const forecast = this.generateWeatherObjectsFromForecast(data.daily.data);
+				const forecast = this.generateWeatherObjectsFromForecast(
+					data.daily.data
+				);
 				this.setWeatherForecast(forecast);
 			})
 			.catch(function (request) {
@@ -67,12 +73,22 @@ WeatherProvider.register("pirateweather", {
 
 		currentWeather.date = moment();
 		currentWeather.humidity = parseFloat(currentWeatherData.currently.humidity);
-		currentWeather.temperature = parseFloat(currentWeatherData.currently.temperature);
-		currentWeather.windSpeed = parseFloat(currentWeatherData.currently.windSpeed);
+		currentWeather.temperature = parseFloat(
+			currentWeatherData.currently.temperature
+		);
+		currentWeather.windSpeed = parseFloat(
+			currentWeatherData.currently.windSpeed
+		);
 		currentWeather.windFromDirection = currentWeatherData.currently.windBearing;
-		currentWeather.weatherType = this.convertWeatherType(currentWeatherData.currently.icon);
-		currentWeather.sunrise = moment.unix(currentWeatherData.daily.data[0].sunriseTime);
-		currentWeather.sunset = moment.unix(currentWeatherData.daily.data[0].sunsetTime);
+		currentWeather.weatherType = this.convertWeatherType(
+			currentWeatherData.currently.icon
+		);
+		currentWeather.sunrise = moment.unix(
+			currentWeatherData.daily.data[0].sunriseTime
+		);
+		currentWeather.sunset = moment.unix(
+			currentWeatherData.daily.data[0].sunsetTime
+		);
 
 		return currentWeather;
 	},
@@ -125,6 +141,8 @@ WeatherProvider.register("pirateweather", {
 			"partly-cloudy-night": "night-cloudy"
 		};
 
-		return weatherTypes.hasOwnProperty(weatherType) ? weatherTypes[weatherType] : null;
+		return weatherTypes.hasOwnProperty(weatherType)
+			? weatherTypes[weatherType]
+			: null;
 	}
 });

@@ -85,8 +85,8 @@ const WeatherUtils = {
 	},
 
 	/*
-	 * Convert the wind direction cardinal to value
-	 */
+   * Convert the wind direction cardinal to value
+   */
 	convertWindDirection (windDirection) {
 		const windCardinals = {
 			N: 0,
@@ -107,7 +107,9 @@ const WeatherUtils = {
 			NNW: 337
 		};
 
-		return windCardinals.hasOwnProperty(windDirection) ? windCardinals[windDirection] : null;
+		return windCardinals.hasOwnProperty(windDirection)
+			? windCardinals[windDirection]
+			: null;
 	},
 
 	convertWindToMetric (mph) {
@@ -124,18 +126,23 @@ const WeatherUtils = {
 		let feelsLike = tempInF;
 
 		if (windInMph > 3 && tempInF < 50) {
-			feelsLike = Math.round(35.74 + 0.6215 * tempInF - 35.75 * Math.pow(windInMph, 0.16) + 0.4275 * tempInF * Math.pow(windInMph, 0.16));
+			feelsLike = Math.round(
+				35.74
+				+ 0.6215 * tempInF
+				- 35.75 * Math.pow(windInMph, 0.16)
+				+ 0.4275 * tempInF * Math.pow(windInMph, 0.16)
+			);
 		} else if (tempInF > 80 && humidity > 40) {
 			feelsLike
-				= -42.379
-				  + 2.04901523 * tempInF
-				  + 10.14333127 * humidity
-				  - 0.22475541 * tempInF * humidity
-				  - 6.83783 * Math.pow(10, -3) * tempInF * tempInF
-				  - 5.481717 * Math.pow(10, -2) * humidity * humidity
-				  + 1.22874 * Math.pow(10, -3) * tempInF * tempInF * humidity
-				  + 8.5282 * Math.pow(10, -4) * tempInF * humidity * humidity
-				  - 1.99 * Math.pow(10, -6) * tempInF * tempInF * humidity * humidity;
+        = -42.379
+          + 2.04901523 * tempInF
+          + 10.14333127 * humidity
+          - 0.22475541 * tempInF * humidity
+          - 6.83783 * Math.pow(10, -3) * tempInF * tempInF
+          - 5.481717 * Math.pow(10, -2) * humidity * humidity
+          + 1.22874 * Math.pow(10, -3) * tempInF * tempInF * humidity
+          + 8.5282 * Math.pow(10, -4) * tempInF * humidity * humidity
+          - 1.99 * Math.pow(10, -6) * tempInF * tempInF * humidity * humidity;
 		}
 
 		return ((feelsLike - 32) * 5) / 9;
@@ -152,12 +159,31 @@ const WeatherUtils = {
 		let imperialWeatherObject = { ...weatherObject };
 
 		if (imperialWeatherObject) {
-			if (imperialWeatherObject.feelsLikeTemp) imperialWeatherObject.feelsLikeTemp = this.convertTemp(imperialWeatherObject.feelsLikeTemp, "imperial");
-			if (imperialWeatherObject.maxTemperature) imperialWeatherObject.maxTemperature = this.convertTemp(imperialWeatherObject.maxTemperature, "imperial");
-			if (imperialWeatherObject.minTemperature) imperialWeatherObject.minTemperature = this.convertTemp(imperialWeatherObject.minTemperature, "imperial");
-			if (imperialWeatherObject.precipitationAmount) imperialWeatherObject.precipitationAmount = this.convertPrecipitationToInch(imperialWeatherObject.precipitationAmount, imperialWeatherObject.precipitationUnits);
-			if (imperialWeatherObject.temperature) imperialWeatherObject.temperature = this.convertTemp(imperialWeatherObject.temperature, "imperial");
-			if (imperialWeatherObject.windSpeed) imperialWeatherObject.windSpeed = this.convertWind(imperialWeatherObject.windSpeed, "imperial");
+			if (imperialWeatherObject.feelsLikeTemp) imperialWeatherObject.feelsLikeTemp = this.convertTemp(
+				imperialWeatherObject.feelsLikeTemp,
+				"imperial"
+			);
+			if (imperialWeatherObject.maxTemperature) imperialWeatherObject.maxTemperature = this.convertTemp(
+				imperialWeatherObject.maxTemperature,
+				"imperial"
+			);
+			if (imperialWeatherObject.minTemperature) imperialWeatherObject.minTemperature = this.convertTemp(
+				imperialWeatherObject.minTemperature,
+				"imperial"
+			);
+			if (imperialWeatherObject.precipitationAmount) imperialWeatherObject.precipitationAmount
+          = this.convertPrecipitationToInch(
+					imperialWeatherObject.precipitationAmount,
+					imperialWeatherObject.precipitationUnits
+				);
+			if (imperialWeatherObject.temperature) imperialWeatherObject.temperature = this.convertTemp(
+				imperialWeatherObject.temperature,
+				"imperial"
+			);
+			if (imperialWeatherObject.windSpeed) imperialWeatherObject.windSpeed = this.convertWind(
+				imperialWeatherObject.windSpeed,
+				"imperial"
+			);
 		}
 
 		return imperialWeatherObject;

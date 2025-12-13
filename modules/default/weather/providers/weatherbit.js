@@ -7,9 +7,9 @@
 WeatherProvider.register("weatherbit", {
 
 	/*
-	 * Set the name of the provider.
-	 * Not strictly required, but helps for debugging.
-	 */
+   * Set the name of the provider.
+   * Not strictly required, but helps for debugging.
+   */
 	providerName: "Weatherbit",
 
 	// Set the default config properties that is specific to this provider
@@ -27,7 +27,11 @@ WeatherProvider.register("weatherbit", {
 	fetchCurrentWeather () {
 		this.fetchData(this.getUrl())
 			.then((data) => {
-				if (!data || !data.data[0] || typeof data.data[0].temp === "undefined") {
+				if (
+					!data
+					|| !data.data[0]
+					|| typeof data.data[0].temp === "undefined"
+				) {
 					// No usable data?
 					return;
 				}
@@ -79,7 +83,9 @@ WeatherProvider.register("weatherbit", {
 					this.config.weatherEndpoint = "/current";
 					break;
 				default:
-					Log.error("weatherEndpoint not configured and could not resolve it based on type");
+					Log.error(
+						"weatherEndpoint not configured and could not resolve it based on type"
+					);
 			}
 		}
 	},
@@ -103,9 +109,17 @@ WeatherProvider.register("weatherbit", {
 		currentWeather.temperature = parseFloat(currentWeatherData.data[0].temp);
 		currentWeather.windSpeed = parseFloat(currentWeatherData.data[0].wind_spd);
 		currentWeather.windFromDirection = currentWeatherData.data[0].wind_dir;
-		currentWeather.weatherType = this.convertWeatherType(currentWeatherData.data[0].weather.icon);
-		currentWeather.sunrise = moment(currentWeatherData.data[0].sunrise, "HH:mm").add(tzOffset, "m");
-		currentWeather.sunset = moment(currentWeatherData.data[0].sunset, "HH:mm").add(tzOffset, "m");
+		currentWeather.weatherType = this.convertWeatherType(
+			currentWeatherData.data[0].weather.icon
+		);
+		currentWeather.sunrise = moment(
+			currentWeatherData.data[0].sunrise,
+			"HH:mm"
+		).add(tzOffset, "m");
+		currentWeather.sunset = moment(
+			currentWeatherData.data[0].sunset,
+			"HH:mm"
+		).add(tzOffset, "m");
 
 		this.fetchedLocationName = `${currentWeatherData.data[0].city_name}, ${currentWeatherData.data[0].state_code}`;
 
@@ -200,6 +214,8 @@ WeatherProvider.register("weatherbit", {
 			u00n: "rain-mix"
 		};
 
-		return weatherTypes.hasOwnProperty(weatherType) ? weatherTypes[weatherType] : null;
+		return weatherTypes.hasOwnProperty(weatherType)
+			? weatherTypes[weatherType]
+			: null;
 	}
 });

@@ -23,7 +23,9 @@ class GitHelper {
 	}
 
 	async isGitRepo (moduleFolder) {
-		const { stderr } = await this.execShell(`cd ${moduleFolder} && git remote -v`);
+		const { stderr } = await this.execShell(
+			`cd ${moduleFolder} && git remote -v`
+		);
 
 		if (stderr) {
 			Log.error(`Failed to fetch git data for ${moduleFolder}: ${stderr}`);
@@ -71,16 +73,22 @@ class GitHelper {
 
 		if (repo.module === "MagicMirror") {
 			// the hash is only needed for the mm repo
-			const { stderr, stdout } = await this.execShell(`cd ${repo.folder} && git rev-parse HEAD`);
+			const { stderr, stdout } = await this.execShell(
+				`cd ${repo.folder} && git rev-parse HEAD`
+			);
 
 			if (stderr) {
-				Log.error(`Failed to get current commit hash for ${repo.module}: ${stderr}`);
+				Log.error(
+					`Failed to get current commit hash for ${repo.module}: ${stderr}`
+				);
 			}
 
 			gitInfo.hash = stdout;
 		}
 
-		const { stderr, stdout } = await this.execShell(`cd ${repo.folder} && git status -sb`);
+		const { stderr, stdout } = await this.execShell(
+			`cd ${repo.folder} && git status -sb`
+		);
 
 		if (stderr) {
 			Log.error(`Failed to get git status for ${repo.module}: ${stderr}`);
@@ -121,11 +129,16 @@ class GitHelper {
 			return;
 		}
 
-		if (gitInfo.isBehindInStatus && (gitInfo.module !== "MagicMirror" || gitInfo.current !== "master")) {
+		if (
+			gitInfo.isBehindInStatus
+			&& (gitInfo.module !== "MagicMirror" || gitInfo.current !== "master")
+		) {
 			return gitInfo;
 		}
 
-		const { stderr } = await this.execShell(`cd ${repo.folder} && git fetch -n --dry-run`);
+		const { stderr } = await this.execShell(
+			`cd ${repo.folder} && git fetch -n --dry-run`
+		);
 
 		// example output:
 		// From https://github.com/MagicMirrorOrg/MagicMirror
@@ -142,22 +155,32 @@ class GitHelper {
 
 		// get behind with refs
 		try {
-			const { stdout } = await this.execShell(`cd ${repo.folder} && git rev-list --ancestry-path --count ${refDiff}`);
+			const { stdout } = await this.execShell(
+				`cd ${repo.folder} && git rev-list --ancestry-path --count ${refDiff}`
+			);
 			gitInfo.behind = parseInt(stdout);
 
 			// for MagicMirror-Repo and "master" branch avoid getting notified when no tag is in refDiff
 			// so only releases are reported and we can change e.g. the README.md without sending notifications
-			if (gitInfo.behind > 0 && gitInfo.module === "MagicMirror" && gitInfo.current === "master") {
+			if (
+				gitInfo.behind > 0
+				&& gitInfo.module === "MagicMirror"
+				&& gitInfo.current === "master"
+			) {
 				let tagList = "";
 				try {
-					const { stdout } = await this.execShell(`cd ${repo.folder} && git ls-remote -q --tags --refs`);
+					const { stdout } = await this.execShell(
+						`cd ${repo.folder} && git ls-remote -q --tags --refs`
+					);
 					tagList = stdout.trim();
 				} catch (err) {
 					Log.error(`Failed to get tag list for ${repo.module}: ${err}`);
 				}
 				// check if tag is between commits and only report behind > 0 if so
 				try {
-					const { stdout } = await this.execShell(`cd ${repo.folder} && git rev-list --ancestry-path ${refDiff}`);
+					const { stdout } = await this.execShell(
+						`cd ${repo.folder} && git rev-list --ancestry-path ${refDiff}`
+					);
 					let cnt = 0;
 					for (const ref of stdout.trim().split("\n")) {
 						if (tagList.includes(ref)) cnt++; // tag found

@@ -15,7 +15,13 @@ const NodeHelper = require("node_helper");
  * @param {boolean} useCorsProxy If true cors proxy is used for article url's.
  * @class
  */
-const NewsfeedFetcher = function (url, reloadInterval, encoding, logFeedWarnings, useCorsProxy) {
+const NewsfeedFetcher = function (
+	url,
+	reloadInterval,
+	encoding,
+	logFeedWarnings,
+	useCorsProxy
+) {
 	let reloadTimer = null;
 	let items = [];
 	let reloadIntervalMS = reloadInterval;
@@ -42,7 +48,12 @@ const NewsfeedFetcher = function (url, reloadInterval, encoding, logFeedWarnings
 		parser.on("item", (item) => {
 			const title = item.title;
 			let description = item.description || item.summary || item.content || "";
-			const pubdate = item.pubdate || item.published || item.updated || item["dc:date"] || item["a10:updated"];
+			const pubdate
+        = item.pubdate
+          || item.published
+          || item.updated
+          || item["dc:date"]
+          || item["a10:updated"];
 			const url = item.url || item.link || "";
 
 			if (title && pubdate) {
@@ -51,7 +62,11 @@ const NewsfeedFetcher = function (url, reloadInterval, encoding, logFeedWarnings
 					wordwrap: false,
 					selectors: [
 						{ selector: "a", options: { ignoreHref: true, noAnchorUrl: true } },
-						{ selector: "br", format: "inlineSurround", options: { prefix: " " } },
+						{
+							selector: "br",
+							format: "inlineSurround",
+							options: { prefix: " " }
+						},
 						{ selector: "img", format: "skip" }
 					]
 				});
@@ -62,7 +77,10 @@ const NewsfeedFetcher = function (url, reloadInterval, encoding, logFeedWarnings
 					pubdate: pubdate,
 					url: url,
 					useCorsProxy: useCorsProxy,
-					hash: crypto.createHash("sha256").update(`${pubdate} :: ${title} :: ${url}`).digest("hex")
+					hash: crypto
+						.createHash("sha256")
+						.update(`${pubdate} :: ${title} :: ${url}`)
+						.digest("hex")
 				});
 			} else if (logFeedWarnings) {
 				Log.warn("Can't parse feed item:");
@@ -93,10 +111,14 @@ const NewsfeedFetcher = function (url, reloadInterval, encoding, logFeedWarnings
 				const ttlms = Math.min(minutes * 60 * 1000, 86400000);
 				if (ttlms > reloadIntervalMS) {
 					reloadIntervalMS = ttlms;
-					Log.info(`Newsfeed-Fetcher: reloadInterval set to ttl=${reloadIntervalMS} for url ${url}`);
+					Log.info(
+						`Newsfeed-Fetcher: reloadInterval set to ttl=${reloadIntervalMS} for url ${url}`
+					);
 				}
 			} catch (error) {
-				Log.warn(`Newsfeed-Fetcher: feed ttl is no valid integer=${minutes} for url ${url}`);
+				Log.warn(
+					`Newsfeed-Fetcher: feed ttl is no valid integer=${minutes} for url ${url}`
+				);
 			}
 		});
 

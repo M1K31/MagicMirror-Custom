@@ -60,7 +60,9 @@ class Updater {
 			if (this.moduleList[module.module] === undefined) {
 				this.moduleList[module.module] = {};
 				this.moduleList[module.module].name = module.module;
-				this.moduleList[module.module].updateCommand = await this.applyCommand(module.module);
+				this.moduleList[module.module].updateCommand = await this.applyCommand(
+					module.module
+				);
 				this.moduleList[module.module].inProgress = false;
 				this.moduleList[module.module].error = null;
 				this.moduleList[module.module].updated = false;
@@ -73,7 +75,10 @@ class Updater {
 					} else {
 						this.updating = true;
 						this.moduleList[module.module].inProgress = true;
-						Object.assign(this.moduleList[module.module], await this.updateProcess(this.moduleList[module.module]));
+						Object.assign(
+							this.moduleList[module.module],
+							await this.updateProcess(this.moduleList[module.module])
+						);
 					}
 				}
 			}
@@ -86,14 +91,14 @@ class Updater {
 	}
 
 	/*
-	 *  module updater with his proper command
-	 *  return object as result
-	 * {
-	 * 	error: <boolean>, // if error detected
-	 * 	updated: <boolean>, // if updated successfully
-	 * 	needRestart: <boolean> // if magicmirror restart required
-	 * };
-	 */
+   *  module updater with his proper command
+   *  return object as result
+   * {
+   * 	error: <boolean>, // if error detected
+   * 	updated: <boolean>, // if updated successfully
+   * 	needRestart: <boolean> // if magicmirror restart required
+   * };
+   */
 	updateProcess (module) {
 		let Result = {
 			error: false,
@@ -107,29 +112,39 @@ class Updater {
 		if (module.updateCommand) {
 			Command = module.updateCommand;
 		} else {
-			Log.warn(`updatenotification: Update of ${module.name} is not supported.`);
+			Log.warn(
+				`updatenotification: Update of ${module.name} is not supported.`
+			);
 			return Result;
 		}
 		Log.info(`updatenotification: Updating ${module.name}...`);
 
 		return new Promise((resolve) => {
-			Exec(Command, { cwd: modulePath, timeout: this.timeout }, (error, stdout, stderr) => {
-				if (error) {
-					Log.error(`updatenotification: exec error: ${error}`);
-					Result.error = true;
-				} else {
-					Log.info(`updatenotification: Update logs of ${module.name}: ${stdout}`);
-					Result.updated = true;
-					if (this.autoRestart) {
-						Log.info("updatenotification: Update done");
-						setTimeout(() => this.restart(), 3000);
+			Exec(
+				Command,
+				{ cwd: modulePath, timeout: this.timeout },
+				(error, stdout, stderr) => {
+					if (error) {
+						Log.error(`updatenotification: exec error: ${error}`);
+						Result.error = true;
 					} else {
-						Log.info("updatenotification: Update done, don't forget to restart MagicMirror!");
-						Result.needRestart = true;
+						Log.info(
+							`updatenotification: Update logs of ${module.name}: ${stdout}`
+						);
+						Result.updated = true;
+						if (this.autoRestart) {
+							Log.info("updatenotification: Update done");
+							setTimeout(() => this.restart(), 3000);
+						} else {
+							Log.info(
+								"updatenotification: Update done, don't forget to restart MagicMirror!"
+							);
+							Result.needRestart = true;
+						}
 					}
+					resolve(Result);
 				}
-				resolve(Result);
-			});
+			);
 		});
 	}
 
@@ -155,7 +170,12 @@ class Updater {
 		Log.info("updatenotification: Restarting MagicMirror...");
 		const out = process.stdout;
 		const err = process.stderr;
-		const subprocess = Spawn("node --run start", { cwd: this.root_path, shell: true, detached: true, stdio: ["ignore", out, err] });
+		const subprocess = Spawn("node --run start", {
+			cwd: this.root_path,
+			shell: true,
+			detached: true,
+			stdio: ["ignore", out, err]
+		});
 		subprocess.unref(); // detach the newly launched process from the master process
 		process.exit();
 	}
@@ -165,7 +185,9 @@ class Updater {
 		Log.info("updatenotification: Checking PM2 using...");
 		return new Promise((resolve) => {
 			if (fs.existsSync("/.dockerenv")) {
-				Log.info("updatenotification: Running in docker container, not using PM2 ...");
+				Log.info(
+					"updatenotification: Running in docker container, not using PM2 ..."
+				);
 				resolve(false);
 				return;
 			}
@@ -176,7 +198,9 @@ class Updater {
 				return;
 			}
 
-			Log.debug(`updatenotification: [PM2] Search for pm2 id: ${process.env.pm_id} -- name: ${process.env.name} -- unique_id: ${process.env.unique_id}`);
+			Log.debug(
+				`updatenotification: [PM2] Search for pm2 id: ${process.env.pm_id} -- name: ${process.env.name} -- unique_id: ${process.env.unique_id}`
+			);
 
 			const pm2 = require("pm2");
 			pm2.connect((err) => {
@@ -192,14 +216,25 @@ class Updater {
 						return;
 					}
 					list.forEach((pm) => {
-						Log.debug(`updatenotification: [PM2] found pm2 process id: ${pm.pm_id} -- name: ${pm.name} -- unique_id: ${pm.pm2_env.unique_id}`);
-						if (pm.pm2_env.status === "online" && process.env.name === pm.name && +process.env.pm_id === +pm.pm_id && process.env.unique_id === pm.pm2_env.unique_id) {
+						Log.debug(
+							`updatenotification: [PM2] found pm2 process id: ${pm.pm_id} -- name: ${pm.name} -- unique_id: ${pm.pm2_env.unique_id}`
+						);
+						if (
+							pm.pm2_env.status === "online"
+							&& process.env.name === pm.name
+							&& +process.env.pm_id === +pm.pm_id
+							&& process.env.unique_id === pm.pm2_env.unique_id
+						) {
 							this.PM2Id = pm.pm_id;
 							this.usePM2 = true;
-							Log.info(`updatenotification: [PM2] You are using pm2 with id: ${this.PM2Id} (${pm.name})`);
+							Log.info(
+								`updatenotification: [PM2] You are using pm2 with id: ${this.PM2Id} (${pm.name})`
+							);
 							resolve(true);
 						} else {
-							Log.debug(`updatenotification: [PM2] pm2 process id: ${pm.pm_id} don't match...`);
+							Log.debug(
+								`updatenotification: [PM2] pm2 process id: ${pm.pm_id} don't match...`
+							);
 						}
 					});
 					pm2.disconnect();

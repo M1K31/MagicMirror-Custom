@@ -12,9 +12,9 @@ const OPEN_METEO_BASE = "https://api.open-meteo.com/v1";
 WeatherProvider.register("openmeteo", {
 
 	/*
-	 * Set the name of the provider.
-	 * Not strictly required, but helps for debugging.
-	 */
+   * Set the name of the provider.
+   * Not strictly required, but helps for debugging.
+   */
 	providerName: "Open-Meteo",
 
 	// Set the default config properties that is specific to this provider
@@ -151,7 +151,8 @@ WeatherProvider.register("openmeteo", {
 					return;
 				}
 
-				const currentWeather = this.generateWeatherDayFromCurrentWeather(parsedData);
+				const currentWeather
+          = this.generateWeatherDayFromCurrentWeather(parsedData);
 				this.setCurrentWeather(currentWeather);
 			})
 			.catch(function (request) {
@@ -169,7 +170,8 @@ WeatherProvider.register("openmeteo", {
 					return;
 				}
 
-				const dailyForecast = this.generateWeatherObjectsFromForecast(parsedData);
+				const dailyForecast
+          = this.generateWeatherObjectsFromForecast(parsedData);
 				this.setWeatherForecast(dailyForecast);
 			})
 			.catch(function (request) {
@@ -187,7 +189,8 @@ WeatherProvider.register("openmeteo", {
 					return;
 				}
 
-				const hourlyForecast = this.generateWeatherObjectsFromHourly(parsedData);
+				const hourlyForecast
+          = this.generateWeatherObjectsFromHourly(parsedData);
 				this.setWeatherHourly(hourlyForecast);
 			})
 			.catch(function (request) {
@@ -208,13 +211,35 @@ WeatherProvider.register("openmeteo", {
 		};
 
 		// Set properly maxNumberOfDays and max Entries properties according to config and value ranges allowed in the documentation
-		const maxEntriesLimit = ["daily", "forecast"].includes(this.config.type) ? 7 : this.config.type === "hourly" ? 48 : 0;
-		if (this.config.hasOwnProperty("maxNumberOfDays") && !isNaN(parseFloat(this.config.maxNumberOfDays))) {
-			const daysFactor = ["daily", "forecast"].includes(this.config.type) ? 1 : this.config.type === "hourly" ? 24 : 0;
-			this.config.maxEntries = Math.max(1, Math.min(Math.round(parseFloat(this.config.maxNumberOfDays)) * daysFactor, maxEntriesLimit));
-			this.config.maxNumberOfDays = Math.ceil(this.config.maxEntries / Math.max(1, daysFactor));
+		const maxEntriesLimit = ["daily", "forecast"].includes(this.config.type)
+			? 7
+			: this.config.type === "hourly"
+				? 48
+				: 0;
+		if (
+			this.config.hasOwnProperty("maxNumberOfDays")
+			&& !isNaN(parseFloat(this.config.maxNumberOfDays))
+		) {
+			const daysFactor = ["daily", "forecast"].includes(this.config.type)
+				? 1
+				: this.config.type === "hourly"
+					? 24
+					: 0;
+			this.config.maxEntries = Math.max(
+				1,
+				Math.min(
+					Math.round(parseFloat(this.config.maxNumberOfDays)) * daysFactor,
+					maxEntriesLimit
+				)
+			);
+			this.config.maxNumberOfDays = Math.ceil(
+				this.config.maxEntries / Math.max(1, daysFactor)
+			);
 		}
-		this.config.maxEntries = Math.max(1, Math.min(this.config.maxEntries, maxEntriesLimit));
+		this.config.maxEntries = Math.max(
+			1,
+			Math.min(this.config.maxEntries, maxEntriesLimit)
+		);
 
 		if (!this.config.type) {
 			Log.error("type not configured and could not resolve it");
@@ -262,7 +287,7 @@ WeatherProvider.register("openmeteo", {
 		}
 
 		return Object.keys(params)
-			.filter((key) => (!!params[key]))
+			.filter((key) => !!params[key])
 			.map((key) => {
 				switch (key) {
 					case "hourly":
@@ -286,7 +311,9 @@ WeatherProvider.register("openmeteo", {
 			return {
 				...row,
 				// Parse time values as momentjs instances
-				[key]: ["time", "sunrise", "sunset"].includes(key) ? moment.unix(data[key][index]) : data[key][index]
+				[key]: ["time", "sunrise", "sunset"].includes(key)
+					? moment.unix(data[key][index])
+					: data[key][index]
 			};
 		}, {}));
 	},
@@ -295,11 +322,21 @@ WeatherProvider.register("openmeteo", {
 	parseWeatherApiResponse (data) {
 		const validByType = {
 			current: data.current_weather && data.current_weather.time,
-			hourly: data.hourly && data.hourly.time && Array.isArray(data.hourly.time) && data.hourly.time.length > 0,
-			daily: data.daily && data.daily.time && Array.isArray(data.daily.time) && data.daily.time.length > 0
+			hourly:
+        data.hourly
+        && data.hourly.time
+        && Array.isArray(data.hourly.time)
+        && data.hourly.time.length > 0,
+			daily:
+        data.daily
+        && data.daily.time
+        && Array.isArray(data.daily.time)
+        && data.daily.time.length > 0
 		};
 		// backwards compatibility
-		const type = ["daily", "forecast"].includes(this.config.type) ? "daily" : this.config.type;
+		const type = ["daily", "forecast"].includes(this.config.type)
+			? "daily"
+			: this.config.type;
 
 		if (!validByType[type]) return;
 
@@ -331,7 +368,9 @@ WeatherProvider.register("openmeteo", {
 
 	// Reverse geocoding from latitude and longitude provided
 	fetchLocation () {
-		this.fetchData(`${GEOCODE_BASE}?latitude=${this.config.lat}&longitude=${this.config.lon}&localityLanguage=${this.config.lang}`)
+		this.fetchData(
+			`${GEOCODE_BASE}?latitude=${this.config.lat}&longitude=${this.config.lon}&localityLanguage=${this.config.lang}`
+		)
 			.then((data) => {
 				if (!data || !data.city) {
 					// No usable data?
@@ -376,15 +415,28 @@ WeatherProvider.register("openmeteo", {
 		currentWeather.windFromDirection = weather.current_weather.winddirection;
 		currentWeather.sunrise = weather.daily[0].sunrise;
 		currentWeather.sunset = weather.daily[0].sunset;
-		currentWeather.temperature = parseFloat(weather.current_weather.temperature);
-		currentWeather.minTemperature = parseFloat(weather.daily[0].temperature_2m_min);
-		currentWeather.maxTemperature = parseFloat(weather.daily[0].temperature_2m_max);
-		currentWeather.weatherType = this.convertWeatherType(weather.current_weather.weathercode, currentWeather.isDayTime());
+		currentWeather.temperature = parseFloat(
+			weather.current_weather.temperature
+		);
+		currentWeather.minTemperature = parseFloat(
+			weather.daily[0].temperature_2m_min
+		);
+		currentWeather.maxTemperature = parseFloat(
+			weather.daily[0].temperature_2m_max
+		);
+		currentWeather.weatherType = this.convertWeatherType(
+			weather.current_weather.weathercode,
+			currentWeather.isDayTime()
+		);
 		currentWeather.humidity = parseFloat(weather.hourly[h].relativehumidity_2m);
 		currentWeather.rain = parseFloat(weather.hourly[h].rain);
 		currentWeather.snow = parseFloat(weather.hourly[h].snowfall * 10);
-		currentWeather.precipitationAmount = parseFloat(weather.hourly[h].precipitation);
-		currentWeather.precipitationProbability = parseFloat(weather.hourly[h].precipitation_probability);
+		currentWeather.precipitationAmount = parseFloat(
+			weather.hourly[h].precipitation
+		);
+		currentWeather.precipitationProbability = parseFloat(
+			weather.hourly[h].precipitation_probability
+		);
 		currentWeather.uv_index = parseFloat(weather.hourly[h].uv_index);
 
 		return currentWeather;
@@ -402,14 +454,23 @@ WeatherProvider.register("openmeteo", {
 			currentWeather.windFromDirection = weather.winddirection_10m_dominant;
 			currentWeather.sunrise = weather.sunrise;
 			currentWeather.sunset = weather.sunset;
-			currentWeather.temperature = parseFloat((weather.temperature_2m_max + weather.temperature_2m_min) / 2);
+			currentWeather.temperature = parseFloat(
+				(weather.temperature_2m_max + weather.temperature_2m_min) / 2
+			);
 			currentWeather.minTemperature = parseFloat(weather.temperature_2m_min);
 			currentWeather.maxTemperature = parseFloat(weather.temperature_2m_max);
-			currentWeather.weatherType = this.convertWeatherType(weather.weathercode, true);
+			currentWeather.weatherType = this.convertWeatherType(
+				weather.weathercode,
+				true
+			);
 			currentWeather.rain = parseFloat(weather.rain_sum);
 			currentWeather.snow = parseFloat(weather.snowfall_sum * 10);
-			currentWeather.precipitationAmount = parseFloat(weather.precipitation_sum);
-			currentWeather.precipitationProbability = parseFloat(weather.precipitation_hours * 100 / 24);
+			currentWeather.precipitationAmount = parseFloat(
+				weather.precipitation_sum
+			);
+			currentWeather.precipitationProbability = parseFloat(
+				(weather.precipitation_hours * 100) / 24
+			);
 			currentWeather.uv_index = parseFloat(weather.uv_index_max);
 
 			days.push(currentWeather);
@@ -424,7 +485,10 @@ WeatherProvider.register("openmeteo", {
 		const now = moment();
 
 		weathers.hourly.forEach((weather, i) => {
-			if ((hours.length === 0 && weather.time <= now) || hours.length >= this.config.maxEntries) {
+			if (
+				(hours.length === 0 && weather.time <= now)
+				|| hours.length >= this.config.maxEntries
+			) {
 				return;
 			}
 
@@ -437,14 +501,23 @@ WeatherProvider.register("openmeteo", {
 			currentWeather.sunrise = weathers.daily[h].sunrise;
 			currentWeather.sunset = weathers.daily[h].sunset;
 			currentWeather.temperature = parseFloat(weather.temperature_2m);
-			currentWeather.minTemperature = parseFloat(weathers.daily[h].temperature_2m_min);
-			currentWeather.maxTemperature = parseFloat(weathers.daily[h].temperature_2m_max);
-			currentWeather.weatherType = this.convertWeatherType(weather.weathercode, currentWeather.isDayTime());
+			currentWeather.minTemperature = parseFloat(
+				weathers.daily[h].temperature_2m_min
+			);
+			currentWeather.maxTemperature = parseFloat(
+				weathers.daily[h].temperature_2m_max
+			);
+			currentWeather.weatherType = this.convertWeatherType(
+				weather.weathercode,
+				currentWeather.isDayTime()
+			);
 			currentWeather.humidity = parseFloat(weather.relativehumidity_2m);
 			currentWeather.rain = parseFloat(weather.rain);
 			currentWeather.snow = parseFloat(weather.snowfall * 10);
 			currentWeather.precipitationAmount = parseFloat(weather.precipitation);
-			currentWeather.precipitationProbability = parseFloat(weather.precipitation_probability);
+			currentWeather.precipitationProbability = parseFloat(
+				weather.precipitation_probability
+			);
 			currentWeather.uv_index = parseFloat(weather.uv_index);
 
 			hours.push(currentWeather);

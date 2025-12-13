@@ -57,7 +57,15 @@ Module.register("weather", {
 
 	// Return the scripts that are necessary for the weather module.
 	getScripts () {
-		return ["moment.js", "weatherutils.js", "weatherobject.js", this.file("providers/overrideWrapper.js"), "weatherprovider.js", "suncalc.js", this.file(`providers/${this.config.weatherProvider.toLowerCase()}.js`)];
+		return [
+			"moment.js",
+			"weatherutils.js",
+			"weatherobject.js",
+			this.file("providers/overrideWrapper.js"),
+			"weatherprovider.js",
+			"suncalc.js",
+			this.file(`providers/${this.config.weatherProvider.toLowerCase()}.js`)
+		];
 	},
 
 	// Override getHeader method.
@@ -75,19 +83,28 @@ Module.register("weather", {
 		moment.locale(this.config.lang);
 
 		if (this.config.useKmh) {
-			Log.warn("Your are using the deprecated config values 'useKmh'. Please switch to windUnits!");
+			Log.warn(
+				"Your are using the deprecated config values 'useKmh'. Please switch to windUnits!"
+			);
 			this.windUnits = "kmh";
 		} else if (this.config.useBeaufort) {
-			Log.warn("Your are using the deprecated config values 'useBeaufort'. Please switch to windUnits!");
+			Log.warn(
+				"Your are using the deprecated config values 'useBeaufort'. Please switch to windUnits!"
+			);
 			this.windUnits = "beaufort";
 		}
 		if (typeof this.config.showHumidity === "boolean") {
-			Log.warn("[weather] Deprecation warning: Please consider updating showHumidity to the new style (config string).");
+			Log.warn(
+				"[weather] Deprecation warning: Please consider updating showHumidity to the new style (config string)."
+			);
 			this.config.showHumidity = this.config.showHumidity ? "wind" : "none";
 		}
 
 		// Initialize the weather provider.
-		this.weatherProvider = WeatherProvider.initialize(this.config.weatherProvider, this);
+		this.weatherProvider = WeatherProvider.initialize(
+			this.config.weatherProvider,
+			this
+		);
 
 		// Let the weather provider know we are starting.
 		this.weatherProvider.start();
@@ -103,7 +120,9 @@ Module.register("weather", {
 	notificationReceived (notification, payload, sender) {
 		if (notification === "CALENDAR_EVENTS") {
 			const senderClasses = sender.data.classes.toLowerCase().split(" ");
-			if (senderClasses.indexOf(this.config.calendarClass.toLowerCase()) !== -1) {
+			if (
+				senderClasses.indexOf(this.config.calendarClass.toLowerCase()) !== -1
+			) {
 				this.firstEvent = null;
 				for (let event of payload) {
 					if (event.location || event.geo) {
@@ -119,7 +138,10 @@ Module.register("weather", {
 		} else if (notification === "INDOOR_HUMIDITY") {
 			this.indoorHumidity = this.roundValue(payload);
 			this.updateDom(300);
-		} else if (notification === "CURRENT_WEATHER_OVERRIDE" && this.config.allowOverrideNotification) {
+		} else if (
+			notification === "CURRENT_WEATHER_OVERRIDE"
+			&& this.config.allowOverrideNotification
+		) {
 			this.weatherProvider.notificationReceived(payload);
 		}
 	},
@@ -134,7 +156,7 @@ Module.register("weather", {
 			case "daily":
 			case "forecast":
 				return "forecast.njk";
-			//Make the invalid values use the "Loading..." from forecast
+				//Make the invalid values use the "Loading..." from forecast
 			default:
 				return "forecast.njk";
 		}
@@ -146,7 +168,12 @@ Module.register("weather", {
 		const forecastData = this.weatherProvider.weatherForecast();
 
 		// Skip some hourly forecast entries if configured
-		const hourlyData = this.weatherProvider.weatherHourly()?.filter((e, i) => (i + 1) % this.config.hourlyForecastIncrements === this.config.hourlyForecastIncrements - 1);
+		const hourlyData = this.weatherProvider
+			.weatherHourly()
+			?.filter(
+				(e, i) => (i + 1) % this.config.hourlyForecastIncrements
+				  === this.config.hourlyForecastIncrements - 1
+			);
 
 		return {
 			config: this.config,
@@ -167,19 +194,28 @@ Module.register("weather", {
 		this.scheduleUpdate();
 
 		if (this.weatherProvider.currentWeather()) {
-			this.sendNotification("CURRENTWEATHER_TYPE", { type: this.weatherProvider.currentWeather().weatherType.replace("-", "_") });
+			this.sendNotification("CURRENTWEATHER_TYPE", {
+				type: this.weatherProvider
+					.currentWeather()
+					.weatherType.replace("-", "_")
+			});
 		}
 
 		const notificationPayload = {
-			currentWeather: this.config.units === "imperial"
-				? WeatherUtils.convertWeatherObjectToImperial(this.weatherProvider?.currentWeatherObject?.simpleClone()) ?? null
-				: this.weatherProvider?.currentWeatherObject?.simpleClone() ?? null,
-			forecastArray: this.config.units === "imperial"
-				? this.weatherProvider?.weatherForecastArray?.map((ar) => WeatherUtils.convertWeatherObjectToImperial(ar.simpleClone())) ?? []
-				: this.weatherProvider?.weatherForecastArray?.map((ar) => ar.simpleClone()) ?? [],
-			hourlyArray: this.config.units === "imperial"
-				? this.weatherProvider?.weatherHourlyArray?.map((ar) => WeatherUtils.convertWeatherObjectToImperial(ar.simpleClone())) ?? []
-				: this.weatherProvider?.weatherHourlyArray?.map((ar) => ar.simpleClone()) ?? [],
+			currentWeather:
+        this.config.units === "imperial"
+        	? (WeatherUtils.convertWeatherObjectToImperial(
+        		this.weatherProvider?.currentWeatherObject?.simpleClone()
+        	) ?? null)
+        	: (this.weatherProvider?.currentWeatherObject?.simpleClone() ?? null),
+			forecastArray:
+        this.config.units === "imperial"
+        	? (this.weatherProvider?.weatherForecastArray?.map((ar) => WeatherUtils.convertWeatherObjectToImperial(ar.simpleClone())) ?? [])
+        	: (this.weatherProvider?.weatherForecastArray?.map((ar) => ar.simpleClone()) ?? []),
+			hourlyArray:
+        this.config.units === "imperial"
+        	? (this.weatherProvider?.weatherHourlyArray?.map((ar) => WeatherUtils.convertWeatherObjectToImperial(ar.simpleClone())) ?? [])
+        	: (this.weatherProvider?.weatherHourlyArray?.map((ar) => ar.simpleClone()) ?? []),
 			locationName: this.weatherProvider?.fetchedLocationName,
 			providerName: this.weatherProvider.providerName
 		};
@@ -206,7 +242,9 @@ Module.register("weather", {
 					this.weatherProvider.fetchWeatherForecast();
 					break;
 				default:
-					Log.error(`Invalid type ${this.config.type} configured (must be one of 'current', 'hourly', 'daily' or 'forecast')`);
+					Log.error(
+						`Invalid type ${this.config.type} configured (must be one of 'current', 'hourly', 'daily' or 'forecast')`
+					);
 			}
 		}, nextLoad);
 	},
@@ -244,12 +282,19 @@ Module.register("weather", {
 					if (value === null || isNaN(value)) {
 						formattedValue = "";
 					} else {
-						formattedValue = WeatherUtils.convertPrecipitationUnit(value, valueUnit, this.config.units);
+						formattedValue = WeatherUtils.convertPrecipitationUnit(
+							value,
+							valueUnit,
+							this.config.units
+						);
 					}
 				} else if (type === "humidity") {
 					formattedValue = `${value}%`;
 				} else if (type === "wind") {
-					formattedValue = WeatherUtils.convertWind(value, this.config.windUnits);
+					formattedValue = WeatherUtils.convertWind(
+						value,
+						this.config.windUnits
+					);
 				}
 				return formattedValue;
 			}.bind(this)

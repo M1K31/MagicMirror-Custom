@@ -25,7 +25,8 @@ module.exports = NodeHelper.create({
 	createFetcher (feed, config) {
 		const url = feed.url || "";
 		const encoding = feed.encoding || "UTF-8";
-		const reloadInterval = feed.reloadInterval || config.reloadInterval || 5 * 60 * 1000;
+		const reloadInterval
+      = feed.reloadInterval || config.reloadInterval || 5 * 60 * 1000;
 		let useCorsProxy = feed.useCorsProxy;
 		if (useCorsProxy === undefined) useCorsProxy = true;
 
@@ -33,14 +34,24 @@ module.exports = NodeHelper.create({
 			new URL(url);
 		} catch (error) {
 			Log.error("Newsfeed Error. Malformed newsfeed url: ", url, error);
-			this.sendSocketNotification("NEWSFEED_ERROR", { error_type: "MODULE_ERROR_MALFORMED_URL" });
+			this.sendSocketNotification("NEWSFEED_ERROR", {
+				error_type: "MODULE_ERROR_MALFORMED_URL"
+			});
 			return;
 		}
 
 		let fetcher;
 		if (typeof this.fetchers[url] === "undefined") {
-			Log.log(`Create new newsfetcher for url: ${url} - Interval: ${reloadInterval}`);
-			fetcher = new NewsfeedFetcher(url, reloadInterval, encoding, config.logFeedWarnings, useCorsProxy);
+			Log.log(
+				`Create new newsfetcher for url: ${url} - Interval: ${reloadInterval}`
+			);
+			fetcher = new NewsfeedFetcher(
+				url,
+				reloadInterval,
+				encoding,
+				config.logFeedWarnings,
+				useCorsProxy
+			);
 
 			fetcher.onReceive(() => {
 				this.broadcastFeeds();

@@ -24,7 +24,9 @@ WeatherProvider.register("yr", {
 			throw new Error("Local storage not available");
 		}
 		if (this.config.updateInterval < 600000) {
-			Log.warn("The Yr weather provider requires a minimum update interval of 10 minutes (600 000 ms). The configuration has been adjusted to meet this requirement.");
+			Log.warn(
+				"The Yr weather provider requires a minimum update interval of 10 minutes (600 000 ms). The configuration has been adjusted to meet this requirement."
+			);
 			this.delegate.config.updateInterval = 600000;
 		}
 		Log.info(`Weather provider: ${this.providerName} started.`);
@@ -43,11 +45,17 @@ WeatherProvider.register("yr", {
 	},
 
 	async getCurrentWeather () {
-		const [weatherData, stellarData] = await Promise.all([this.getWeatherData(), this.getStellarData()]);
+		const [weatherData, stellarData] = await Promise.all([
+			this.getWeatherData(),
+			this.getStellarData()
+		]);
 		if (!stellarData) {
 			Log.warn("No stellar data available.");
 		}
-		if (!weatherData.properties.timeseries || !weatherData.properties.timeseries[0]) {
+		if (
+			!weatherData.properties.timeseries
+			|| !weatherData.properties.timeseries[0]
+		) {
 			Log.error("No weather data available.");
 			return;
 		}
@@ -62,21 +70,29 @@ WeatherProvider.register("yr", {
 			}
 		}
 		const forecastXHours = this.getForecastForXHoursFrom(forecast.data);
-		forecast.weatherType = this.convertWeatherType(forecastXHours.summary.symbol_code, forecast.time);
+		forecast.weatherType = this.convertWeatherType(
+			forecastXHours.summary.symbol_code,
+			forecast.time
+		);
 		forecast.precipitationAmount = forecastXHours.details?.precipitation_amount;
-		forecast.precipitationProbability = forecastXHours.details?.probability_of_precipitation;
+		forecast.precipitationProbability
+      = forecastXHours.details?.probability_of_precipitation;
 		forecast.minTemperature = forecastXHours.details?.air_temperature_min;
 		forecast.maxTemperature = forecastXHours.details?.air_temperature_max;
-		return this.getWeatherDataFrom(forecast, stellarData, weatherData.properties.meta.units);
+		return this.getWeatherDataFrom(
+			forecast,
+			stellarData,
+			weatherData.properties.meta.units
+		);
 	},
 
 	getWeatherData () {
 		return new Promise((resolve, reject) => {
 
 			/*
-			 * If a user has several Yr-modules, for instance one current and one forecast, the API calls must be synchronized across classes.
-			 * This is to avoid multiple similar calls to the API.
-			 */
+       * If a user has several Yr-modules, for instance one current and one forecast, the API calls must be synchronized across classes.
+       * This is to avoid multiple similar calls to the API.
+       */
 			let shouldWait = localStorage.getItem("yrIsFetchingWeatherData");
 			if (shouldWait) {
 				const checkForGo = setInterval(function () {
@@ -141,7 +157,11 @@ WeatherProvider.register("yr", {
 			weatherData
 			&& weatherData.timeout
 			&& 0 < moment(weatherData.timeout).diff(moment())
-			&& (!weatherData.geometry || !weatherData.geometry.coordinates || !weatherData.geometry.coordinates.length < 2 || (weatherData.geometry.coordinates[0] === this.config.lat && weatherData.geometry.coordinates[1] === this.config.lon))
+			&& (!weatherData.geometry
+			  || !weatherData.geometry.coordinates
+			  || !weatherData.geometry.coordinates.length < 2
+			  || (weatherData.geometry.coordinates[0] === this.config.lat
+			    && weatherData.geometry.coordinates[1] === this.config.lon))
 		);
 	},
 
@@ -157,16 +177,28 @@ WeatherProvider.register("yr", {
 	getWeatherDataFromYr (currentDataFetchedAt) {
 		const requestHeaders = [{ name: "Accept", value: "application/json" }];
 		if (currentDataFetchedAt) {
-			requestHeaders.push({ name: "If-Modified-Since", value: currentDataFetchedAt });
+			requestHeaders.push({
+				name: "If-Modified-Since",
+				value: currentDataFetchedAt
+			});
 		}
 
 		const expectedResponseHeaders = ["expires", "date"];
 
-		return this.fetchData(this.getForecastUrl(), "json", requestHeaders, expectedResponseHeaders)
+		return this.fetchData(
+			this.getForecastUrl(),
+			"json",
+			requestHeaders,
+			expectedResponseHeaders
+		)
 			.then((data) => {
 				if (!data || !data.headers) return data;
-				data.timeout = data.headers.find((header) => header.name === "expires").value;
-				data.downloadedAt = data.headers.find((header) => header.name === "date").value;
+				data.timeout = data.headers.find(
+					(header) => header.name === "expires"
+				).value;
+				data.downloadedAt = data.headers.find(
+					(header) => header.name === "date"
+				).value;
 				data.headers = undefined;
 				return data;
 			})
@@ -196,12 +228,16 @@ WeatherProvider.register("yr", {
 		let { lat, lon, altitude } = this.getConfigOptions();
 
 		if (lat.includes(".") && lat.split(".")[1].length > 4) {
-			Log.warn("Latitude is too specific for weather data. Do not use more than four decimals. Trimming to maximum length.");
+			Log.warn(
+				"Latitude is too specific for weather data. Do not use more than four decimals. Trimming to maximum length."
+			);
 			const latParts = lat.split(".");
 			lat = `${latParts[0]}.${latParts[1].substring(0, 4)}`;
 		}
 		if (lon.includes(".") && lon.split(".")[1].length > 4) {
-			Log.warn("Longitude is too specific for weather data. Do not use more than four decimals. Trimming to maximum length.");
+			Log.warn(
+				"Longitude is too specific for weather data. Do not use more than four decimals. Trimming to maximum length."
+			);
 			const lonParts = lon.split(".");
 			lon = `${lonParts[0]}.${lonParts[1].substring(0, 4)}`;
 		}
@@ -216,9 +252,9 @@ WeatherProvider.register("yr", {
 	getStellarData () {
 
 		/*
-		 * If a user has several Yr-modules, for instance one current and one forecast, the API calls must be synchronized across classes.
-		 * This is to avoid multiple similar calls to the API.
-		 */
+     * If a user has several Yr-modules, for instance one current and one forecast, the API calls must be synchronized across classes.
+     * This is to avoid multiple similar calls to the API.
+     */
 		return new Promise((resolve, reject) => {
 			let shouldWait = localStorage.getItem("yrIsFetchingStellarData");
 			if (shouldWait) {
@@ -248,11 +284,21 @@ WeatherProvider.register("yr", {
 		let stellarData = this.getStellarDataFromCache();
 		const today = moment().format("YYYY-MM-DD");
 		const tomorrow = moment().add(1, "days").format("YYYY-MM-DD");
-		if (stellarData && stellarData.today && stellarData.today.date === today && stellarData.tomorrow && stellarData.tomorrow.date === tomorrow) {
+		if (
+			stellarData
+			&& stellarData.today
+			&& stellarData.today.date === today
+			&& stellarData.tomorrow
+			&& stellarData.tomorrow.date === tomorrow
+		) {
 			Log.debug("Stellar data found in cache.");
 			localStorage.removeItem("yrIsFetchingStellarData");
 			resolve(stellarData);
-		} else if (stellarData && stellarData.tomorrow && stellarData.tomorrow.date === today) {
+		} else if (
+			stellarData
+			&& stellarData.tomorrow
+			&& stellarData.tomorrow.date === today
+		) {
 			Log.debug("stellar data for today found in cache, but not for tomorrow.");
 			stellarData.today = stellarData.tomorrow;
 			this.getStellarDataFromYr(tomorrow)
@@ -286,7 +332,9 @@ WeatherProvider.register("yr", {
 						this.cacheStellarData(data);
 						resolve(data);
 					} else {
-						Log.error(`Something went wrong when fetching stellar data. Responses: ${stellarData}`);
+						Log.error(
+							`Something went wrong when fetching stellar data. Responses: ${stellarData}`
+						);
 						reject(stellarData);
 					}
 				})
@@ -311,7 +359,11 @@ WeatherProvider.register("yr", {
 
 	getStellarDataFromYr (date, days = 1) {
 		const requestHeaders = [{ name: "Accept", value: "application/json" }];
-		return this.fetchData(this.getStellarDataUrl(date, days), "json", requestHeaders)
+		return this.fetchData(
+			this.getStellarDataUrl(date, days),
+			"json",
+			requestHeaders
+		)
 			.then((data) => {
 				Log.debug("Got stellar data from yr.");
 				return data;
@@ -326,12 +378,16 @@ WeatherProvider.register("yr", {
 		let { lat, lon, altitude } = this.getConfigOptions();
 
 		if (lat.includes(".") && lat.split(".")[1].length > 4) {
-			Log.warn("Latitude is too specific for stellar data. Do not use more than four decimals. Trimming to maximum length.");
+			Log.warn(
+				"Latitude is too specific for stellar data. Do not use more than four decimals. Trimming to maximum length."
+			);
 			const latParts = lat.split(".");
 			lat = `${latParts[0]}.${latParts[1].substring(0, 4)}`;
 		}
 		if (lon.includes(".") && lon.split(".")[1].length > 4) {
-			Log.warn("Longitude is too specific for stellar data. Do not use more than four decimals. Trimming to maximum length.");
+			Log.warn(
+				"Longitude is too specific for stellar data. Do not use more than four decimals. Trimming to maximum length."
+			);
 			const lonParts = lon.split(".");
 			lon = `${lonParts[0]}.${lonParts[1].substring(0, 4)}`;
 		}
@@ -362,7 +418,8 @@ WeatherProvider.register("yr", {
 
 		weather.date = moment(forecast.time);
 		weather.windSpeed = forecast.data.instant.details.wind_speed;
-		weather.windFromDirection = forecast.data.instant.details.wind_from_direction;
+		weather.windFromDirection
+      = forecast.data.instant.details.wind_from_direction;
 		weather.temperature = forecast.data.instant.details.air_temperature;
 		weather.minTemperature = forecast.minTemperature;
 		weather.maxTemperature = forecast.maxTemperature;
@@ -467,7 +524,9 @@ WeatherProvider.register("yr", {
 			snowshowersandthunder_polartwilight: "day-snow-thunderstorm"
 		};
 
-		return weatherTypes.hasOwnProperty(weatherType) ? weatherTypes[weatherType] : null;
+		return weatherTypes.hasOwnProperty(weatherType)
+			? weatherTypes[weatherType]
+			: null;
 	},
 
 	getForecastForXHoursFrom (weather) {
@@ -511,8 +570,14 @@ WeatherProvider.register("yr", {
 	},
 
 	async getWeatherForecast (type) {
-		const [weatherData, stellarData] = await Promise.all([this.getWeatherData(), this.getStellarData()]);
-		if (!weatherData.properties.timeseries || !weatherData.properties.timeseries[0]) {
+		const [weatherData, stellarData] = await Promise.all([
+			this.getWeatherData(),
+			this.getStellarData()
+		]);
+		if (
+			!weatherData.properties.timeseries
+			|| !weatherData.properties.timeseries[0]
+		) {
 			Log.error("No weather data available.");
 			return;
 		}
@@ -531,7 +596,13 @@ WeatherProvider.register("yr", {
 		}
 		const series = [];
 		for (const forecast of forecasts) {
-			series.push(this.getWeatherDataFrom(forecast, stellarData, weatherData.properties.meta.units));
+			series.push(
+				this.getWeatherDataFrom(
+					forecast,
+					stellarData,
+					weatherData.properties.meta.units
+				)
+			);
 		}
 		return series;
 	},
@@ -549,11 +620,18 @@ WeatherProvider.register("yr", {
 			if (now.isAfter(moment(forecast.time))) continue;
 
 			forecast.symbol = forecast.data.next_1_hours?.summary?.symbol_code;
-			forecast.precipitationAmount = forecast.data.next_1_hours?.details?.precipitation_amount;
-			forecast.precipitationProbability = forecast.data.next_1_hours?.details?.probability_of_precipitation;
-			forecast.minTemperature = forecast.data.next_1_hours?.details?.air_temperature_min;
-			forecast.maxTemperature = forecast.data.next_1_hours?.details?.air_temperature_max;
-			forecast.weatherType = this.convertWeatherType(forecast.symbol, forecast.time);
+			forecast.precipitationAmount
+        = forecast.data.next_1_hours?.details?.precipitation_amount;
+			forecast.precipitationProbability
+        = forecast.data.next_1_hours?.details?.probability_of_precipitation;
+			forecast.minTemperature
+        = forecast.data.next_1_hours?.details?.air_temperature_min;
+			forecast.maxTemperature
+        = forecast.data.next_1_hours?.details?.air_temperature_max;
+			forecast.weatherType = this.convertWeatherType(
+				forecast.symbol,
+				forecast.time
+			);
 			series.push(forecast);
 		}
 		return series;
@@ -562,7 +640,10 @@ WeatherProvider.register("yr", {
 	getDailyForecastFrom (weatherData) {
 		const series = [];
 
-		const days = weatherData.properties.timeseries.reduce(function (days, forecast) {
+		const days = weatherData.properties.timeseries.reduce(function (
+			days,
+			forecast
+		) {
 			const date = moment(forecast.time).format("YYYY-MM-DD");
 			days[date] = days[date] || [];
 			days[date].push(forecast);
@@ -576,27 +657,53 @@ WeatherProvider.register("yr", {
 			//Default to first entry
 			let forecast = days[time][0];
 			forecast.symbol = forecast.data.next_12_hours?.summary?.symbol_code;
-			forecast.precipitation = forecast.data.next_12_hours?.details?.precipitation_amount;
+			forecast.precipitation
+        = forecast.data.next_12_hours?.details?.precipitation_amount;
 
 			//Coming days
 			let forecastDiffToEight = undefined;
 			for (const timeseries of days[time]) {
 				if (!timeseries.data.next_6_hours) continue; //next_6_hours has the most data
 
-				if (!minTemperature || timeseries.data.next_6_hours.details.air_temperature_min < minTemperature) minTemperature = timeseries.data.next_6_hours.details.air_temperature_min;
-				if (!maxTemperature || maxTemperature < timeseries.data.next_6_hours.details.air_temperature_max) maxTemperature = timeseries.data.next_6_hours.details.air_temperature_max;
+				if (
+					!minTemperature
+					|| timeseries.data.next_6_hours.details.air_temperature_min
+					< minTemperature
+				) minTemperature
+            = timeseries.data.next_6_hours.details.air_temperature_min;
+				if (
+					!maxTemperature
+					|| maxTemperature
+					< timeseries.data.next_6_hours.details.air_temperature_max
+				) maxTemperature
+            = timeseries.data.next_6_hours.details.air_temperature_max;
 
-				let closestTime = Math.abs(moment(timeseries.time).local().set({ hour: 8, minute: 0, second: 0, millisecond: 0 }).diff(moment(timeseries.time).local()));
-				if ((forecastDiffToEight === undefined || closestTime < forecastDiffToEight) && timeseries.data.next_12_hours) {
+				let closestTime = Math.abs(
+					moment(timeseries.time)
+						.local()
+						.set({ hour: 8, minute: 0, second: 0, millisecond: 0 })
+						.diff(moment(timeseries.time).local())
+				);
+				if (
+					(forecastDiffToEight === undefined
+					  || closestTime < forecastDiffToEight)
+			  && timeseries.data.next_12_hours
+				) {
 					forecastDiffToEight = closestTime;
 					forecast = timeseries;
 				}
 			}
-			const forecastXHours = forecast.data.next_12_hours ?? forecast.data.next_6_hours ?? forecast.data.next_1_hours;
+			const forecastXHours
+        = forecast.data.next_12_hours
+          ?? forecast.data.next_6_hours
+          ?? forecast.data.next_1_hours;
 			if (forecastXHours) {
 				forecast.symbol = forecastXHours.summary?.symbol_code;
-				forecast.precipitationAmount = forecastXHours.details?.precipitation_amount ?? forecast.data.next_6_hours?.details?.precipitation_amount; // 6 hours is likely to have precipitation amount even if 12 hours does not
-				forecast.precipitationProbability = forecastXHours.details?.probability_of_precipitation;
+				forecast.precipitationAmount
+          = forecastXHours.details?.precipitation_amount
+            ?? forecast.data.next_6_hours?.details?.precipitation_amount; // 6 hours is likely to have precipitation amount even if 12 hours does not
+				forecast.precipitationProbability
+          = forecastXHours.details?.probability_of_precipitation;
 				forecast.minTemperature = minTemperature;
 				forecast.maxTemperature = maxTemperature;
 
@@ -604,7 +711,10 @@ WeatherProvider.register("yr", {
 			}
 		});
 		for (const forecast of series) {
-			forecast.weatherType = this.convertWeatherType(forecast.symbol, forecast.time);
+			forecast.weatherType = this.convertWeatherType(
+				forecast.symbol,
+				forecast.time
+			);
 		}
 		return series;
 	},

@@ -68,7 +68,12 @@ Module.register("updatenotification", {
 	},
 
 	getTemplateData () {
-		return { moduleList: this.moduleList, updatesList: this.updates, suspended: this.suspended, needRestart: this.needRestart };
+		return {
+			moduleList: this.moduleList,
+			updatesList: this.updates,
+			suspended: this.suspended,
+			needRestart: this.needRestart
+		};
 	},
 
 	updateUI (payload) {

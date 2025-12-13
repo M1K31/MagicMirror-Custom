@@ -42,19 +42,25 @@ const WeatherProvider = Class.extend({
 	// This method should start the API request to fetch the current weather.
 	// This method should definitely be overwritten in the provider.
 	fetchCurrentWeather () {
-		Log.warn(`Weather provider: ${this.providerName} does not subclass the fetchCurrentWeather method.`);
+		Log.warn(
+			`Weather provider: ${this.providerName} does not subclass the fetchCurrentWeather method.`
+		);
 	},
 
 	// This method should start the API request to fetch the weather forecast.
 	// This method should definitely be overwritten in the provider.
 	fetchWeatherForecast () {
-		Log.warn(`Weather provider: ${this.providerName} does not subclass the fetchWeatherForecast method.`);
+		Log.warn(
+			`Weather provider: ${this.providerName} does not subclass the fetchWeatherForecast method.`
+		);
 	},
 
 	// This method should start the API request to fetch the weather hourly.
 	// This method should definitely be overwritten in the provider.
 	fetchWeatherHourly () {
-		Log.warn(`Weather provider: ${this.providerName} does not subclass the fetchWeatherHourly method.`);
+		Log.warn(
+			`Weather provider: ${this.providerName} does not subclass the fetchWeatherHourly method.`
+		);
 	},
 
 	// This returns a WeatherDay object for the current weather.
@@ -112,14 +118,28 @@ const WeatherProvider = Class.extend({
 	 * @param {Array.<string>} expectedResponseHeaders the expected HTTP headers to recieve
 	 * @returns {Promise} resolved when the fetch is done
 	 */
-	async fetchData (url, type = "json", requestHeaders = undefined, expectedResponseHeaders = undefined) {
+	async fetchData (
+		url,
+		type = "json",
+		requestHeaders = undefined,
+		expectedResponseHeaders = undefined
+	) {
 		const mockData = this.config.mockData;
 		if (mockData) {
 			const data = mockData.substring(1, mockData.length - 1);
 			return JSON.parse(data);
 		}
-		const useCorsProxy = typeof this.config.useCorsProxy !== "undefined" && this.config.useCorsProxy;
-		return performWebRequest(url, type, useCorsProxy, requestHeaders, expectedResponseHeaders, config.basePath);
+		const useCorsProxy
+      = typeof this.config.useCorsProxy !== "undefined"
+        && this.config.useCorsProxy;
+		return performWebRequest(
+			url,
+			type,
+			useCorsProxy,
+			requestHeaders,
+			expectedResponseHeaders,
+			config.basePath
+		);
 	}
 });
 
@@ -134,7 +154,8 @@ WeatherProvider.providers = [];
  * @param {object} providerDetails The details of the weather provider
  */
 WeatherProvider.register = function (providerIdentifier, providerDetails) {
-	WeatherProvider.providers[providerIdentifier.toLowerCase()] = WeatherProvider.extend(providerDetails);
+	WeatherProvider.providers[providerIdentifier.toLowerCase()]
+    = WeatherProvider.extend(providerDetails);
 };
 
 /**

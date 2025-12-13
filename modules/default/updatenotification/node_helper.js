@@ -23,7 +23,8 @@ module.exports = NodeHelper.create({
 			// get modules from modules-directory
 			const moduleDir = path.normalize(`${__dirname}/../../`);
 			const getDirectories = (source) => {
-				return fs.readdirSync(source, { withFileTypes: true })
+				return fs
+					.readdirSync(source, { withFileTypes: true })
 					.filter((dirent) => dirent.isDirectory() && dirent.name !== "default")
 					.map((dirent) => dirent.name);
 			};

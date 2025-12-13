@@ -12,10 +12,10 @@
 WeatherProvider.register("weathergov", {
 
 	/*
-	 * Set the name of the provider.
-	 * This isn't strictly necessary, since it will fallback to the provider identifier
-	 * But for debugging (and future alerts) it would be nice to have the real name.
-	 */
+   * Set the name of the provider.
+   * This isn't strictly necessary, since it will fallback to the provider identifier
+   * But for debugging (and future alerts) it would be nice to have the real name.
+   */
 	providerName: "Weather.gov",
 
 	// Set the default config properties that is specific to this provider
@@ -63,7 +63,9 @@ WeatherProvider.register("weathergov", {
 					// Did not receive usable new data.
 					return;
 				}
-				const currentWeather = this.generateWeatherObjectFromCurrentWeather(data.properties);
+				const currentWeather = this.generateWeatherObjectFromCurrentWeather(
+					data.properties
+				);
 				this.setCurrentWeather(currentWeather);
 			})
 			.catch(function (request) {
@@ -80,11 +82,18 @@ WeatherProvider.register("weathergov", {
 		}
 		this.fetchData(this.forecastURL)
 			.then((data) => {
-				if (!data || !data.properties || !data.properties.periods || !data.properties.periods.length) {
+				if (
+					!data
+					|| !data.properties
+					|| !data.properties.periods
+					|| !data.properties.periods.length
+				) {
 					// Did not receive usable new data.
 					return;
 				}
-				const forecast = this.generateWeatherObjectsFromForecast(data.properties.periods);
+				const forecast = this.generateWeatherObjectsFromForecast(
+					data.properties.periods
+				);
 				this.setWeatherForecast(forecast);
 			})
 			.catch(function (request) {
@@ -104,12 +113,14 @@ WeatherProvider.register("weathergov", {
 				if (!data) {
 
 					/*
-					 * Did not receive usable new data.
-					 * Maybe this needs a better check?
-					 */
+           * Did not receive usable new data.
+           * Maybe this needs a better check?
+           */
 					return;
 				}
-				const hourly = this.generateWeatherObjectsFromHourly(data.properties.periods);
+				const hourly = this.generateWeatherObjectsFromHourly(
+					data.properties.periods
+				);
 				this.setWeatherHourly(hourly);
 			})
 			.catch(function (request) {
@@ -121,8 +132,8 @@ WeatherProvider.register("weathergov", {
 	/** Weather.gov Specific Methods - These are not part of the default provider methods */
 
 	/*
-	 * Get specific URLs
-	 */
+   * Get specific URLs
+   */
 	fetchWxGovURLs (config) {
 		this.fetchData(`${config.apiBase}/${config.lat},${config.lon}`)
 			.then((data) => {
@@ -165,10 +176,10 @@ WeatherProvider.register("weathergov", {
 	},
 
 	/*
-	 * Generate a WeatherObject based on hourlyWeatherInformation
-	 * Weather.gov API uses specific units; API does not include choice of units
-	 * ... object needs data in units based on config!
-	 */
+   * Generate a WeatherObject based on hourlyWeatherInformation
+   * Weather.gov API uses specific units; API does not include choice of units
+   * ... object needs data in units based on config!
+   */
 	generateWeatherObjectsFromHourly (forecasts) {
 		const days = [];
 
@@ -179,7 +190,10 @@ WeatherProvider.register("weathergov", {
 			if (forecast.windSpeed.search(" ") < 0) {
 				weather.windSpeed = forecast.windSpeed;
 			} else {
-				weather.windSpeed = forecast.windSpeed.slice(0, forecast.windSpeed.search(" "));
+				weather.windSpeed = forecast.windSpeed.slice(
+					0,
+					forecast.windSpeed.search(" ")
+				);
 			}
 			weather.windSpeed = WeatherUtils.convertWindToMs(weather.windSpeed);
 			weather.windFromDirection = forecast.windDirection;
@@ -188,10 +202,14 @@ WeatherProvider.register("weathergov", {
 			if (forecast.probabilityOfPrecipitation.value === null) {
 				weather.precipitationProbability = 0;
 			} else {
-				weather.precipitationProbability = forecast.probabilityOfPrecipitation.value;
+				weather.precipitationProbability
+          = forecast.probabilityOfPrecipitation.value;
 			}
 			// use the forecast isDayTime attribute to help build the weatherType label
-			weather.weatherType = this.convertWeatherType(forecast.shortForecast, forecast.isDaytime);
+			weather.weatherType = this.convertWeatherType(
+				forecast.shortForecast,
+				forecast.isDaytime
+			);
 
 			days.push(weather);
 
@@ -204,21 +222,30 @@ WeatherProvider.register("weathergov", {
 	},
 
 	/*
-	 * Generate a WeatherObject based on currentWeatherInformation
-	 * Weather.gov API uses specific units; API does not include choice of units
-	 * ... object needs data in units based on config!
-	 */
+   * Generate a WeatherObject based on currentWeatherInformation
+   * Weather.gov API uses specific units; API does not include choice of units
+   * ... object needs data in units based on config!
+   */
 	generateWeatherObjectFromCurrentWeather (currentWeatherData) {
 		const currentWeather = new WeatherObject();
 
 		currentWeather.date = moment(currentWeatherData.timestamp);
 		currentWeather.temperature = currentWeatherData.temperature.value;
-		currentWeather.windSpeed = WeatherUtils.convertWindToMs(currentWeatherData.windSpeed.value);
+		currentWeather.windSpeed = WeatherUtils.convertWindToMs(
+			currentWeatherData.windSpeed.value
+		);
 		currentWeather.windFromDirection = currentWeatherData.windDirection.value;
-		currentWeather.minTemperature = currentWeatherData.minTemperatureLast24Hours.value;
-		currentWeather.maxTemperature = currentWeatherData.maxTemperatureLast24Hours.value;
-		currentWeather.humidity = Math.round(currentWeatherData.relativeHumidity.value);
-		currentWeather.precipitationAmount = currentWeatherData.precipitationLastHour.value ? currentWeatherData.precipitationLastHour.value : currentWeatherData.precipitationLast3Hours.value;
+		currentWeather.minTemperature
+      = currentWeatherData.minTemperatureLast24Hours.value;
+		currentWeather.maxTemperature
+      = currentWeatherData.maxTemperatureLast24Hours.value;
+		currentWeather.humidity = Math.round(
+			currentWeatherData.relativeHumidity.value
+		);
+		currentWeather.precipitationAmount = currentWeatherData
+			.precipitationLastHour.value
+			? currentWeatherData.precipitationLastHour.value
+			: currentWeatherData.precipitationLast3Hours.value;
 		if (currentWeatherData.heatIndex.value !== null) {
 			currentWeather.feelsLikeTemp = currentWeatherData.heatIndex.value;
 		} else if (currentWeatherData.windChill.value !== null) {
@@ -230,21 +257,24 @@ WeatherProvider.register("weathergov", {
 		currentWeather.updateSunTime(this.config.lat, this.config.lon);
 
 		// update weatherType
-		currentWeather.weatherType = this.convertWeatherType(currentWeatherData.textDescription, currentWeather.isDayTime());
+		currentWeather.weatherType = this.convertWeatherType(
+			currentWeatherData.textDescription,
+			currentWeather.isDayTime()
+		);
 
 		return currentWeather;
 	},
 
 	/*
-	 * Generate WeatherObjects based on forecast information
-	 */
+   * Generate WeatherObjects based on forecast information
+   */
 	generateWeatherObjectsFromForecast (forecasts) {
 		return this.fetchForecastDaily(forecasts);
 	},
 
 	/*
-	 * fetch forecast information for daily forecast.
-	 */
+   * fetch forecast information for daily forecast.
+   */
 	fetchForecastDaily (forecasts) {
 		// initial variable declaration
 		const days = [];
@@ -272,7 +302,8 @@ WeatherProvider.register("weathergov", {
 				if (forecast.probabilityOfPrecipitation.value === null) {
 					weather.precipitationProbability = 0;
 				} else {
-					weather.precipitationProbability = forecast.probabilityOfPrecipitation.value;
+					weather.precipitationProbability
+            = forecast.probabilityOfPrecipitation.value;
 				}
 
 				// set new date
@@ -282,25 +313,34 @@ WeatherProvider.register("weathergov", {
 				weather.date = moment(forecast.startTime);
 
 				// use the forecast isDayTime attribute to help build the weatherType label
-				weather.weatherType = this.convertWeatherType(forecast.shortForecast, forecast.isDaytime);
+				weather.weatherType = this.convertWeatherType(
+					forecast.shortForecast,
+					forecast.isDaytime
+				);
 			}
 
-			if (moment(forecast.startTime).format("H") >= 8 && moment(forecast.startTime).format("H") <= 17) {
-				weather.weatherType = this.convertWeatherType(forecast.shortForecast, forecast.isDaytime);
+			if (
+				moment(forecast.startTime).format("H") >= 8
+				&& moment(forecast.startTime).format("H") <= 17
+			) {
+				weather.weatherType = this.convertWeatherType(
+					forecast.shortForecast,
+					forecast.isDaytime
+				);
 			}
 
 			/*
-			 * the same day as before
-			 * add values from forecast to corresponding variables
-			 */
+       * the same day as before
+       * add values from forecast to corresponding variables
+       */
 			minTemp.push(forecast.temperature);
 			maxTemp.push(forecast.temperature);
 		}
 
 		/*
-		 * last day
-		 * calculate minimum/maximum temperature
-		 */
+     * last day
+     * calculate minimum/maximum temperature
+     */
 		weather.minTemperature = Math.min.apply(null, minTemp);
 		weather.maxTemperature = Math.max.apply(null, maxTemp);
 
@@ -310,14 +350,14 @@ WeatherProvider.register("weathergov", {
 	},
 
 	/*
-	 * Convert the icons to a more usable name.
-	 */
+   * Convert the icons to a more usable name.
+   */
 	convertWeatherType (weatherType, isDaytime) {
 
 		/*
-		 * https://w1.weather.gov/xml/current_obs/weather.php
-		 *  There are way too many types to create, so lets just look for certain strings
-		 */
+     * https://w1.weather.gov/xml/current_obs/weather.php
+     *  There are way too many types to create, so lets just look for certain strings
+     */
 
 		if (weatherType.includes("Cloudy") || weatherType.includes("Partly")) {
 			if (isDaytime) {
@@ -331,7 +371,10 @@ WeatherProvider.register("weathergov", {
 			}
 
 			return "night-cloudy";
-		} else if (weatherType.includes("Freezing") || weatherType.includes("Ice")) {
+		} else if (
+			weatherType.includes("Freezing")
+			|| weatherType.includes("Ice")
+		) {
 			return "rain-mix";
 		} else if (weatherType.includes("Snow")) {
 			if (isDaytime) {
@@ -351,19 +394,30 @@ WeatherProvider.register("weathergov", {
 			}
 
 			return "night-showers";
-		} else if (weatherType.includes("Rain") || weatherType.includes("Drizzle")) {
+		} else if (
+			weatherType.includes("Rain")
+			|| weatherType.includes("Drizzle")
+		) {
 			if (isDaytime) {
 				return "rain";
 			}
 
 			return "night-rain";
-		} else if (weatherType.includes("Breezy") || weatherType.includes("Windy")) {
+		} else if (
+			weatherType.includes("Breezy")
+			|| weatherType.includes("Windy")
+		) {
 			if (isDaytime) {
 				return "cloudy-windy";
 			}
 
 			return "night-alt-cloudy-windy";
-		} else if (weatherType.includes("Fair") || weatherType.includes("Clear") || weatherType.includes("Few") || weatherType.includes("Sunny")) {
+		} else if (
+			weatherType.includes("Fair")
+			|| weatherType.includes("Clear")
+			|| weatherType.includes("Few")
+			|| weatherType.includes("Sunny")
+		) {
 			if (isDaytime) {
 				return "day-sunny";
 			}

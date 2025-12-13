@@ -69,8 +69,18 @@ const OverrideWrapper = Class.extend({
 	updateAvailable () {
 		this.baseProvider.updateAvailable();
 	},
-	async fetchData (url, type = "json", requestHeaders = undefined, expectedResponseHeaders = undefined) {
-		this.baseProvider.fetchData(url, type, requestHeaders, expectedResponseHeaders);
+	async fetchData (
+		url,
+		type = "json",
+		requestHeaders = undefined,
+		expectedResponseHeaders = undefined
+	) {
+		this.baseProvider.fetchData(
+			url,
+			type,
+			requestHeaders,
+			expectedResponseHeaders
+		);
 	},
 
 	/* Override Methods */
@@ -90,7 +100,10 @@ const OverrideWrapper = Class.extend({
 	 * @param {WeatherObject} currentWeatherObject - the api provider weather object
 	 */
 	setCurrentWeather (currentWeatherObject) {
-		this.currentOverrideWeatherObject = Object.assign(currentWeatherObject, this.notificationWeatherObject);
+		this.currentOverrideWeatherObject = Object.assign(
+			currentWeatherObject,
+			this.notificationWeatherObject
+		);
 	},
 
 	/**

@@ -7,9 +7,9 @@
 WeatherProvider.register("weatherflow", {
 
 	/*
-	 * Set the name of the provider.
-	 * Not strictly required, but helps for debugging
-	 */
+   * Set the name of the provider.
+   * Not strictly required, but helps for debugging
+   */
 	providerName: "WeatherFlow",
 
 	// Set the default config properties that is specific to this provider
@@ -31,9 +31,14 @@ WeatherProvider.register("weatherflow", {
 				currentWeather.humidity = data.current_conditions.relative_humidity;
 				currentWeather.temperature = data.current_conditions.air_temperature;
 				currentWeather.feelsLikeTemp = data.current_conditions.feels_like;
-				currentWeather.windSpeed = WeatherUtils.convertWindToMs(data.current_conditions.wind_avg);
-				currentWeather.windFromDirection = data.current_conditions.wind_direction;
-				currentWeather.weatherType = this.convertWeatherType(data.current_conditions.icon);
+				currentWeather.windSpeed = WeatherUtils.convertWindToMs(
+					data.current_conditions.wind_avg
+				);
+				currentWeather.windFromDirection
+          = data.current_conditions.wind_direction;
+				currentWeather.weatherType = this.convertWeatherType(
+					data.current_conditions.icon
+				);
 				currentWeather.uv_index = data.current_conditions.uv;
 				currentWeather.sunrise = moment.unix(data.forecast.daily[0].sunrise);
 				currentWeather.sunset = moment.unix(data.forecast.daily[0].sunset);
@@ -67,10 +72,11 @@ WeatherProvider.register("weatherflow", {
 
 					for (const hour of data.forecast.hourly) {
 						const hour_time = moment.unix(hour.time);
-						if (hour_time.day() === weather.date.day()) { // Iterate though until day is reached
+						if (hour_time.day() === weather.date.day()) {
+							// Iterate though until day is reached
 							// Get data from today
 							weather.uv_index = Math.max(weather.uv_index, hour.uv);
-							weather.precipitationAmount += (hour.precip ?? 0);
+							weather.precipitationAmount += hour.precip ?? 0;
 						} else if (hour_time.diff(weather.date) >= 86400) {
 							break; // No more data to be found
 						}
@@ -140,7 +146,9 @@ WeatherProvider.register("weatherflow", {
 			windy: "strong-wind"
 		};
 
-		return weatherTypes.hasOwnProperty(weatherType) ? weatherTypes[weatherType] : null;
+		return weatherTypes.hasOwnProperty(weatherType)
+			? weatherTypes[weatherType]
+			: null;
 	},
 
 	// Create a URL from the config and base URL.

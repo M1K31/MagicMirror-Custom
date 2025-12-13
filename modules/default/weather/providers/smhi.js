@@ -24,8 +24,13 @@ WeatherProvider.register("smhi", {
 			.then((data) => {
 				const closest = this.getClosestToCurrentTime(data.timeSeries);
 				const coordinates = this.resolveCoordinates(data);
-				const weatherObject = this.convertWeatherDataToObject(closest, coordinates);
-				this.setFetchedLocation(this.config.location || `(${coordinates.lat},${coordinates.lon})`);
+				const weatherObject = this.convertWeatherDataToObject(
+					closest,
+					coordinates
+				);
+				this.setFetchedLocation(
+					this.config.location || `(${coordinates.lat},${coordinates.lon})`
+				);
 				this.setCurrentWeather(weatherObject);
 			})
 			.catch((error) => Log.error(`Could not load data: ${error.message}`))
@@ -39,8 +44,13 @@ WeatherProvider.register("smhi", {
 		this.fetchData(this.getURL())
 			.then((data) => {
 				const coordinates = this.resolveCoordinates(data);
-				const weatherObjects = this.convertWeatherDataGroupedBy(data.timeSeries, coordinates);
-				this.setFetchedLocation(this.config.location || `(${coordinates.lat},${coordinates.lon})`);
+				const weatherObjects = this.convertWeatherDataGroupedBy(
+					data.timeSeries,
+					coordinates
+				);
+				this.setFetchedLocation(
+					this.config.location || `(${coordinates.lat},${coordinates.lon})`
+				);
 				this.setWeatherForecast(weatherObjects);
 			})
 			.catch((error) => Log.error(`Could not load data: ${error.message}`))
@@ -54,8 +64,14 @@ WeatherProvider.register("smhi", {
 		this.fetchData(this.getURL())
 			.then((data) => {
 				const coordinates = this.resolveCoordinates(data);
-				const weatherObjects = this.convertWeatherDataGroupedBy(data.timeSeries, coordinates, "hour");
-				this.setFetchedLocation(this.config.location || `(${coordinates.lat},${coordinates.lon})`);
+				const weatherObjects = this.convertWeatherDataGroupedBy(
+					data.timeSeries,
+					coordinates,
+					"hour"
+				);
+				this.setFetchedLocation(
+					this.config.location || `(${coordinates.lat},${coordinates.lon})`
+				);
 				this.setWeatherHourly(weatherObjects);
 			})
 			.catch((error) => Log.error(`Could not load data: ${error.message}`))
@@ -68,7 +84,12 @@ WeatherProvider.register("smhi", {
 	 */
 	setConfig (config) {
 		this.config = config;
-		if (!config.precipitationValue || ["pmin", "pmean", "pmedian", "pmax"].indexOf(config.precipitationValue) === -1) {
+		if (
+			!config.precipitationValue
+			|| ["pmin", "pmean", "pmedian", "pmax"].indexOf(
+				config.precipitationValue
+			) === -1
+		) {
 			Log.log(`invalid or not set: ${config.precipitationValue}`);
 			config.precipitationValue = this.defaults.precipitationValue;
 		}
@@ -136,15 +157,22 @@ WeatherProvider.register("smhi", {
 		currentWeather.temperature = this.paramValue(weatherData, "t");
 		currentWeather.windSpeed = this.paramValue(weatherData, "ws");
 		currentWeather.windFromDirection = this.paramValue(weatherData, "wd");
-		currentWeather.weatherType = this.convertWeatherType(this.paramValue(weatherData, "Wsymb2"), currentWeather.isDayTime());
-		currentWeather.feelsLikeTemp = this.calculateApparentTemperature(weatherData);
+		currentWeather.weatherType = this.convertWeatherType(
+			this.paramValue(weatherData, "Wsymb2"),
+			currentWeather.isDayTime()
+		);
+		currentWeather.feelsLikeTemp
+      = this.calculateApparentTemperature(weatherData);
 
 		/*
-		 * Determine the precipitation amount and category and update the
-		 * weatherObject with it, the valuetype to use can be configured or uses
-		 * median as default.
-		 */
-		let precipitationValue = this.paramValue(weatherData, this.config.precipitationValue);
+     * Determine the precipitation amount and category and update the
+     * weatherObject with it, the valuetype to use can be configured or uses
+     * median as default.
+     */
+		let precipitationValue = this.paramValue(
+			weatherData,
+			this.config.precipitationValue
+		);
 		switch (this.paramValue(weatherData, "pcat")) {
 			// 0 = No precipitation
 			case 1: // Snow
@@ -184,7 +212,10 @@ WeatherProvider.register("smhi", {
 
 		for (const weatherObject of allWeatherObjects) {
 			//If its the first object or if a day/hour change we need to reset the summary object
-			if (!currentWeather || !currentWeather.date.isSame(weatherObject.date, groupBy)) {
+			if (
+				!currentWeather
+				|| !currentWeather.date.isSame(weatherObject.date, groupBy)
+			) {
 				currentWeather = new WeatherObject();
 				dayWeatherTypes = [];
 				currentWeather.temperature = weatherObject.temperature;
@@ -202,14 +233,21 @@ WeatherProvider.register("smhi", {
 				dayWeatherTypes.push(weatherObject.weatherType);
 			}
 			if (dayWeatherTypes.length > 0) {
-				currentWeather.weatherType = dayWeatherTypes[Math.floor(dayWeatherTypes.length / 2)];
+				currentWeather.weatherType
+          = dayWeatherTypes[Math.floor(dayWeatherTypes.length / 2)];
 			} else {
 				currentWeather.weatherType = weatherObject.weatherType;
 			}
 
 			//All other properties is either a sum, min or max of each hour
-			currentWeather.minTemperature = Math.min(currentWeather.minTemperature, weatherObject.temperature);
-			currentWeather.maxTemperature = Math.max(currentWeather.maxTemperature, weatherObject.temperature);
+			currentWeather.minTemperature = Math.min(
+				currentWeather.minTemperature,
+				weatherObject.temperature
+			);
+			currentWeather.maxTemperature = Math.max(
+				currentWeather.maxTemperature,
+				weatherObject.temperature
+			);
 			currentWeather.snow += weatherObject.snow;
 			currentWeather.rain += weatherObject.rain;
 			currentWeather.precipitationAmount += weatherObject.precipitationAmount;
@@ -225,7 +263,10 @@ WeatherProvider.register("smhi", {
 	 * @returns {{lon, lat}} the lat/long coordinates of the data
 	 */
 	resolveCoordinates (data) {
-		return { lat: data.geometry.coordinates[0][1], lon: data.geometry.coordinates[0][0] };
+		return {
+			lat: data.geometry.coordinates[0][1],
+			lon: data.geometry.coordinates[0][0]
+		};
 	},
 
 	/**
@@ -257,7 +298,9 @@ WeatherProvider.register("smhi", {
 	 * @returns {*} The value of the property in the weatherdata
 	 */
 	paramValue (currentWeatherData, name) {
-		return currentWeatherData.parameters.filter((p) => p.name === name).flatMap((p) => p.values)[0];
+		return currentWeatherData.parameters
+			.filter((p) => p.name === name)
+			.flatMap((p) => p.values)[0];
 	},
 
 	/**
