@@ -1,0 +1,293 @@
+/**
+ * Timer Module Styles
+ *
+ * Follows Apple HIG principles adapted for mirror display:
+ * - High contrast (white on black)
+ * - Large, readable typography
+ * - Subtle animations
+ * - Clear visual hierarchy
+ */
+
+/* Module container */
+.timer-module {
+	text-align: center;
+	min-width: 200px;
+}
+
+.timer-module.compact {
+	min-width: 150px;
+}
+
+/* Presets section */
+.timer-presets {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 8px;
+	justify-content: center;
+	margin-bottom: 15px;
+}
+
+.timer-preset-btn {
+	background: rgba(255, 255, 255, 0.1);
+	border: 1px solid rgba(255, 255, 255, 0.2);
+	border-radius: 20px;
+	color: var(--color-text);
+	padding: 8px 16px;
+	font-size: var(--font-size-xsmall);
+	font-family: var(--font-secondary);
+	cursor: pointer;
+	transition: all 0.2s ease;
+}
+
+.timer-preset-btn:hover,
+.timer-preset-btn:active {
+	background: rgba(255, 255, 255, 0.2);
+	color: var(--color-text-bright);
+}
+
+.timer-preset-btn i {
+	margin-right: 6px;
+}
+
+/* Timer list */
+.timer-list {
+	display: flex;
+	flex-direction: column;
+	gap: 15px;
+}
+
+/* Individual timer */
+.timer-item {
+	padding: 10px 15px;
+	border-radius: 8px;
+	background: rgba(255, 255, 255, 0.03);
+	transition: all 0.3s ease;
+}
+
+.timer-item.running {
+	background: rgba(255, 255, 255, 0.05);
+}
+
+.timer-item.completed {
+	opacity: 0.6;
+}
+
+/* Alerting animation */
+.timer-item.alerting {
+	animation: timer-pulse 1s ease-in-out infinite;
+}
+
+@keyframes timer-pulse {
+	0%,
+	100% {
+		background: rgba(255, 200, 100, 0.1);
+		box-shadow: 0 0 0 0 rgba(255, 200, 100, 0.4);
+	}
+	50% {
+		background: rgba(255, 200, 100, 0.2);
+		box-shadow: 0 0 20px 5px rgba(255, 200, 100, 0.3);
+	}
+}
+
+/* Timer label */
+.timer-label {
+	margin-bottom: 5px;
+	text-transform: uppercase;
+	letter-spacing: 1px;
+}
+
+.timer-label i {
+	margin-right: 6px;
+}
+
+/* Timer time display */
+.timer-time {
+	font-family: var(--font-secondary);
+	font-weight: 300;
+	font-variant-numeric: tabular-nums;
+	letter-spacing: 2px;
+}
+
+/* Progress bar */
+.timer-progress {
+	height: 3px;
+	background: rgba(255, 255, 255, 0.1);
+	border-radius: 2px;
+	margin-top: 10px;
+	overflow: hidden;
+}
+
+.timer-progress-fill {
+	height: 100%;
+	background: var(--color-text-bright);
+	border-radius: 2px;
+	transition: width 0.5s linear;
+}
+
+.timer-item.completed .timer-progress-fill {
+	background: rgba(255, 200, 100, 0.8);
+}
+
+/* Timer controls */
+.timer-controls {
+	display: flex;
+	justify-content: center;
+	gap: 10px;
+	margin-top: 10px;
+}
+
+.timer-controls button {
+	background: rgba(255, 255, 255, 0.1);
+	border: none;
+	border-radius: 50%;
+	width: 36px;
+	height: 36px;
+	color: var(--color-text);
+	cursor: pointer;
+	transition: all 0.2s ease;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+}
+
+.timer-controls button:hover,
+.timer-controls button:active {
+	background: rgba(255, 255, 255, 0.2);
+	color: var(--color-text-bright);
+}
+
+/* Stopwatch section */
+.stopwatch {
+	margin-top: 20px;
+	padding-top: 15px;
+	border-top: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.stopwatch-label {
+	margin-bottom: 5px;
+	text-transform: uppercase;
+	letter-spacing: 1px;
+}
+
+.stopwatch-label i {
+	margin-right: 6px;
+}
+
+.stopwatch-time {
+	font-family: var(--font-secondary);
+	font-weight: 300;
+	font-variant-numeric: tabular-nums;
+	letter-spacing: 2px;
+}
+
+.stopwatch.running .stopwatch-time {
+	color: var(--color-text-bright);
+}
+
+/* Laps */
+.stopwatch-laps {
+	margin-top: 10px;
+}
+
+.stopwatch-lap {
+	padding: 3px 0;
+	font-variant-numeric: tabular-nums;
+}
+
+/* Stopwatch controls */
+.stopwatch-controls {
+	display: flex;
+	justify-content: center;
+	gap: 10px;
+	margin-top: 10px;
+}
+
+.stopwatch-controls button {
+	background: rgba(255, 255, 255, 0.1);
+	border: none;
+	border-radius: 50%;
+	width: 36px;
+	height: 36px;
+	color: var(--color-text);
+	cursor: pointer;
+	transition: all 0.2s ease;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+}
+
+.stopwatch-controls button:hover,
+.stopwatch-controls button:active {
+	background: rgba(255, 255, 255, 0.2);
+	color: var(--color-text-bright);
+}
+
+/* Compact mode adjustments */
+.timer-module.compact .timer-item {
+	padding: 5px 10px;
+}
+
+.timer-module.compact .timer-label {
+	font-size: 10px;
+}
+
+.timer-module.compact .timer-time {
+	font-size: var(--font-size-medium);
+}
+
+.timer-module.compact .timer-progress {
+	height: 2px;
+	margin-top: 5px;
+}
+
+.timer-module.compact .timer-controls,
+.timer-module.compact .stopwatch-controls {
+	margin-top: 5px;
+}
+
+.timer-module.compact .timer-controls button,
+.timer-module.compact .stopwatch-controls button {
+	width: 28px;
+	height: 28px;
+	font-size: 12px;
+}
+
+/* Display-only mode: hide controls */
+.timer-module:not(.touch-mode) .timer-controls,
+.timer-module:not(.touch-mode) .stopwatch-controls,
+.timer-module:not(.touch-mode) .timer-presets {
+	display: none;
+}
+
+/* Animation for new timers */
+.timer-item {
+	animation: timer-fadein 0.3s ease-out;
+}
+
+@keyframes timer-fadein {
+	from {
+		opacity: 0;
+		transform: translateY(-10px);
+	}
+	to {
+		opacity: 1;
+		transform: translateY(0);
+	}
+}
+
+/* Responsive adjustments */
+@media (max-width: 400px) {
+	.timer-module {
+		min-width: 150px;
+	}
+
+	.timer-time,
+	.stopwatch-time {
+		font-size: var(--font-size-medium);
+	}
+
+	.timer-preset-btn {
+		padding: 6px 12px;
+		font-size: 11px;
+	}
+}
