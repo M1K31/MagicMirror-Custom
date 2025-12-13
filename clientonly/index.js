@@ -24,7 +24,10 @@
 
 		// Prefer command line arguments over environment variables
 		["address", "port"].forEach((key) => {
-			config[key] = getCommandLineParameter(key, process.env[key.toUpperCase()]);
+			config[key] = getCommandLineParameter(
+				key,
+				process.env[key.toUpperCase()]
+			);
 		});
 
 		// determine if "--use-tls"-flag was provided
@@ -40,7 +43,9 @@
 		// Return new pending promise
 		return new Promise((resolve, reject) => {
 			// Select http or https module, depending on requested url
-			const lib = url.startsWith("https") ? require("node:https") : require("node:http");
+			const lib = url.startsWith("https")
+				? require("node:https")
+				: require("node:http");
 			const request = lib.get(url, (response) => {
 				let configData = "";
 
@@ -55,7 +60,11 @@
 			});
 
 			request.on("error", function (error) {
-				reject(new Error(`Unable to read config from server (${url} (${error.message}`));
+				reject(
+					new Error(
+						`Unable to read config from server (${url} (${error.message}`
+					)
+				);
 			});
 		});
 	}
@@ -69,7 +78,9 @@
 		if (message !== undefined && typeof message === "string") {
 			console.log(message);
 		} else {
-			console.log("Usage: 'node clientonly --address 192.168.1.10 --port 8080 [--use-tls]'");
+			console.log(
+				"Usage: 'node clientonly --address 192.168.1.10 --port 8080 [--use-tls]'"
+			);
 		}
 		process.exit(code);
 	}
@@ -80,19 +91,27 @@
 	const prefix = config.tls ? "https://" : "http://";
 
 	// Only start the client if a non-local server was provided
-	if (["localhost", "127.0.0.1", "::1", "::ffff:127.0.0.1", undefined].indexOf(config.address) === -1) {
+	if (
+		["localhost", "127.0.0.1", "::1", "::ffff:127.0.0.1", undefined].indexOf(
+			config.address
+		) === -1
+	) {
 		getServerConfig(`${prefix}${config.address}:${config.port}/config/`)
 			.then(function (configReturn) {
 				// check environment for DISPLAY or WAYLAND_DISPLAY
 				const elecParams = ["js/electron.js"];
 				if (process.env.WAYLAND_DISPLAY) {
-					console.log(`Client: Using WAYLAND_DISPLAY=${process.env.WAYLAND_DISPLAY}`);
+					console.log(
+						`Client: Using WAYLAND_DISPLAY=${process.env.WAYLAND_DISPLAY}`
+					);
 					elecParams.push("--enable-features=UseOzonePlatform");
 					elecParams.push("--ozone-platform=wayland");
 				} else if (process.env.DISPLAY) {
 					console.log(`Client: Using DISPLAY=${process.env.DISPLAY}`);
 				} else {
-					fail("Error: Requires environment variable WAYLAND_DISPLAY or DISPLAY, none is provided.");
+					fail(
+						"Error: Requires environment variable WAYLAND_DISPLAY or DISPLAY, none is provided."
+					);
 				}
 				// Pass along the server config via an environment variable
 				const env = Object.create(process.env);
@@ -105,7 +124,11 @@
 
 				// Spawn electron application
 				const electron = require("electron");
-				const child = require("node:child_process").spawn(electron, elecParams, options);
+				const child = require("node:child_process").spawn(
+					electron,
+					elecParams,
+					options
+				);
 
 				// Pipe all child process output to current stdout
 				child.stdout.on("data", function (buf) {
@@ -123,7 +146,9 @@
 
 				child.on("close", (code) => {
 					if (code !== 0) {
-						console.log(`There something wrong. The clientonly is not running code ${code}`);
+						console.log(
+							`There something wrong. The clientonly is not running code ${code}`
+						);
 					}
 				});
 			})
