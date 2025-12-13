@@ -6,6 +6,13 @@
  *
  * Note: Garmin doesn't have an official public API for consumer devices
  * This uses the Garmin Connect web API which requires login credentials
+ *
+ * SECURITY WARNING: This provider uses email/password authentication.
+ * Store credentials in environment variables, NOT in config.js!
+ *
+ * Environment variables:
+ * - GARMIN_EMAIL
+ * - GARMIN_PASSWORD
  */
 
 const FitnessProvider = require("./fitnessprovider");
@@ -14,8 +21,9 @@ FitnessProvider.register("garmin", {
 	providerName: "Garmin",
 
 	defaults: {
-		email: "",
-		password: "",
+		// IMPORTANT: Use environment variables for credentials
+		email: process.env.GARMIN_EMAIL || "",
+		password: process.env.GARMIN_PASSWORD || "",
 		session: null,
 		baseUrl: "https://connect.garmin.com"
 	},
@@ -26,7 +34,7 @@ FitnessProvider.register("garmin", {
 	 */
 	validateConfig() {
 		if (!this.config.email || !this.config.password) {
-			this.setError("Garmin email and password are required");
+			this.setError("Garmin email and password are required. Set GARMIN_EMAIL and GARMIN_PASSWORD environment variables.");
 			return false;
 		}
 		return true;

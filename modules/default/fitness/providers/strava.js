@@ -10,6 +10,11 @@
  * 3. Use OAuth flow to get refresh token
  *    - Authorize URL: https://www.strava.com/oauth/authorize
  *    - Required scope: activity:read_all
+ *
+ * Credentials can be set via environment variables:
+ * - STRAVA_CLIENT_ID
+ * - STRAVA_CLIENT_SECRET
+ * - STRAVA_REFRESH_TOKEN
  */
 
 const FitnessProvider = require("./fitnessprovider");
@@ -18,9 +23,10 @@ FitnessProvider.register("strava", {
 	providerName: "Strava",
 
 	defaults: {
-		clientId: "",
-		clientSecret: "",
-		refreshToken: "",
+		// Support environment variables for credentials
+		clientId: process.env.STRAVA_CLIENT_ID || "",
+		clientSecret: process.env.STRAVA_CLIENT_SECRET || "",
+		refreshToken: process.env.STRAVA_REFRESH_TOKEN || "",
 		accessToken: "",
 		tokenExpiry: 0,
 		baseUrl: "https://www.strava.com/api/v3"
@@ -32,11 +38,11 @@ FitnessProvider.register("strava", {
 	 */
 	validateConfig() {
 		if (!this.config.clientId || !this.config.clientSecret) {
-			this.setError("Strava client ID and secret are required");
+			this.setError("Strava client ID and secret are required. Set STRAVA_CLIENT_ID and STRAVA_CLIENT_SECRET environment variables.");
 			return false;
 		}
 		if (!this.config.refreshToken) {
-			this.setError("Strava refresh token is required");
+			this.setError("Strava refresh token is required. Set STRAVA_REFRESH_TOKEN environment variable.");
 			return false;
 		}
 		return true;

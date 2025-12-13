@@ -356,25 +356,34 @@ Module.register("packages", {
 		const wrapper = document.createElement("div");
 		wrapper.className = `packages-module${this.config.compactMode ? " compact" : ""}`;
 
+		// Helper to create icon elements safely
+		const createIcon = (iconClass) => {
+			const icon = document.createElement("i");
+			icon.className = `fa ${iconClass}`;
+			return icon;
+		};
+
 		// Error state
 		if (this.error) {
-			wrapper.innerHTML = `
-				<div class="packages-error">
-					<i class="fa fa-exclamation-triangle"></i>
-					<span>${this.error}</span>
-				</div>
-			`;
+			const errorDiv = document.createElement("div");
+			errorDiv.className = "packages-error";
+			errorDiv.appendChild(createIcon("fa-exclamation-triangle"));
+			const errorSpan = document.createElement("span");
+			errorSpan.textContent = this.error;
+			errorDiv.appendChild(errorSpan);
+			wrapper.appendChild(errorDiv);
 			return wrapper;
 		}
 
 		// Empty state
 		if (this.packages.length === 0) {
-			wrapper.innerHTML = `
-				<div class="packages-empty">
-					<i class="fa fa-box-open"></i>
-					<span>No packages to track</span>
-				</div>
-			`;
+			const emptyDiv = document.createElement("div");
+			emptyDiv.className = "packages-empty";
+			emptyDiv.appendChild(createIcon("fa-box-open"));
+			const emptySpan = document.createElement("span");
+			emptySpan.textContent = "No packages to track";
+			emptyDiv.appendChild(emptySpan);
+			wrapper.appendChild(emptyDiv);
 			return wrapper;
 		}
 
@@ -400,11 +409,18 @@ Module.register("packages", {
 		el.className = `package-item ${pkg.status}`;
 		el.style.setProperty("--status-color", this.config.statusColors[pkg.status]);
 
+		// Helper to create icon elements safely
+		const createIcon = (iconClass) => {
+			const icon = document.createElement("i");
+			icon.className = `fa ${iconClass}`;
+			return icon;
+		};
+
 		// Icon
 		const iconClass = this.config.carrierIcons[pkg.carrier] || this.config.carrierIcons.default;
 		const icon = document.createElement("div");
 		icon.className = "package-icon";
-		icon.innerHTML = `<i class="fa ${iconClass}"></i>`;
+		icon.appendChild(createIcon(iconClass));
 
 		// Info
 		const info = document.createElement("div");
@@ -416,10 +432,12 @@ Module.register("packages", {
 
 		const status = document.createElement("div");
 		status.className = "package-status";
-		status.innerHTML = `
-			<span class="status-indicator"></span>
-			<span>${pkg.statusText}</span>
-		`;
+		const statusIndicator = document.createElement("span");
+		statusIndicator.className = "status-indicator";
+		status.appendChild(statusIndicator);
+		const statusText = document.createElement("span");
+		statusText.textContent = pkg.statusText;
+		status.appendChild(statusText);
 
 		const carrier = document.createElement("div");
 		carrier.className = "package-carrier";
@@ -436,15 +454,15 @@ Module.register("packages", {
 		delivery.className = "package-delivery";
 
 		if (pkg.status === "delivered" && pkg.deliveredAt) {
-			delivery.innerHTML = `
-				<i class="fa fa-check-circle"></i>
-				<span>${this.formatDeliveryDate(pkg.deliveredAt)}</span>
-			`;
+			delivery.appendChild(createIcon("fa-check-circle"));
+			const dateSpan = document.createElement("span");
+			dateSpan.textContent = this.formatDeliveryDate(pkg.deliveredAt);
+			delivery.appendChild(dateSpan);
 		} else if (pkg.estimatedDelivery) {
-			delivery.innerHTML = `
-				<i class="fa fa-calendar"></i>
-				<span>${this.formatDeliveryDate(pkg.estimatedDelivery)}</span>
-			`;
+			delivery.appendChild(createIcon("fa-calendar"));
+			const dateSpan = document.createElement("span");
+			dateSpan.textContent = this.formatDeliveryDate(pkg.estimatedDelivery);
+			delivery.appendChild(dateSpan);
 		}
 
 		el.appendChild(icon);

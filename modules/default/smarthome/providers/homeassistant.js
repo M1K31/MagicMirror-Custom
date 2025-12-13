@@ -8,6 +8,10 @@
  * 1. Go to Profile > Long-Lived Access Tokens
  * 2. Create a new token
  * 3. Configure host URL (http://homeassistant.local:8123)
+ *
+ * Credentials can be set via environment variables:
+ * - HOMEASSISTANT_HOST
+ * - HOMEASSISTANT_TOKEN
  */
 
 const SmartHomeProvider = require("./smarthomeprovider");
@@ -17,8 +21,9 @@ SmartHomeProvider.register("homeassistant", {
 	providerName: "Home Assistant",
 
 	defaults: {
-		host: "http://homeassistant.local:8123",
-		token: "",
+		// Support environment variables for credentials
+		host: process.env.HOMEASSISTANT_HOST || "http://homeassistant.local:8123",
+		token: process.env.HOMEASSISTANT_TOKEN || "",
 		// Entity ID patterns to include
 		include: [],
 		// Entity ID patterns to exclude

@@ -10,6 +10,20 @@
 
 const NodeHelper = require("node_helper");
 const Log = require("logger");
+const path = require("path");
+const { createDefaultStorage } = require("../../shared/secure-storage");
+const { RateLimiter } = require("../../shared/rate-limiter");
+
+// Initialize secure storage for OAuth tokens
+const secureStorage = createDefaultStorage();
+
+// Rate limiters per provider
+const rateLimiters = {
+	aftership: new RateLimiter(10, 1000, { name: "AfterShip" }), // 10/sec
+	usps: new RateLimiter(5, 1000, { name: "USPS" }), // Conservative
+	fedex: new RateLimiter(30, 60 * 1000, { name: "FedEx" }),
+	ups: new RateLimiter(30, 60 * 1000, { name: "UPS" })
+};
 
 module.exports = NodeHelper.create({
 	/**
@@ -20,6 +34,36 @@ module.exports = NodeHelper.create({
 		this.providers = {};
 		this.cache = new Map();
 		this.cacheExpiry = 5 * 60 * 1000; // 5 minutes
+	},
+
+	/**
+	 * Load saved tokens from encrypted storage
+	 * @param {string} provider - Provider name
+	 * @returns {object} Saved tokens
+	 */
+	loadTokens: function (provider) {
+		const configPath = path.join(__dirname, `.${provider}_tokens.encrypted`);
+		try {
+			return secureStorage.loadSecure(configPath) || {};
+		} catch (error) {
+			Log.warn(`[${this.name}] Could not load tokens for ${provider}: ${error.message}`);
+			return {};
+		}
+	},
+
+	/**
+	 * Save tokens to encrypted storage
+	 * @param {string} provider - Provider name
+	 * @param {object} tokens - Tokens to save
+	 */
+	saveTokens: function (provider, tokens) {
+		const configPath = path.join(__dirname, `.${provider}_tokens.encrypted`);
+		try {
+			secureStorage.saveSecure(configPath, tokens);
+			Log.info(`[${this.name}] Saved encrypted tokens for ${provider}`);
+		} catch (error) {
+			Log.warn(`[${this.name}] Could not save tokens for ${provider}: ${error.message}`);
+		}
 	},
 
 	/**
@@ -103,21 +147,25 @@ module.exports = NodeHelper.create({
 		const provider = this.providers.aftership;
 		if (!provider) throw new Error("AfterShip not initialized");
 
-		const response = await fetch(`${provider.baseUrl}${endpoint}`, {
-			...options,
-			headers: {
-				"aftership-api-key": provider.apiKey,
-				"Content-Type": "application/json",
-				...options.headers
+		// Wrap API call with rate limiting
+		const limiter = rateLimiters.aftership;
+		return limiter.throttle(async () => {
+			const response = await fetch(`${provider.baseUrl}${endpoint}`, {
+				...options,
+				headers: {
+					"aftership-api-key": provider.apiKey,
+					"Content-Type": "application/json",
+					...options.headers
+				}
+			});
+
+			if (!response.ok) {
+				const error = await response.json();
+				throw new Error(error.meta?.message || `API error: ${response.status}`);
 			}
+
+			return response.json();
 		});
-
-		if (!response.ok) {
-			const error = await response.json();
-			throw new Error(error.meta?.message || `API error: ${response.status}`);
-		}
-
-		return response.json();
 	},
 
 	/**
@@ -184,7 +232,7 @@ module.exports = NodeHelper.create({
 	},
 
 	/**
-	 * Track package via USPS
+	 * Track package via USPS (rate-limited)
 	 * @param {string} trackingNumber - Tracking number
 	 * @returns {Promise<object>} Tracking info
 	 */
@@ -198,14 +246,18 @@ module.exports = NodeHelper.create({
 			</TrackFieldRequest>
 		`;
 
-		const response = await fetch(`${provider.baseUrl}?API=TrackV2&XML=${encodeURIComponent(xml)}`);
+		// Wrap API call with rate limiting
+		const limiter = rateLimiters.usps;
+		return limiter.throttle(async () => {
+			const response = await fetch(`${provider.baseUrl}?API=TrackV2&XML=${encodeURIComponent(xml)}`);
 
-		if (!response.ok) {
-			throw new Error(`USPS API error: ${response.status}`);
-		}
+			if (!response.ok) {
+				throw new Error(`USPS API error: ${response.status}`);
+			}
 
-		const text = await response.text();
-		return this.parseUSPSResponse(text, trackingNumber);
+			const text = await response.text();
+			return this.parseUSPSResponse(text, trackingNumber);
+		});
 	},
 
 	/**
@@ -308,7 +360,7 @@ module.exports = NodeHelper.create({
 	},
 
 	/**
-	 * Track package via FedEx
+	 * Track package via FedEx (rate-limited)
 	 * @param {string} trackingNumber - Tracking number
 	 * @returns {Promise<object>} Tracking info
 	 */
@@ -321,30 +373,34 @@ module.exports = NodeHelper.create({
 			await this.getFedExToken();
 		}
 
-		const response = await fetch(`${provider.baseUrl}/track/v1/trackingnumbers`, {
-			method: "POST",
-			headers: {
-				Authorization: `Bearer ${provider.accessToken}`,
-				"Content-Type": "application/json"
-			},
-			body: JSON.stringify({
-				trackingInfo: [
-					{
-						trackingNumberInfo: {
-							trackingNumber: trackingNumber
+		// Wrap API call with rate limiting
+		const limiter = rateLimiters.fedex;
+		return limiter.throttle(async () => {
+			const response = await fetch(`${provider.baseUrl}/track/v1/trackingnumbers`, {
+				method: "POST",
+				headers: {
+					Authorization: `Bearer ${provider.accessToken}`,
+					"Content-Type": "application/json"
+				},
+				body: JSON.stringify({
+					trackingInfo: [
+						{
+							trackingNumberInfo: {
+								trackingNumber: trackingNumber
+							}
 						}
-					}
-				],
-				includeDetailedScans: true
-			})
+					],
+					includeDetailedScans: true
+				})
+			});
+
+			if (!response.ok) {
+				throw new Error(`FedEx API error: ${response.status}`);
+			}
+
+			const data = await response.json();
+			return this.parseFedExResponse(data, trackingNumber);
 		});
-
-		if (!response.ok) {
-			throw new Error(`FedEx API error: ${response.status}`);
-		}
-
-		const data = await response.json();
-		return this.parseFedExResponse(data, trackingNumber);
 	},
 
 	/**
@@ -417,7 +473,7 @@ module.exports = NodeHelper.create({
 	},
 
 	/**
-	 * Track package via UPS
+	 * Track package via UPS (rate-limited)
 	 * @param {string} trackingNumber - Tracking number
 	 * @returns {Promise<object>} Tracking info
 	 */
@@ -425,22 +481,26 @@ module.exports = NodeHelper.create({
 		const provider = this.providers.ups;
 		if (!provider) throw new Error("UPS not initialized");
 
-		const response = await fetch(`${provider.baseUrl}/details/${trackingNumber}`, {
-			headers: {
-				AccessLicenseNumber: provider.accessKey,
-				Username: provider.userId,
-				Password: provider.password,
-				transId: Date.now().toString(),
-				transactionSrc: "MagicMirror"
+		// Wrap API call with rate limiting
+		const limiter = rateLimiters.ups;
+		return limiter.throttle(async () => {
+			const response = await fetch(`${provider.baseUrl}/details/${trackingNumber}`, {
+				headers: {
+					AccessLicenseNumber: provider.accessKey,
+					Username: provider.userId,
+					Password: provider.password,
+					transId: Date.now().toString(),
+					transactionSrc: "MagicMirror"
+				}
+			});
+
+			if (!response.ok) {
+				throw new Error(`UPS API error: ${response.status}`);
 			}
+
+			const data = await response.json();
+			return this.parseUPSResponse(data, trackingNumber);
 		});
-
-		if (!response.ok) {
-			throw new Error(`UPS API error: ${response.status}`);
-		}
-
-		const data = await response.json();
-		return this.parseUPSResponse(data, trackingNumber);
 	},
 
 	/**

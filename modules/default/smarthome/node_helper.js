@@ -10,6 +10,20 @@
 
 const NodeHelper = require("node_helper");
 const Log = require("logger");
+const path = require("path");
+const { createDefaultStorage } = require("../../shared/secure-storage");
+const { RateLimiter } = require("../../shared/rate-limiter");
+
+// Initialize secure storage for tokens
+const secureStorage = createDefaultStorage();
+
+// Rate limiters per provider
+const rateLimiters = {
+	homeassistant: new RateLimiter(30, 60 * 1000, { name: "HomeAssistant" }),
+	smartthings: new RateLimiter(250, 60 * 1000, { name: "SmartThings" }),
+	homekit: new RateLimiter(30, 60 * 1000, { name: "HomeKit" }),
+	google: new RateLimiter(30, 60 * 1000, { name: "GoogleHome" })
+};
 
 module.exports = NodeHelper.create({
 	/**
@@ -19,6 +33,36 @@ module.exports = NodeHelper.create({
 		Log.log(`[${this.name}] Node helper started`);
 		this.providers = {};
 		this.websockets = {};
+	},
+
+	/**
+	 * Load saved tokens from encrypted storage
+	 * @param {string} provider - Provider name
+	 * @returns {object} Saved tokens
+	 */
+	loadTokens: function (provider) {
+		const configPath = path.join(__dirname, `.${provider}_tokens.encrypted`);
+		try {
+			return secureStorage.loadSecure(configPath) || {};
+		} catch (error) {
+			Log.warn(`[${this.name}] Could not load tokens for ${provider}: ${error.message}`);
+			return {};
+		}
+	},
+
+	/**
+	 * Save tokens to encrypted storage
+	 * @param {string} provider - Provider name
+	 * @param {object} tokens - Tokens to save
+	 */
+	saveTokens: function (provider, tokens) {
+		const configPath = path.join(__dirname, `.${provider}_tokens.encrypted`);
+		try {
+			secureStorage.saveSecure(configPath, tokens);
+			Log.info(`[${this.name}] Saved encrypted tokens for ${provider}`);
+		} catch (error) {
+			Log.warn(`[${this.name}] Could not save tokens for ${provider}: ${error.message}`);
+		}
 	},
 
 	/**
@@ -181,22 +225,26 @@ module.exports = NodeHelper.create({
 	},
 
 	/**
-	 * Get devices from Home Assistant
+	 * Get devices from Home Assistant (rate-limited)
 	 * @param {object} payload - Request payload
 	 */
 	getHomeAssistantDevices: async function (payload) {
 		const provider = this.providers.homeassistant;
 		if (!provider) return [];
 
-		const response = await fetch(`${provider.host}/api/states`, {
-			headers: provider.headers
+		// Wrap API call with rate limiting
+		const limiter = rateLimiters.homeassistant;
+		const states = await limiter.throttle(async () => {
+			const response = await fetch(`${provider.host}/api/states`, {
+				headers: provider.headers
+			});
+
+			if (!response.ok) {
+				throw new Error(`Failed to get states: ${response.status}`);
+			}
+
+			return response.json();
 		});
-
-		if (!response.ok) {
-			throw new Error(`Failed to get states: ${response.status}`);
-		}
-
-		const states = await response.json();
 
 		// Filter to requested devices or return all
 		if (payload.devices && payload.devices.length > 0) {
@@ -213,7 +261,7 @@ module.exports = NodeHelper.create({
 	},
 
 	/**
-	 * Call Home Assistant service
+	 * Call Home Assistant service (rate-limited)
 	 * @param {string} domain - Service domain
 	 * @param {string} service - Service name
 	 * @param {object} data - Service data
@@ -222,17 +270,21 @@ module.exports = NodeHelper.create({
 		const provider = this.providers.homeassistant;
 		if (!provider) return;
 
-		const response = await fetch(`${provider.host}/api/services/${domain}/${service}`, {
-			method: "POST",
-			headers: provider.headers,
-			body: JSON.stringify(data)
+		// Wrap API call with rate limiting
+		const limiter = rateLimiters.homeassistant;
+		return limiter.throttle(async () => {
+			const response = await fetch(`${provider.host}/api/services/${domain}/${service}`, {
+				method: "POST",
+				headers: provider.headers,
+				body: JSON.stringify(data)
+			});
+
+			if (!response.ok) {
+				throw new Error(`Service call failed: ${response.status}`);
+			}
+
+			return response.json();
 		});
-
-		if (!response.ok) {
-			throw new Error(`Service call failed: ${response.status}`);
-		}
-
-		return response.json();
 	},
 
 	// ==========================================
@@ -501,41 +553,48 @@ module.exports = NodeHelper.create({
 	},
 
 	/**
-	 * Get devices from SmartThings
+	 * Get devices from SmartThings (rate-limited)
 	 * @param {object} payload - Request payload
 	 */
 	getSmartThingsDevices: async function (payload) {
 		const provider = this.providers.smartthings;
 		if (!provider) return [];
 
-		// Get all devices
+		const limiter = rateLimiters.smartthings;
+
+		// Get all devices with rate limiting
 		let url = "https://api.smartthings.com/v1/devices";
 		if (provider.locationId) {
 			url += `?locationId=${provider.locationId}`;
 		}
 
-		const response = await fetch(url, {
-			headers: provider.headers
-		});
-
-		if (!response.ok) {
-			throw new Error(`Failed to get devices: ${response.status}`);
-		}
-
-		const data = await response.json();
-		const devices = [];
-
-		for (const device of data.items || []) {
-			// Get device status
-			const statusResponse = await fetch(`https://api.smartthings.com/v1/devices/${device.deviceId}/status`, {
+		const data = await limiter.throttle(async () => {
+			const response = await fetch(url, {
 				headers: provider.headers
 			});
 
-			let status = {};
-			if (statusResponse.ok) {
-				const statusData = await statusResponse.json();
-				status = this.flattenSmartThingsStatus(statusData);
+			if (!response.ok) {
+				throw new Error(`Failed to get devices: ${response.status}`);
 			}
+
+			return response.json();
+		});
+
+		const devices = [];
+
+		for (const device of data.items || []) {
+			// Get device status with rate limiting
+			const status = await limiter.throttle(async () => {
+				const statusResponse = await fetch(`https://api.smartthings.com/v1/devices/${device.deviceId}/status`, {
+					headers: provider.headers
+				});
+
+				if (statusResponse.ok) {
+					const statusData = await statusResponse.json();
+					return this.flattenSmartThingsStatus(statusData);
+				}
+				return {};
+			});
 
 			devices.push({
 				id: device.deviceId,
@@ -590,7 +649,7 @@ module.exports = NodeHelper.create({
 	},
 
 	/**
-	 * Control SmartThings device
+	 * Control SmartThings device (rate-limited)
 	 * @param {string} deviceId - Device ID
 	 * @param {string} capability - Capability to control
 	 * @param {string} command - Command to execute
@@ -600,24 +659,28 @@ module.exports = NodeHelper.create({
 		const provider = this.providers.smartthings;
 		if (!provider) return;
 
-		const response = await fetch(`https://api.smartthings.com/v1/devices/${deviceId}/commands`, {
-			method: "POST",
-			headers: provider.headers,
-			body: JSON.stringify({
-				commands: [
-					{
-						component: "main",
-						capability: capability,
-						command: command,
-						arguments: args
-					}
-				]
-			})
-		});
+		// Wrap API call with rate limiting
+		const limiter = rateLimiters.smartthings;
+		return limiter.throttle(async () => {
+			const response = await fetch(`https://api.smartthings.com/v1/devices/${deviceId}/commands`, {
+				method: "POST",
+				headers: provider.headers,
+				body: JSON.stringify({
+					commands: [
+						{
+							component: "main",
+							capability: capability,
+							command: command,
+							arguments: args
+						}
+					]
+				})
+			});
 
-		if (!response.ok) {
-			throw new Error(`Command failed: ${response.status}`);
-		}
+			if (!response.ok) {
+				throw new Error(`Command failed: ${response.status}`);
+			}
+		});
 	},
 
 	// ==========================================

@@ -406,10 +406,17 @@ Module.register("transit", {
 		this.alerts.slice(0, 3).forEach((alert) => {
 			const alertEl = document.createElement("div");
 			alertEl.className = `transit-alert ${alert.severity || ""}`;
-			alertEl.innerHTML = `
-				<i class="fa fa-triangle-exclamation"></i>
-				<span class="alert-title">${alert.title}</span>
-			`;
+			
+			// Build alert safely - icon is static, title needs sanitization
+			const icon = document.createElement("i");
+			icon.className = "fa fa-triangle-exclamation";
+			alertEl.appendChild(icon);
+			
+			const titleSpan = document.createElement("span");
+			titleSpan.className = "alert-title";
+			titleSpan.textContent = alert.title; // Use textContent to prevent XSS
+			alertEl.appendChild(titleSpan);
+			
 			section.appendChild(alertEl);
 		});
 
@@ -431,13 +438,25 @@ Module.register("transit", {
 			const stopEl = document.createElement("div");
 			stopEl.className = "transit-stop";
 
-			// Stop header
+			// Stop header - build safely
 			const header = document.createElement("div");
 			header.className = "stop-header";
-			header.innerHTML = `
-				<span class="stop-name">${stop.name}</span>
-				${this.config.showWalkTime && stop.walkTime ? `<span class="stop-walk dimmed xsmall"><i class="fa fa-person-walking"></i> ${stop.walkTime} min</span>` : ""}
-			`;
+			
+			const stopNameSpan = document.createElement("span");
+			stopNameSpan.className = "stop-name";
+			stopNameSpan.textContent = stop.name; // Use textContent to prevent XSS
+			header.appendChild(stopNameSpan);
+			
+			if (this.config.showWalkTime && stop.walkTime) {
+				const walkSpan = document.createElement("span");
+				walkSpan.className = "stop-walk dimmed xsmall";
+				const walkIcon = document.createElement("i");
+				walkIcon.className = "fa fa-person-walking";
+				walkSpan.appendChild(walkIcon);
+				walkSpan.appendChild(document.createTextNode(` ${stop.walkTime} min`));
+				header.appendChild(walkSpan);
+			}
+			
 			stopEl.appendChild(header);
 
 			// Arrivals list
@@ -448,11 +467,13 @@ Module.register("transit", {
 				const arrivalEl = document.createElement("div");
 				arrivalEl.className = `arrival-item ${arrival.isRealtime ? "realtime" : "scheduled"}`;
 
-				// Vehicle icon
+				// Vehicle icon - static class, safe
 				if (this.config.showVehicleIcons) {
 					const icon = document.createElement("span");
 					icon.className = "arrival-icon";
-					icon.innerHTML = `<i class="fa ${this.getVehicleIcon(arrival.type)}"></i>`;
+					const iconEl = document.createElement("i");
+					iconEl.className = `fa ${this.getVehicleIcon(arrival.type)}`;
+					icon.appendChild(iconEl);
 					arrivalEl.appendChild(icon);
 				}
 

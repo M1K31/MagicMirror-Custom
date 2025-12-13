@@ -10,6 +10,19 @@
 
 const NodeHelper = require("node_helper");
 const Log = require("logger");
+const path = require("path");
+const { createDefaultStorage } = require("../../shared/secure-storage");
+const { RateLimiter } = require("../../shared/rate-limiter");
+
+// Initialize secure storage for tokens
+const secureStorage = createDefaultStorage();
+
+// Rate limiters
+const rateLimiters = {
+	spotify: new RateLimiter(100, 60 * 1000, { name: "Spotify" }),
+	applemusic: new RateLimiter(50, 60 * 1000, { name: "AppleMusic" }),
+	youtube: new RateLimiter(50, 60 * 1000, { name: "YouTube" })
+};
 
 module.exports = NodeHelper.create({
 	/**
@@ -19,6 +32,36 @@ module.exports = NodeHelper.create({
 		Log.log(`[${this.name}] Node helper started`);
 		this.providers = {};
 		this.tokenRefreshTimers = {};
+	},
+
+	/**
+	 * Load saved tokens from encrypted storage
+	 * @param {string} provider - Provider name
+	 * @returns {object} Saved tokens
+	 */
+	loadTokens: function (provider) {
+		const configPath = path.join(__dirname, `.${provider}_tokens.encrypted`);
+		try {
+			return secureStorage.loadSecure(configPath) || {};
+		} catch (error) {
+			Log.warn(`[${this.name}] Could not load tokens for ${provider}: ${error.message}`);
+			return {};
+		}
+	},
+
+	/**
+	 * Save tokens to encrypted storage
+	 * @param {string} provider - Provider name
+	 * @param {object} tokens - Tokens to save
+	 */
+	saveTokens: function (provider, tokens) {
+		const configPath = path.join(__dirname, `.${provider}_tokens.encrypted`);
+		try {
+			secureStorage.saveSecure(configPath, tokens);
+			Log.info(`[${this.name}] Saved encrypted tokens for ${provider}`);
+		} catch (error) {
+			Log.warn(`[${this.name}] Could not save tokens for ${provider}: ${error.message}`);
+		}
 	},
 
 	/**
@@ -152,7 +195,7 @@ module.exports = NodeHelper.create({
 	},
 
 	/**
-	 * Make Spotify API request
+	 * Make Spotify API request (rate-limited)
 	 * @param {string} endpoint - API endpoint
 	 * @param {object} options - Fetch options
 	 * @returns {Promise<object>} Response data
@@ -166,25 +209,29 @@ module.exports = NodeHelper.create({
 			await this.refreshSpotifyToken();
 		}
 
-		const response = await fetch(`https://api.spotify.com/v1${endpoint}`, {
-			...options,
-			headers: {
-				Authorization: `Bearer ${provider.accessToken}`,
-				"Content-Type": "application/json",
-				...options.headers
+		// Wrap API call with rate limiting
+		const limiter = rateLimiters.spotify;
+		return limiter.throttle(async () => {
+			const response = await fetch(`https://api.spotify.com/v1${endpoint}`, {
+				...options,
+				headers: {
+					Authorization: `Bearer ${provider.accessToken}`,
+					"Content-Type": "application/json",
+					...options.headers
+				}
+			});
+
+			if (response.status === 204) {
+				return null;
 			}
+
+			if (!response.ok) {
+				const error = await response.text();
+				throw new Error(`Spotify API error: ${response.status} - ${error}`);
+			}
+
+			return response.json();
 		});
-
-		if (response.status === 204) {
-			return null;
-		}
-
-		if (!response.ok) {
-			const error = await response.text();
-			throw new Error(`Spotify API error: ${response.status} - ${error}`);
-		}
-
-		return response.json();
 	},
 
 	/**
@@ -273,7 +320,7 @@ module.exports = NodeHelper.create({
 	},
 
 	/**
-	 * Make Apple Music API request
+	 * Make Apple Music API request (rate-limited)
 	 * @param {string} endpoint - API endpoint
 	 * @param {object} options - Fetch options
 	 * @returns {Promise<object>} Response data
@@ -282,21 +329,25 @@ module.exports = NodeHelper.create({
 		const provider = this.providers.applemusic;
 		if (!provider) throw new Error("Apple Music not initialized");
 
-		const response = await fetch(`https://api.music.apple.com${endpoint}`, {
-			...options,
-			headers: {
-				Authorization: `Bearer ${provider.developerToken}`,
-				"Music-User-Token": provider.userToken,
-				"Content-Type": "application/json",
-				...options.headers
+		// Wrap API call with rate limiting
+		const limiter = rateLimiters.applemusic;
+		return limiter.throttle(async () => {
+			const response = await fetch(`https://api.music.apple.com${endpoint}`, {
+				...options,
+				headers: {
+					Authorization: `Bearer ${provider.developerToken}`,
+					"Music-User-Token": provider.userToken,
+					"Content-Type": "application/json",
+					...options.headers
+				}
+			});
+
+			if (!response.ok) {
+				throw new Error(`Apple Music API error: ${response.status}`);
 			}
+
+			return response.json();
 		});
-
-		if (!response.ok) {
-			throw new Error(`Apple Music API error: ${response.status}`);
-		}
-
-		return response.json();
 	},
 
 	/**

@@ -2,7 +2,7 @@
  * Node Helper for Fitness Module
  *
  * Handles server-side operations for fitness data providers:
- * - OAuth token management
+ * - OAuth token management (encrypted storage)
  * - API requests with proper credentials
  * - Data caching
  * - Provider initialization
@@ -11,6 +11,19 @@
 const NodeHelper = require("node_helper");
 const path = require("path");
 const fs = require("fs");
+const { createDefaultStorage } = require("../../shared/secure-storage");
+const { RateLimiter } = require("../../shared/rate-limiter");
+
+// Initialize secure storage for tokens
+const secureStorage = createDefaultStorage();
+
+// Rate limiters per provider
+const rateLimiters = {
+	fitbit: new RateLimiter(140, 60 * 60 * 1000, { name: "Fitbit" }), // 140/hour
+	strava: new RateLimiter(100, 15 * 60 * 1000, { name: "Strava" }), // 100/15min
+	garmin: new RateLimiter(60, 60 * 1000, { name: "Garmin" }), // 60/min
+	default: new RateLimiter(30, 60 * 1000, { name: "Default" })
+};
 
 // Load providers
 const FitnessProvider = require("./providers/fitnessprovider");
@@ -126,13 +139,18 @@ module.exports = NodeHelper.create({
 	},
 
 	/**
-	 * Fetch data from a provider instance
+	 * Fetch data from a provider instance (rate-limited)
 	 * @param {string} moduleId - Module identifier
 	 * @param {object} provider - Provider instance
 	 */
 	async fetchProviderData(moduleId, provider) {
 		try {
-			const data = await provider.fetchData();
+			// Get the appropriate rate limiter for this provider
+			const providerName = provider.providerName.toLowerCase();
+			const limiter = rateLimiters[providerName] || rateLimiters.default;
+			
+			// Wrap the API call with rate limiting
+			const data = await limiter.throttle(() => provider.fetchData());
 
 			// Cache the data
 			const cacheKey = `${moduleId}-${provider.providerName}`;
@@ -164,17 +182,35 @@ module.exports = NodeHelper.create({
 	},
 
 	/**
-	 * Load saved configuration (tokens) for a provider
+	 * Load saved configuration (tokens) for a provider - ENCRYPTED
 	 * @param {string} provider - Provider name
 	 * @returns {object}
 	 */
 	loadSavedConfig(provider) {
-		const configPath = path.join(__dirname, `.${provider}_config.json`);
+		const configPath = path.join(__dirname, `.${provider}_config.encrypted`);
 
 		try {
-			if (fs.existsSync(configPath)) {
-				const data = fs.readFileSync(configPath, "utf-8");
-				return JSON.parse(data);
+			// Try to load encrypted config first
+			const encryptedData = secureStorage.loadSecure(configPath);
+			if (encryptedData) {
+				console.log(`[Fitness] Loaded encrypted config for ${provider}`);
+				return encryptedData;
+			}
+
+			// Fall back to legacy plaintext config (migrate it)
+			const legacyPath = path.join(__dirname, `.${provider}_config.json`);
+			if (fs.existsSync(legacyPath)) {
+				const data = fs.readFileSync(legacyPath, "utf-8");
+				const config = JSON.parse(data);
+				
+				// Migrate to encrypted storage
+				this.saveConfig(provider, config);
+				
+				// Remove legacy plaintext file
+				fs.unlinkSync(legacyPath);
+				console.log(`[Fitness] Migrated ${provider} config to encrypted storage`);
+				
+				return config;
 			}
 		} catch (error) {
 			console.warn(`[Fitness] Could not load saved config: ${error.message}`);
@@ -184,16 +220,16 @@ module.exports = NodeHelper.create({
 	},
 
 	/**
-	 * Save configuration (tokens) for a provider
+	 * Save configuration (tokens) for a provider - ENCRYPTED
 	 * @param {string} provider - Provider name
 	 * @param {object} config - Configuration to save
 	 */
 	saveConfig(provider, config) {
-		const configPath = path.join(__dirname, `.${provider}_config.json`);
+		const configPath = path.join(__dirname, `.${provider}_config.encrypted`);
 
 		try {
-			fs.writeFileSync(configPath, JSON.stringify(config, null, 2));
-			console.log(`[Fitness] Saved config for ${provider}`);
+			secureStorage.saveSecure(configPath, config);
+			console.log(`[Fitness] Saved encrypted config for ${provider}`);
 		} catch (error) {
 			console.warn(`[Fitness] Could not save config: ${error.message}`);
 		}

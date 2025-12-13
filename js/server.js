@@ -46,7 +46,41 @@ function Server (config) {
 			}
 			const io = socketio(server, {
 				cors: {
-					origin: /.*$/,
+					// Build secure origin list based on config
+					// By default, only allow localhost origins
+					origin: function (origin, callback) {
+						// Allow requests with no origin (like curl, or same-origin requests)
+						if (!origin) return callback(null, true);
+						
+						// Build list of allowed origins
+						const allowedOrigins = [];
+						const address = config.address || "localhost";
+						
+						// Add common localhost origins
+						allowedOrigins.push(`http://localhost:${port}`);
+						allowedOrigins.push(`http://127.0.0.1:${port}`);
+						allowedOrigins.push(`https://localhost:${port}`);
+						allowedOrigins.push(`https://127.0.0.1:${port}`);
+						
+						// Add configured address
+						if (address !== "localhost" && address !== "127.0.0.1" && address !== "0.0.0.0") {
+							allowedOrigins.push(`http://${address}:${port}`);
+							allowedOrigins.push(`https://${address}:${port}`);
+						}
+						
+						// If address is 0.0.0.0, it's bound to all interfaces
+						// In production, consider adding config.allowedCorsOrigins array
+						if (config.corsOrigins && Array.isArray(config.corsOrigins)) {
+							allowedOrigins.push(...config.corsOrigins);
+						}
+						
+						if (allowedOrigins.includes(origin)) {
+							callback(null, true);
+						} else {
+							Log.warn(`Blocked CORS request from origin: ${origin}`);
+							callback(new Error("Not allowed by CORS"));
+						}
+					},
 					credentials: true
 				},
 				allowEIO3: true
@@ -77,7 +111,33 @@ function Server (config) {
 					log: false
 				})(req, res, function (err) {
 					if (err === undefined) {
-						res.header("Access-Control-Allow-Origin", "*");
+						// Set CORS header based on request origin for security
+						// Only allow origins that would pass Socket.IO CORS check
+						const origin = req.headers.origin;
+						if (origin) {
+							const allowedOrigins = [];
+							const address = config.address || "localhost";
+							
+							allowedOrigins.push(`http://localhost:${port}`);
+							allowedOrigins.push(`http://127.0.0.1:${port}`);
+							allowedOrigins.push(`https://localhost:${port}`);
+							allowedOrigins.push(`https://127.0.0.1:${port}`);
+							
+							if (address !== "localhost" && address !== "127.0.0.1" && address !== "0.0.0.0") {
+								allowedOrigins.push(`http://${address}:${port}`);
+								allowedOrigins.push(`https://${address}:${port}`);
+							}
+							
+							if (config.corsOrigins && Array.isArray(config.corsOrigins)) {
+								allowedOrigins.push(...config.corsOrigins);
+							}
+							
+							if (allowedOrigins.includes(origin)) {
+								res.header("Access-Control-Allow-Origin", origin);
+								res.header("Access-Control-Allow-Credentials", "true");
+							}
+							// If origin not allowed, don't set CORS headers at all
+						}
 						return next();
 					}
 					Log.log(err.message);

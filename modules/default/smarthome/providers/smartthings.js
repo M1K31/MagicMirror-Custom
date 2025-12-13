@@ -8,6 +8,9 @@
  * 1. Go to https://account.smartthings.com/tokens
  * 2. Create a new personal access token
  * 3. Select required scopes (devices, scenes, locations)
+ *
+ * Credentials can be set via environment variables:
+ * - SMARTTHINGS_TOKEN
  */
 
 const SmartHomeProvider = require("./smarthomeprovider");
@@ -16,7 +19,8 @@ SmartHomeProvider.register("smartthings", {
 	providerName: "SmartThings",
 
 	defaults: {
-		token: "",
+		// Support environment variables for credentials
+		token: process.env.SMARTTHINGS_TOKEN || "",
 		baseUrl: "https://api.smartthings.com/v1",
 		// Filter by location ID (optional)
 		locationId: "",
@@ -30,7 +34,7 @@ SmartHomeProvider.register("smartthings", {
 	 */
 	validateConfig() {
 		if (!this.config.token) {
-			this.setError("SmartThings personal access token is required");
+			this.setError("SmartThings personal access token is required. Set SMARTTHINGS_TOKEN environment variable.");
 			return false;
 		}
 		return true;

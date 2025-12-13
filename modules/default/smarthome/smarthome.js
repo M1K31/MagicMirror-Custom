@@ -415,44 +415,56 @@ Module.register("smarthome", {
 		const wrapper = document.createElement("div");
 		wrapper.className = `smarthome-module${this.config.compactMode ? " compact" : ""}`;
 
-		// Error state
+		// Error state - build safely
 		if (this.error) {
-			wrapper.innerHTML = `
-				<div class="smarthome-error">
-					<i class="fa fa-exclamation-triangle"></i>
-					<span>${this.error}</span>
-				</div>
-			`;
+			const errorDiv = document.createElement("div");
+			errorDiv.className = "smarthome-error";
+			const errorIcon = document.createElement("i");
+			errorIcon.className = "fa fa-exclamation-triangle";
+			errorDiv.appendChild(errorIcon);
+			const errorSpan = document.createElement("span");
+			errorSpan.textContent = this.error; // Use textContent to prevent XSS
+			errorDiv.appendChild(errorSpan);
+			wrapper.appendChild(errorDiv);
 			return wrapper;
 		}
 
-		// Loading state
+		// Loading state - static content, safe
 		if (this.devices.length === 0 && !this.connected) {
-			wrapper.innerHTML = `
-				<div class="smarthome-loading">
-					<i class="fa fa-spinner fa-spin"></i>
-					<span>Connecting to ${this.config.provider}...</span>
-				</div>
-			`;
+			const loadingDiv = document.createElement("div");
+			loadingDiv.className = "smarthome-loading";
+			const spinnerIcon = document.createElement("i");
+			spinnerIcon.className = "fa fa-spinner fa-spin";
+			loadingDiv.appendChild(spinnerIcon);
+			const loadingSpan = document.createElement("span");
+			loadingSpan.textContent = `Connecting to ${this.config.provider}...`;
+			loadingDiv.appendChild(loadingSpan);
+			wrapper.appendChild(loadingDiv);
 			return wrapper;
 		}
 
-		// Empty state
+		// Empty state - static content, safe
 		if (this.devices.length === 0) {
-			wrapper.innerHTML = `
-				<div class="smarthome-empty">
-					<i class="fa fa-home"></i>
-					<span>No devices configured</span>
-				</div>
-			`;
+			const emptyDiv = document.createElement("div");
+			emptyDiv.className = "smarthome-empty";
+			const homeIcon = document.createElement("i");
+			homeIcon.className = "fa fa-home";
+			emptyDiv.appendChild(homeIcon);
+			const emptySpan = document.createElement("span");
+			emptySpan.textContent = "No devices configured";
+			emptyDiv.appendChild(emptySpan);
+			wrapper.appendChild(emptyDiv);
 			return wrapper;
 		}
 
-		// Connection status indicator
+		// Connection status indicator - static content, safe
 		if (!this.connected) {
 			const status = document.createElement("div");
 			status.className = "smarthome-status disconnected";
-			status.innerHTML = '<i class="fa fa-plug-circle-xmark"></i> Disconnected';
+			const plugIcon = document.createElement("i");
+			plugIcon.className = "fa fa-plug-circle-xmark";
+			status.appendChild(plugIcon);
+			status.appendChild(document.createTextNode(" Disconnected"));
 			wrapper.appendChild(status);
 		}
 
@@ -485,10 +497,18 @@ Module.register("smarthome", {
 
 			const header = document.createElement("div");
 			header.className = "room-header";
-			header.innerHTML = `
-				<span class="room-name">${roomName}</span>
-				<span class="room-count">${devices.length}</span>
-			`;
+			
+			// Build header safely using textContent for user data
+			const nameSpan = document.createElement("span");
+			nameSpan.className = "room-name";
+			nameSpan.textContent = roomName; // Use textContent to prevent XSS
+			header.appendChild(nameSpan);
+			
+			const countSpan = document.createElement("span");
+			countSpan.className = "room-count";
+			countSpan.textContent = devices.length;
+			header.appendChild(countSpan);
+			
 			roomEl.appendChild(header);
 
 			roomEl.appendChild(this.renderDeviceList(devices));
@@ -527,11 +547,13 @@ Module.register("smarthome", {
 		}
 		el.dataset.deviceId = device.id;
 
-		// Icon
+		// Icon - use DOM methods instead of innerHTML for safety
 		const iconClass = this.config.deviceIcons[device.type] || "fa-circle";
 		const iconEl = document.createElement("div");
 		iconEl.className = "device-icon";
-		iconEl.innerHTML = `<i class="fa ${iconClass}"></i>`;
+		const iconI = document.createElement("i");
+		iconI.className = `fa ${iconClass}`;
+		iconEl.appendChild(iconI);
 
 		// Info
 		const infoEl = document.createElement("div");
@@ -616,6 +638,13 @@ Module.register("smarthome", {
 		const controls = document.createElement("div");
 		controls.className = "device-controls";
 
+		// Helper to create icon elements safely
+		const createIcon = (iconClass) => {
+			const icon = document.createElement("i");
+			icon.className = `fa ${iconClass}`;
+			return icon;
+		};
+
 		switch (device.type) {
 			case "light":
 			case "switch":
@@ -623,7 +652,7 @@ Module.register("smarthome", {
 			case "outlet":
 				const toggleBtn = document.createElement("button");
 				toggleBtn.className = `control-btn toggle ${device.state.on ? "on" : "off"}`;
-				toggleBtn.innerHTML = `<i class="fa fa-power-off"></i>`;
+				toggleBtn.appendChild(createIcon("fa-power-off"));
 				toggleBtn.addEventListener("click", (e) => {
 					e.stopPropagation();
 					this.toggleDevice(device.id);
@@ -650,7 +679,7 @@ Module.register("smarthome", {
 			case "climate":
 				const tempDown = document.createElement("button");
 				tempDown.className = "control-btn temp-down";
-				tempDown.innerHTML = '<i class="fa fa-minus"></i>';
+				tempDown.appendChild(createIcon("fa-minus"));
 				tempDown.addEventListener("click", (e) => {
 					e.stopPropagation();
 					const currentTemp = device.state.temperature || 70;
@@ -663,7 +692,7 @@ Module.register("smarthome", {
 
 				const tempUp = document.createElement("button");
 				tempUp.className = "control-btn temp-up";
-				tempUp.innerHTML = '<i class="fa fa-plus"></i>';
+				tempUp.appendChild(createIcon("fa-plus"));
 				tempUp.addEventListener("click", (e) => {
 					e.stopPropagation();
 					const currentTemp = device.state.temperature || 70;
@@ -678,7 +707,7 @@ Module.register("smarthome", {
 			case "lock":
 				const lockBtn = document.createElement("button");
 				lockBtn.className = `control-btn lock ${device.state.on ? "locked" : "unlocked"}`;
-				lockBtn.innerHTML = `<i class="fa ${device.state.on ? "fa-lock" : "fa-lock-open"}"></i>`;
+				lockBtn.appendChild(createIcon(device.state.on ? "fa-lock" : "fa-lock-open"));
 				lockBtn.addEventListener("click", (e) => {
 					e.stopPropagation();
 					this.toggleDevice(device.id);

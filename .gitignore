@@ -13,8 +13,13 @@
 config/config.js
 
 # Token storage files (OAuth tokens, session data)
+# Plaintext JSON (legacy)
 modules/default/**/.*.json
 modules/default/**/.*_config.json
+# Encrypted token files
+modules/default/**/.*.encrypted
+modules/default/**/.*_tokens.encrypted
+modules/default/**/.*_config.encrypted
 .magicmirror/
 
 # SSL/TLS certificates

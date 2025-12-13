@@ -388,10 +388,20 @@ Module.register("quotes", {
 			return wrapper;
 		}
 
-		// Quote text
+		// Quote text - use textContent for user data to prevent XSS
 		const quoteText = document.createElement("div");
 		quoteText.className = `quote-text ${this.config.quoteClass}`;
-		quoteText.innerHTML = `<i class="fa fa-quote-left quote-icon"></i> ${this.currentQuote.text}`;
+		
+		// Create icon element safely
+		const quoteIcon = document.createElement("i");
+		quoteIcon.className = "fa fa-quote-left quote-icon";
+		quoteText.appendChild(quoteIcon);
+		
+		// Add quote text safely using textContent
+		const textSpan = document.createElement("span");
+		textSpan.textContent = ` ${this.currentQuote.text}`;
+		quoteText.appendChild(textSpan);
+		
 		wrapper.appendChild(quoteText);
 
 		// Author attribution
@@ -410,7 +420,7 @@ Module.register("quotes", {
 			wrapper.appendChild(category);
 		}
 
-		// Touch controls
+		// Touch controls - static HTML, no user data
 		if (this.config.mode === "touch") {
 			const controls = document.createElement("div");
 			controls.className = "quote-controls";

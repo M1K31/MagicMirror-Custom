@@ -10,6 +10,9 @@
  * 1. Enable APIs in Google Cloud Console
  * 2. Create API key with appropriate restrictions
  * 3. Enable billing (required for most transit features)
+ *
+ * Credentials can be set via environment variables:
+ * - GOOGLE_MAPS_API_KEY
  */
 
 const TransitProvider = require("./transitprovider");
@@ -18,7 +21,8 @@ TransitProvider.register("google", {
 	providerName: "Google",
 
 	defaults: {
-		apiKey: "",
+		// Support environment variables for credentials
+		apiKey: process.env.GOOGLE_MAPS_API_KEY || "",
 		baseUrl: "https://maps.googleapis.com/maps/api",
 		transitModes: ["bus", "subway", "train", "tram", "rail"]
 	},
@@ -29,7 +33,7 @@ TransitProvider.register("google", {
 	 */
 	validateConfig() {
 		if (!this.config.apiKey) {
-			this.setError("Google Maps API key is required");
+			this.setError("Google Maps API key is required. Set GOOGLE_MAPS_API_KEY environment variable.");
 			return false;
 		}
 		return true;

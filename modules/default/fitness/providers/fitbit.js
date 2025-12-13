@@ -9,6 +9,11 @@
  * 2. Set OAuth 2.0 Application Type to "Personal"
  * 3. Get client ID and secret
  * 4. Use authorization code flow to get refresh token
+ *
+ * Credentials can be set via environment variables:
+ * - FITBIT_CLIENT_ID
+ * - FITBIT_CLIENT_SECRET
+ * - FITBIT_REFRESH_TOKEN
  */
 
 const FitnessProvider = require("./fitnessprovider");
@@ -17,9 +22,10 @@ FitnessProvider.register("fitbit", {
 	providerName: "Fitbit",
 
 	defaults: {
-		clientId: "",
-		clientSecret: "",
-		refreshToken: "",
+		// Support environment variables for credentials
+		clientId: process.env.FITBIT_CLIENT_ID || "",
+		clientSecret: process.env.FITBIT_CLIENT_SECRET || "",
+		refreshToken: process.env.FITBIT_REFRESH_TOKEN || "",
 		accessToken: "",
 		tokenExpiry: 0,
 		baseUrl: "https://api.fitbit.com"
@@ -31,11 +37,11 @@ FitnessProvider.register("fitbit", {
 	 */
 	validateConfig() {
 		if (!this.config.clientId || !this.config.clientSecret) {
-			this.setError("Fitbit client ID and secret are required");
+			this.setError("Fitbit client ID and secret are required. Set FITBIT_CLIENT_ID and FITBIT_CLIENT_SECRET environment variables or provide in config.");
 			return false;
 		}
 		if (!this.config.refreshToken) {
-			this.setError("Fitbit refresh token is required");
+			this.setError("Fitbit refresh token is required. Set FITBIT_REFRESH_TOKEN environment variable or provide in config.");
 			return false;
 		}
 		return true;

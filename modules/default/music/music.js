@@ -333,14 +333,22 @@ Module.register("music", {
 		const wrapper = document.createElement("div");
 		wrapper.className = `music-module${this.config.compactMode ? " compact" : ""}`;
 
+		// Helper to create icon elements safely
+		const createIcon = (iconClass) => {
+			const icon = document.createElement("i");
+			icon.className = `fa ${iconClass}`;
+			return icon;
+		};
+
 		// Error state
 		if (this.error) {
-			wrapper.innerHTML = `
-				<div class="music-error">
-					<i class="fa fa-exclamation-triangle"></i>
-					<span>${this.error}</span>
-				</div>
-			`;
+			const errorDiv = document.createElement("div");
+			errorDiv.className = "music-error";
+			errorDiv.appendChild(createIcon("fa-exclamation-triangle"));
+			const errorSpan = document.createElement("span");
+			errorSpan.textContent = this.error;
+			errorDiv.appendChild(errorSpan);
+			wrapper.appendChild(errorDiv);
 			return wrapper;
 		}
 
@@ -349,12 +357,13 @@ Module.register("music", {
 			if (this.config.hideWhenPaused) {
 				wrapper.style.display = "none";
 			} else {
-				wrapper.innerHTML = `
-					<div class="music-empty">
-						<i class="fa fa-music"></i>
-						<span>Nothing playing</span>
-					</div>
-				`;
+				const emptyDiv = document.createElement("div");
+				emptyDiv.className = "music-empty";
+				emptyDiv.appendChild(createIcon("fa-music"));
+				const emptySpan = document.createElement("span");
+				emptySpan.textContent = "Nothing playing";
+				emptyDiv.appendChild(emptySpan);
+				wrapper.appendChild(emptyDiv);
 			}
 			return wrapper;
 		}
@@ -405,10 +414,18 @@ Module.register("music", {
 
 		const trackName = document.createElement("div");
 		trackName.className = `track-name${this.config.scrollLongText ? " scrollable" : ""}`;
-		trackName.innerHTML = `
-			<span>${this.currentTrack.name}</span>
-			${this.currentTrack.explicit ? '<span class="explicit-badge">E</span>' : ""}
-		`;
+		
+		// Build track name safely with DOM methods
+		const nameSpan = document.createElement("span");
+		nameSpan.textContent = this.currentTrack.name;
+		trackName.appendChild(nameSpan);
+		
+		if (this.currentTrack.explicit) {
+			const explicitBadge = document.createElement("span");
+			explicitBadge.className = "explicit-badge";
+			explicitBadge.textContent = "E";
+			trackName.appendChild(explicitBadge);
+		}
 
 		const artistName = document.createElement("div");
 		artistName.className = "track-artist";
@@ -459,10 +476,17 @@ Module.register("music", {
 
 		const times = document.createElement("div");
 		times.className = "progress-times";
-		times.innerHTML = `
-			<span class="progress-current">${this.formatTime(this.progress)}</span>
-			<span class="progress-duration">${this.formatTime(this.duration)}</span>
-		`;
+		
+		// Build times safely with DOM methods
+		const currentTime = document.createElement("span");
+		currentTime.className = "progress-current";
+		currentTime.textContent = this.formatTime(this.progress);
+		times.appendChild(currentTime);
+		
+		const durationTime = document.createElement("span");
+		durationTime.className = "progress-duration";
+		durationTime.textContent = this.formatTime(this.duration);
+		times.appendChild(durationTime);
 
 		progressContainer.appendChild(progressBar);
 		progressContainer.appendChild(times);
@@ -478,14 +502,21 @@ Module.register("music", {
 		const controls = document.createElement("div");
 		controls.className = "playback-controls";
 
+		// Helper to create icon elements safely
+		const createIcon = (iconClass) => {
+			const icon = document.createElement("i");
+			icon.className = `fa ${iconClass}`;
+			return icon;
+		};
+
 		const prevBtn = document.createElement("button");
 		prevBtn.className = "control-btn prev";
-		prevBtn.innerHTML = '<i class="fa fa-step-backward"></i>';
+		prevBtn.appendChild(createIcon("fa-step-backward"));
 		prevBtn.addEventListener("click", () => this.previous());
 
 		const playPauseBtn = document.createElement("button");
 		playPauseBtn.className = `control-btn play-pause ${this.isPlaying ? "playing" : "paused"}`;
-		playPauseBtn.innerHTML = `<i class="fa fa-${this.isPlaying ? "pause" : "play"}"></i>`;
+		playPauseBtn.appendChild(createIcon(this.isPlaying ? "fa-pause" : "fa-play"));
 		playPauseBtn.addEventListener("click", () => {
 			if (this.isPlaying) {
 				this.pause();
@@ -496,7 +527,7 @@ Module.register("music", {
 
 		const nextBtn = document.createElement("button");
 		nextBtn.className = "control-btn next";
-		nextBtn.innerHTML = '<i class="fa fa-step-forward"></i>';
+		nextBtn.appendChild(createIcon("fa-step-forward"));
 		nextBtn.addEventListener("click", () => this.next());
 
 		controls.appendChild(prevBtn);
@@ -536,10 +567,18 @@ Module.register("music", {
 
 			const info = document.createElement("div");
 			info.className = "queue-info";
-			info.innerHTML = `
-				<div class="queue-track">${track.name}</div>
-				<div class="queue-artist">${track.artist}</div>
-			`;
+			
+			// Build queue info safely with DOM methods
+			const queueTrack = document.createElement("div");
+			queueTrack.className = "queue-track";
+			queueTrack.textContent = track.name;
+			info.appendChild(queueTrack);
+			
+			const queueArtist = document.createElement("div");
+			queueArtist.className = "queue-artist";
+			queueArtist.textContent = track.artist;
+			info.appendChild(queueArtist);
+			
 			item.appendChild(info);
 
 			list.appendChild(item);

@@ -9,6 +9,11 @@
  * 3. Get client ID and secret
  * 4. Use OAuth flow to get refresh token
  *    - Required scopes: user-read-playback-state, user-modify-playback-state, user-read-currently-playing
+ *
+ * Credentials can be set via environment variables:
+ * - SPOTIFY_CLIENT_ID
+ * - SPOTIFY_CLIENT_SECRET
+ * - SPOTIFY_REFRESH_TOKEN
  */
 
 const MusicProvider = require("./musicprovider");
@@ -17,9 +22,10 @@ MusicProvider.register("spotify", {
 	providerName: "Spotify",
 
 	defaults: {
-		clientId: "",
-		clientSecret: "",
-		refreshToken: "",
+		// Support environment variables for credentials
+		clientId: process.env.SPOTIFY_CLIENT_ID || "",
+		clientSecret: process.env.SPOTIFY_CLIENT_SECRET || "",
+		refreshToken: process.env.SPOTIFY_REFRESH_TOKEN || "",
 		accessToken: "",
 		tokenExpiry: 0,
 		baseUrl: "https://api.spotify.com/v1"
@@ -31,11 +37,11 @@ MusicProvider.register("spotify", {
 	 */
 	validateConfig() {
 		if (!this.config.clientId || !this.config.clientSecret) {
-			this.setError("Spotify client ID and secret are required");
+			this.setError("Spotify client ID and secret are required. Set SPOTIFY_CLIENT_ID and SPOTIFY_CLIENT_SECRET environment variables.");
 			return false;
 		}
 		if (!this.config.refreshToken) {
-			this.setError("Spotify refresh token is required");
+			this.setError("Spotify refresh token is required. Set SPOTIFY_REFRESH_TOKEN environment variable.");
 			return false;
 		}
 		return true;
