@@ -1,0 +1,348 @@
+/**
+ * Package Tracking Module Styles
+ *
+ * Follows Apple HIG principles adapted for mirror display:
+ * - Clear delivery status at a glance
+ * - Color-coded status indicators
+ * - Progress visualization
+ * - High contrast for readability
+ */
+
+/* Module container */
+.packages-module {
+	min-width: 250px;
+}
+
+.packages-module.compact {
+	min-width: 180px;
+}
+
+/* Error state */
+.packages-error {
+	display: flex;
+	align-items: center;
+	gap: 10px;
+	padding: 15px;
+	color: #ff8e99;
+}
+
+.packages-error i {
+	font-size: 16px;
+}
+
+/* Empty state */
+.packages-empty {
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+	gap: 10px;
+	padding: 20px;
+	color: var(--color-text-dimmed);
+}
+
+.packages-empty i {
+	font-size: 24px;
+	opacity: 0.5;
+}
+
+/* Package list */
+.packages-list {
+	display: flex;
+	flex-direction: column;
+	gap: 12px;
+}
+
+/* Single package */
+.package-item {
+	display: grid;
+	grid-template-columns: auto 1fr auto;
+	gap: 12px;
+	align-items: center;
+	padding: 12px;
+	background: rgba(255, 255, 255, 0.03);
+	border-radius: 8px;
+	border-left: 3px solid var(--status-color, #888);
+	animation: package-fadein 0.3s ease-out;
+}
+
+@keyframes package-fadein {
+	from {
+		opacity: 0;
+		transform: translateY(-5px);
+	}
+	to {
+		opacity: 1;
+		transform: translateY(0);
+	}
+}
+
+/* Package icon */
+.package-icon {
+	width: 40px;
+	height: 40px;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	background: rgba(255, 255, 255, 0.1);
+	border-radius: 50%;
+	color: var(--status-color, var(--color-text-dimmed));
+	font-size: 16px;
+}
+
+/* Status-specific icon styling */
+.package-item.out_for_delivery .package-icon {
+	animation: icon-pulse 1.5s ease-in-out infinite;
+}
+
+@keyframes icon-pulse {
+	0%,
+	100% {
+		transform: scale(1);
+	}
+	50% {
+		transform: scale(1.1);
+	}
+}
+
+.package-item.delivered .package-icon {
+	background: rgba(0, 200, 150, 0.2);
+}
+
+.package-item.exception .package-icon {
+	background: rgba(255, 100, 100, 0.2);
+}
+
+/* Package info */
+.package-info {
+	min-width: 0;
+}
+
+.package-title {
+	color: var(--color-text-bright);
+	font-size: var(--font-size-small);
+	font-weight: 400;
+	white-space: nowrap;
+	overflow: hidden;
+	text-overflow: ellipsis;
+}
+
+.package-status {
+	display: flex;
+	align-items: center;
+	gap: 6px;
+	margin-top: 4px;
+	color: var(--color-text);
+	font-size: var(--font-size-xsmall);
+}
+
+.status-indicator {
+	width: 8px;
+	height: 8px;
+	border-radius: 50%;
+	background: var(--status-color, #888);
+}
+
+.package-item.out_for_delivery .status-indicator {
+	animation: status-blink 1s ease-in-out infinite;
+}
+
+@keyframes status-blink {
+	0%,
+	100% {
+		opacity: 1;
+	}
+	50% {
+		opacity: 0.4;
+	}
+}
+
+.package-carrier {
+	color: var(--color-text-dimmed);
+	font-size: var(--font-size-xsmall);
+	margin-top: 2px;
+}
+
+/* Delivery info */
+.package-delivery {
+	display: flex;
+	align-items: center;
+	gap: 6px;
+	color: var(--color-text-dimmed);
+	font-size: var(--font-size-xsmall);
+	text-align: right;
+	white-space: nowrap;
+}
+
+.package-delivery i {
+	font-size: 12px;
+}
+
+.package-item.delivered .package-delivery {
+	color: #00c896;
+}
+
+.package-item.delivered .package-delivery i {
+	color: #00c896;
+}
+
+.package-item.out_for_delivery .package-delivery {
+	color: #ffd700;
+}
+
+/* Progress bar */
+.package-progress {
+	grid-column: 1 / -1;
+	height: 3px;
+	background: rgba(255, 255, 255, 0.1);
+	border-radius: 2px;
+	overflow: hidden;
+	margin-top: 4px;
+}
+
+.package-progress .progress-fill {
+	height: 100%;
+	background: var(--status-color, #888);
+	border-radius: 2px;
+	transition: width 0.5s ease;
+}
+
+/* Compact mode */
+.packages-module.compact .packages-list {
+	gap: 8px;
+}
+
+.packages-module.compact .package-item {
+	padding: 8px;
+	gap: 8px;
+}
+
+.packages-module.compact .package-icon {
+	width: 28px;
+	height: 28px;
+	font-size: 12px;
+}
+
+.packages-module.compact .package-title {
+	font-size: var(--font-size-xsmall);
+}
+
+.packages-module.compact .package-status {
+	font-size: 11px;
+}
+
+.packages-module.compact .package-delivery {
+	font-size: 11px;
+}
+
+.packages-module.compact .package-progress {
+	height: 2px;
+}
+
+/* Status-specific backgrounds */
+.package-item.pending {
+	opacity: 0.8;
+}
+
+.package-item.expired {
+	opacity: 0.5;
+}
+
+/* Hover effect for touch mode */
+.packages-module:not(.display-only) .package-item {
+	cursor: pointer;
+	transition: all 0.2s ease;
+}
+
+.packages-module:not(.display-only) .package-item:hover,
+.packages-module:not(.display-only) .package-item:active {
+	background: rgba(255, 255, 255, 0.06);
+	transform: translateX(2px);
+}
+
+/* Carrier logos (optional) */
+.carrier-logo {
+	width: 24px;
+	height: 24px;
+	object-fit: contain;
+	filter: brightness(0) invert(1);
+	opacity: 0.7;
+}
+
+/* Tracking number display */
+.package-tracking {
+	font-family: monospace;
+	font-size: 10px;
+	color: var(--color-text-dimmed);
+	letter-spacing: 0.5px;
+}
+
+/* Checkpoints list (expanded view) */
+.package-checkpoints {
+	grid-column: 1 / -1;
+	margin-top: 8px;
+	padding-top: 8px;
+	border-top: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.checkpoint-item {
+	display: flex;
+	gap: 10px;
+	padding: 4px 0;
+	font-size: var(--font-size-xsmall);
+}
+
+.checkpoint-time {
+	color: var(--color-text-dimmed);
+	min-width: 50px;
+}
+
+.checkpoint-message {
+	color: var(--color-text);
+}
+
+.checkpoint-location {
+	color: var(--color-text-dimmed);
+}
+
+/* Responsive */
+@media (max-width: 300px) {
+	.packages-module {
+		min-width: 150px;
+	}
+
+	.package-delivery {
+		display: none;
+	}
+
+	.package-carrier {
+		display: none;
+	}
+}
+
+/* Out for delivery highlight */
+.package-item.out_for_delivery {
+	background: rgba(255, 215, 0, 0.05);
+	border-left-width: 4px;
+}
+
+/* Delivered checkmark animation */
+.package-item.delivered::after {
+	content: "";
+	position: absolute;
+	right: 10px;
+	top: 50%;
+	transform: translateY(-50%);
+	width: 20px;
+	height: 20px;
+	background: rgba(0, 200, 150, 0.2);
+	border-radius: 50%;
+}
+
+/* Exception warning */
+.package-item.exception {
+	background: rgba(255, 100, 100, 0.05);
+}
+
+.package-item.exception .package-status {
+	color: #ff8e99;
+}
