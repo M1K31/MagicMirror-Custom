@@ -1,0 +1,291 @@
+/**
+ * Countdown Module Styles
+ *
+ * Follows Apple HIG principles adapted for mirror display:
+ * - High contrast (white on black)
+ * - Clear visual hierarchy
+ * - Urgency indicators through color
+ * - Subtle animations
+ */
+
+/* Module container */
+.countdown-module {
+	min-width: 200px;
+}
+
+.countdown-module.compact {
+	min-width: 150px;
+}
+
+/* Event list */
+.countdown-list {
+	display: flex;
+	flex-direction: column;
+	gap: 12px;
+}
+
+/* Individual event */
+.countdown-event {
+	display: flex;
+	align-items: center;
+	gap: 12px;
+	padding: 8px 12px;
+	border-radius: 8px;
+	background: rgba(255, 255, 255, 0.03);
+	transition: all 0.3s ease;
+}
+
+.countdown-event:hover {
+	background: rgba(255, 255, 255, 0.05);
+}
+
+/* Urgency states */
+.countdown-event.urgent {
+	background: rgba(255, 100, 100, 0.1);
+}
+
+.countdown-event.soon {
+	background: rgba(255, 200, 100, 0.05);
+}
+
+.countdown-event.today {
+	background: rgba(100, 255, 100, 0.1);
+	animation: countdown-glow 2s ease-in-out infinite;
+}
+
+.countdown-event.past {
+	opacity: 0.5;
+}
+
+@keyframes countdown-glow {
+	0%,
+	100% {
+		box-shadow: 0 0 5px rgba(100, 255, 100, 0.2);
+	}
+	50% {
+		box-shadow: 0 0 15px rgba(100, 255, 100, 0.4);
+	}
+}
+
+/* Event icon */
+.countdown-icon {
+	flex-shrink: 0;
+	width: 32px;
+	height: 32px;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	color: var(--color-text);
+	font-size: 18px;
+}
+
+.countdown-event.urgent .countdown-icon {
+	color: #ff8e99;
+}
+
+.countdown-event.soon .countdown-icon {
+	color: #ffd699;
+}
+
+.countdown-event.today .countdown-icon {
+	color: #99ff99;
+}
+
+/* Event content */
+.countdown-content {
+	flex: 1;
+	min-width: 0;
+}
+
+.countdown-name {
+	color: var(--color-text-bright);
+	font-size: var(--font-size-small);
+	font-weight: 400;
+	white-space: nowrap;
+	overflow: hidden;
+	text-overflow: ellipsis;
+}
+
+.countdown-date {
+	margin-top: 2px;
+	text-transform: uppercase;
+	letter-spacing: 0.5px;
+}
+
+/* Time display */
+.countdown-time {
+	flex-shrink: 0;
+	text-align: right;
+	min-width: 60px;
+}
+
+.countdown-value {
+	display: block;
+	font-size: var(--font-size-medium);
+	font-weight: 300;
+	color: var(--color-text-bright);
+	font-variant-numeric: tabular-nums;
+}
+
+.countdown-unit {
+	display: block;
+	font-size: var(--font-size-xsmall);
+	color: var(--color-text-dimmed);
+	text-transform: uppercase;
+	letter-spacing: 1px;
+}
+
+.countdown-today {
+	display: block;
+	font-size: var(--font-size-small);
+	font-weight: 400;
+	color: #99ff99;
+}
+
+.countdown-past {
+	display: block;
+	font-size: var(--font-size-small);
+	color: var(--color-text-dimmed);
+}
+
+/* Urgency colors for time */
+.countdown-event.urgent .countdown-value {
+	color: #ff8e99;
+}
+
+.countdown-event.soon .countdown-value {
+	color: #ffd699;
+}
+
+/* Progress bar */
+.countdown-progress {
+	position: absolute;
+	bottom: 0;
+	left: 0;
+	right: 0;
+	height: 2px;
+	background: rgba(255, 255, 255, 0.1);
+	border-radius: 0 0 8px 8px;
+	overflow: hidden;
+}
+
+.countdown-event {
+	position: relative;
+}
+
+.countdown-progress-fill {
+	height: 100%;
+	background: var(--color-text);
+	transition: width 1s ease;
+}
+
+.countdown-progress-fill.urgent {
+	background: #ff8e99;
+}
+
+.countdown-progress-fill.soon {
+	background: #ffd699;
+}
+
+.countdown-progress-fill.today {
+	background: #99ff99;
+}
+
+/* Compact mode */
+.countdown-module.compact .countdown-list {
+	gap: 6px;
+}
+
+.countdown-module.compact .countdown-event {
+	padding: 4px 8px;
+	gap: 8px;
+}
+
+.countdown-module.compact .countdown-icon {
+	width: 24px;
+	height: 24px;
+	font-size: 14px;
+}
+
+.countdown-module.compact .countdown-name {
+	font-size: var(--font-size-xsmall);
+}
+
+.countdown-module.compact .countdown-value {
+	font-size: var(--font-size-small);
+}
+
+.countdown-module.compact .countdown-unit {
+	display: none;
+}
+
+.countdown-module.compact .countdown-date {
+	display: none;
+}
+
+.countdown-module.compact .countdown-progress {
+	display: none;
+}
+
+/* Animation for new events */
+.countdown-event {
+	animation: countdown-fadein 0.5s ease-out;
+}
+
+@keyframes countdown-fadein {
+	from {
+		opacity: 0;
+		transform: translateX(-10px);
+	}
+	to {
+		opacity: 1;
+		transform: translateX(0);
+	}
+}
+
+/* Large number display variant */
+.countdown-module.large .countdown-time {
+	min-width: 80px;
+}
+
+.countdown-module.large .countdown-value {
+	font-size: var(--font-size-large);
+}
+
+/* Circle progress variant */
+.countdown-module.circle-progress .countdown-event {
+	flex-direction: column;
+	text-align: center;
+	padding: 15px;
+}
+
+.countdown-module.circle-progress .countdown-icon {
+	margin-bottom: 8px;
+}
+
+.countdown-module.circle-progress .countdown-content {
+	margin-bottom: 10px;
+}
+
+.countdown-module.circle-progress .countdown-time {
+	text-align: center;
+}
+
+/* Responsive */
+@media (max-width: 300px) {
+	.countdown-icon {
+		display: none;
+	}
+
+	.countdown-event {
+		gap: 8px;
+	}
+
+	.countdown-name {
+		font-size: var(--font-size-xsmall);
+	}
+
+	.countdown-value {
+		font-size: var(--font-size-small);
+	}
+}
