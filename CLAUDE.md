@@ -122,7 +122,7 @@ Modules can also broadcast to other modules via `sendNotification()`.
 
 ## Custom Modules
 
-This fork includes 8 additional modules:
+This fork includes 10 additional modules:
 
 - **Timer** - Countdown timers and stopwatch
 - **Countdown** - Event countdowns with recurring events
@@ -132,6 +132,8 @@ This fork includes 8 additional modules:
 - **SmartHome** - Device control for Home Assistant, SmartThings
 - **Fitness** - Health data from Fitbit, Strava, Garmin
 - **Packages** - Package tracking via AfterShip, FedEx, UPS
+- **Network** - Network device discovery, speed testing, connectivity monitoring
+- **Security** - OpenEye AI surveillance integration (cameras, motion, face detection)
 
 See `docs/CUSTOM_MODULES.md` for full documentation.
 

@@ -18,6 +18,8 @@ Complete documentation for all custom MagicMirror modules with Apple Human Inter
   - [Smart Home](#smart-home-module)
   - [Fitness](#fitness-module)
   - [Packages](#packages-module)
+  - [Network](#network-module)
+  - [Security](#security-module)
 - [Interaction Modes](#interaction-modes)
 - [Theming & Customization](#theming--customization)
 - [Troubleshooting](#troubleshooting)
@@ -26,7 +28,7 @@ Complete documentation for all custom MagicMirror modules with Apple Human Inter
 
 ## Overview
 
-This collection adds 8 feature-rich modules to MagicMirror², designed with:
+This collection adds 10 feature-rich modules to MagicMirror², designed with:
 
 - **Apple HIG Principles**: Clean typography, high contrast, glanceable information
 - **Three Interaction Modes**: Display-only, touch, and voice control
@@ -46,6 +48,8 @@ This collection adds 8 feature-rich modules to MagicMirror², designed with:
 | Smart Home | Device control | Home Assistant, HomeKit, Google, SmartThings |
 | Fitness | Health tracking | Fitbit, Garmin, Apple Health, Strava |
 | Packages | Delivery tracking | AfterShip, USPS, FedEx, UPS |
+| Network | Network monitoring & speed test | arp-scan, nmap, speedtest-cli |
+| Security | Home surveillance | OpenEye (AI-powered cameras) |
 
 ---
 
@@ -878,6 +882,183 @@ Track package deliveries.
 | `showTrackingNumber` | boolean | `true` | Show tracking # |
 | `compact` | boolean | `false` | Compact layout |
 | `updateInterval` | number | `900000` | Refresh (15 min) |
+
+---
+
+## Network Module
+
+Monitor your local network with device discovery, speed testing, and connectivity alerts.
+
+### Features
+
+- **Device Discovery**: Scan and list all devices on your network
+- **Known Device Tracking**: Mark devices as known to identify intruders
+- **Speed Testing**: Periodic download/upload speed measurements
+- **Connectivity Monitoring**: Alerts when network goes down
+- **Device Type Detection**: Auto-categorizes devices (phone, computer, router, etc.)
+
+### Configuration
+
+```javascript
+{
+	module: "network",
+	position: "bottom_left",
+	config: {
+		scanInterval: 300000,        // 5 minutes
+		speedTestInterval: 3600000,  // 1 hour
+		connectivityCheckInterval: 60000,  // 1 minute
+		showUnknownDevices: true,
+		showKnownDevices: true,
+		showSpeedTest: true,
+		showConnectivity: true,
+		maxDevicesShown: 10,
+		knownDevices: [
+			// Pre-configure known devices
+			{ mac: "AA:BB:CC:DD:EE:FF", name: "Living Room TV" }
+		],
+		speedThresholds: {
+			download: { warning: 10, critical: 5 },  // Mbps
+			upload: { warning: 5, critical: 2 }
+		}
+	}
+}
+```
+
+### Requirements
+
+For full network scanning, install:
+
+```bash
+# Debian/Ubuntu/Raspberry Pi
+sudo apt install arp-scan nmap speedtest-cli
+
+# Allow arp-scan without password
+sudo visudo
+# Add: username ALL=(ALL) NOPASSWD: /usr/sbin/arp-scan
+```
+
+### Options
+
+| Option | Type | Default | Description |
+|--------|------|---------|-------------|
+| `scanInterval` | number | `300000` | Network scan interval (ms) |
+| `speedTestInterval` | number | `3600000` | Speed test interval (ms) |
+| `connectivityCheckInterval` | number | `60000` | Ping check interval (ms) |
+| `showUnknownDevices` | boolean | `true` | Show new/unknown devices |
+| `showKnownDevices` | boolean | `true` | Show known devices |
+| `showSpeedTest` | boolean | `true` | Show speed test results |
+| `showConnectivity` | boolean | `true` | Show connection status |
+| `maxDevicesShown` | number | `10` | Maximum devices displayed |
+| `knownDevices` | array | `[]` | Pre-configured known devices |
+| `notifyOnNewDevice` | boolean | `true` | Alert on new device |
+| `notifyOnNetworkDown` | boolean | `true` | Alert on connection loss |
+
+### Notifications Sent
+
+| Notification | Payload | Description |
+|--------------|---------|-------------|
+| `NETWORK_STATUS` | `{ online: boolean }` | Connectivity change |
+| `NETWORK_NEW_DEVICE` | `{ device: {...} }` | New device detected |
+| `NETWORK_SPEED_UPDATE` | `{ download, upload }` | Speed test complete |
+
+---
+
+## Security Module
+
+Integrate with OpenEye AI-powered surveillance system for home security monitoring.
+
+### Features
+
+- **Live Camera Feeds**: MJPEG streams from all cameras
+- **Motion Detection**: Real-time motion event alerts
+- **Face Recognition**: Known vs unknown face notifications
+- **Event Timeline**: Recent security events display
+- **WebSocket Updates**: Real-time event streaming
+
+### Prerequisites
+
+1. **Install OpenEye** surveillance system:
+   ```bash
+   git clone https://github.com/YOUR_USERNAME/OpenEye-OpenCV_Home_Security.git
+   cd OpenEye-OpenCV_Home_Security
+   docker-compose up -d
+   ```
+
+2. **Get JWT Token** from OpenEye authentication
+
+3. **Configure environment**:
+   ```bash
+   # In MagicMirror .env file
+   OPENEYE_HOST=http://localhost:8000
+   OPENEYE_TOKEN=your-jwt-token
+   ```
+
+### Configuration
+
+```javascript
+{
+	module: "security",
+	position: "middle_center",
+	config: {
+		openeyeHost: process.env.OPENEYE_HOST || "http://localhost:8000",
+		token: process.env.OPENEYE_TOKEN,
+		cameras: [],              // Empty = all cameras
+		displayMode: "full",      // "full", "compact", "events-only"
+		showEvents: true,
+		maxEvents: 10,
+		useWebSocket: true,
+		notifyOnMotion: true,
+		notifyOnUnknownFace: true,
+		notifyOnKnownFace: false,
+		refreshInterval: 60000
+	}
+}
+```
+
+### Display Modes
+
+| Mode | Description |
+|------|-------------|
+| `"full"` | Camera grid + events list + statistics |
+| `"compact"` | Smaller camera thumbnails, no events |
+| `"events-only"` | Only show event timeline |
+
+### Options
+
+| Option | Type | Default | Description |
+|--------|------|---------|-------------|
+| `openeyeHost` | string | `"http://localhost:8000"` | OpenEye API URL |
+| `token` | string | `""` | JWT authentication token |
+| `cameras` | array | `[]` | Camera IDs (empty = all) |
+| `displayMode` | string | `"full"` | Display layout mode |
+| `showEvents` | boolean | `true` | Show event timeline |
+| `maxEvents` | number | `10` | Maximum events shown |
+| `useWebSocket` | boolean | `true` | Use real-time updates |
+| `notifyOnMotion` | boolean | `true` | Alert on motion |
+| `notifyOnUnknownFace` | boolean | `true` | Alert on unknown face |
+| `notifyOnKnownFace` | boolean | `false` | Alert on known face |
+| `refreshInterval` | number | `60000` | API refresh interval |
+
+### Event Types
+
+| Event | Icon | Description |
+|-------|------|-------------|
+| Motion Detected | 🔔 | Movement in camera view |
+| Known Face | 👤 | Recognized person |
+| Unknown Face | ⚠️ | Unrecognized person |
+| Recording Started | 🔴 | Camera began recording |
+
+### API Integration
+
+The module connects to OpenEye's REST API and WebSocket:
+
+| Endpoint | Method | Description |
+|----------|--------|-------------|
+| `/api/cameras/` | GET | List all cameras |
+| `/api/cameras/{id}/stream` | GET | MJPEG video stream |
+| `/api/motion-events/` | GET | Motion event history |
+| `/api/face-history/` | GET | Face detection history |
+| `/api/ws/statistics` | WS | Real-time event stream |
 
 ---
 

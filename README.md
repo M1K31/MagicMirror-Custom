@@ -33,8 +33,16 @@ This fork includes additional custom modules with Apple HIG design principles:
 | Smart Home | Device control (Home Assistant/HomeKit) |
 | Fitness | Health tracking (Fitbit/Garmin/Strava) |
 | Packages | Delivery tracking (AfterShip/USPS/FedEx/UPS) |
+| Network | Device discovery, speed test, connectivity monitor |
+| Security | OpenEye AI surveillance integration |
 
 📖 **[Full Custom Modules Documentation](docs/CUSTOM_MODULES.md)** - Hardware requirements, provider setup, configuration options, and troubleshooting.
+
+### For Developers
+
+📖 **[Contributing Guide](CONTRIBUTING.md)** - Development setup, module creation, testing, and code style.
+
+📖 **[CLAUDE.md](CLAUDE.md)** - AI assistant context for automated development.
 
 ## Links
 

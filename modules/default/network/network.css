@@ -1,0 +1,233 @@
+/* Network Module Styles */
+
+.network-module {
+	font-size: 14px;
+	min-width: 250px;
+}
+
+.network-module.compact {
+	font-size: 12px;
+	min-width: 200px;
+}
+
+/* Status indicator */
+.network-status {
+	display: flex;
+	align-items: center;
+	gap: 8px;
+	padding: 8px 12px;
+	border-radius: 8px;
+	margin-bottom: 12px;
+	font-weight: 500;
+}
+
+.network-status.online {
+	background-color: rgba(0, 200, 150, 0.15);
+	color: #00c896;
+}
+
+.network-status.offline {
+	background-color: rgba(255, 100, 100, 0.15);
+	color: #ff6464;
+}
+
+.network-status i {
+	font-size: 1.2em;
+}
+
+/* Error and empty states */
+.network-error,
+.network-empty {
+	display: flex;
+	align-items: center;
+	gap: 8px;
+	padding: 12px;
+	opacity: 0.7;
+}
+
+.network-error {
+	color: #ff6464;
+}
+
+.network-empty i {
+	opacity: 0.5;
+}
+
+/* Speed test section */
+.speed-test-section {
+	margin-bottom: 16px;
+}
+
+.section-header {
+	font-size: 0.9em;
+	font-weight: 600;
+	color: rgba(255, 255, 255, 0.7);
+	margin-bottom: 8px;
+	text-transform: uppercase;
+	letter-spacing: 0.05em;
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+}
+
+.speed-results {
+	display: flex;
+	gap: 16px;
+	padding: 12px;
+	background-color: rgba(255, 255, 255, 0.05);
+	border-radius: 8px;
+}
+
+.speed-item {
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+	flex: 1;
+	gap: 4px;
+}
+
+.speed-item i {
+	font-size: 1.2em;
+	opacity: 0.7;
+}
+
+.speed-item.download i {
+	color: #64b4ff;
+}
+
+.speed-item.upload i {
+	color: #ffd700;
+}
+
+.speed-item.ping i {
+	color: #00c896;
+}
+
+.speed-value {
+	font-size: 1.1em;
+	font-weight: 600;
+}
+
+.speed-label {
+	font-size: 0.75em;
+	opacity: 0.6;
+	text-transform: uppercase;
+}
+
+/* Device sections */
+.device-section {
+	margin-bottom: 16px;
+}
+
+.device-section.unknown .section-header {
+	color: #ffd700;
+}
+
+.device-count {
+	background-color: rgba(255, 255, 255, 0.15);
+	padding: 2px 8px;
+	border-radius: 12px;
+	font-size: 0.8em;
+}
+
+.device-list {
+	display: flex;
+	flex-direction: column;
+	gap: 6px;
+}
+
+/* Device item */
+.device-item {
+	display: flex;
+	align-items: center;
+	gap: 10px;
+	padding: 8px 12px;
+	background-color: rgba(255, 255, 255, 0.05);
+	border-radius: 8px;
+	transition: background-color 0.2s;
+}
+
+.device-item:hover {
+	background-color: rgba(255, 255, 255, 0.1);
+}
+
+.device-item.offline {
+	opacity: 0.5;
+}
+
+.device-icon {
+	width: 32px;
+	height: 32px;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	background-color: rgba(100, 180, 255, 0.15);
+	border-radius: 8px;
+	color: #64b4ff;
+	font-size: 14px;
+}
+
+.device-section.unknown .device-icon {
+	background-color: rgba(255, 215, 0, 0.15);
+	color: #ffd700;
+}
+
+.device-info {
+	flex: 1;
+	min-width: 0;
+}
+
+.device-name {
+	font-weight: 500;
+	white-space: nowrap;
+	overflow: hidden;
+	text-overflow: ellipsis;
+}
+
+.device-details {
+	white-space: nowrap;
+	overflow: hidden;
+	text-overflow: ellipsis;
+}
+
+.device-owner {
+	color: #64b4ff;
+}
+
+.device-status {
+	width: 8px;
+	height: 8px;
+	border-radius: 50%;
+}
+
+.device-status.online {
+	background-color: #00c896;
+	box-shadow: 0 0 8px rgba(0, 200, 150, 0.5);
+}
+
+.device-status.offline {
+	background-color: #666;
+}
+
+.more-devices {
+	text-align: center;
+	padding: 8px;
+	opacity: 0.5;
+	font-size: 0.9em;
+}
+
+/* Compact mode */
+.network-module.compact .speed-results {
+	padding: 8px;
+	gap: 12px;
+}
+
+.network-module.compact .device-item {
+	padding: 6px 10px;
+}
+
+.network-module.compact .device-icon {
+	width: 26px;
+	height: 26px;
+	font-size: 12px;
+}
