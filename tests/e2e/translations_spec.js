@@ -16,7 +16,10 @@ describe("translations", () => {
 			res.header("Access-Control-Allow-Origin", "*");
 			next();
 		});
-		app.use("/translations", express.static(path.join(__dirname, "..", "..", "translations")));
+		app.use(
+			"/translations",
+			express.static(path.join(__dirname, "..", "..", "translations"))
+		);
 
 		server = app.listen(3000);
 	});
@@ -46,8 +49,14 @@ describe("translations", () => {
 			dom.window.config = { language: "de" };
 
 			// Load class.js and module.js content directly
-			const classJs = fs.readFileSync(path.join(__dirname, "..", "..", "js", "class.js"), "utf-8");
-			const moduleJs = fs.readFileSync(path.join(__dirname, "..", "..", "js", "module.js"), "utf-8");
+			const classJs = fs.readFileSync(
+				path.join(__dirname, "..", "..", "js", "class.js"),
+				"utf-8"
+			);
+			const moduleJs = fs.readFileSync(
+				path.join(__dirname, "..", "..", "js", "module.js"),
+				"utf-8"
+			);
 
 			// Execute the scripts in the JSDOM context
 			dom.window.eval(classJs);
@@ -69,7 +78,9 @@ describe("translations", () => {
 			await MMM.loadTranslations();
 
 			expect(Translator.load.args).toHaveLength(1);
-			expect(Translator.load.calledWith(MMM, "translations/en.json", false)).toBe(true);
+			expect(
+				Translator.load.calledWith(MMM, "translations/en.json", false)
+			).toBe(true);
 		});
 
 		it("should load translation + fallback file", async () => {
@@ -86,8 +97,12 @@ describe("translations", () => {
 			await MMM.loadTranslations();
 
 			expect(Translator.load.args).toHaveLength(2);
-			expect(Translator.load.calledWith(MMM, "translations/de.json", false)).toBe(true);
-			expect(Translator.load.calledWith(MMM, "translations/en.json", true)).toBe(true);
+			expect(
+				Translator.load.calledWith(MMM, "translations/de.json", false)
+			).toBe(true);
+			expect(
+				Translator.load.calledWith(MMM, "translations/en.json", true)
+			).toBe(true);
 		});
 
 		it("should load translation fallback file", async () => {
@@ -105,7 +120,9 @@ describe("translations", () => {
 			await MMM.loadTranslations();
 
 			expect(Translator.load.args).toHaveLength(1);
-			expect(Translator.load.calledWith(MMM, "translations/en.json", true)).toBe(true);
+			expect(
+				Translator.load.calledWith(MMM, "translations/en.json", true)
+			).toBe(true);
 		});
 
 		it("should load no file", async () => {
@@ -132,12 +149,18 @@ describe("translations", () => {
 		}
 	};
 
-	const translatorJs = fs.readFileSync(path.join(__dirname, "..", "..", "js", "translator.js"), "utf-8");
+	const translatorJs = fs.readFileSync(
+		path.join(__dirname, "..", "..", "js", "translator.js"),
+		"utf-8"
+	);
 
 	describe("parsing language files through the Translator class", () => {
 		for (const language in translations) {
 			it(`should parse ${language}`, async () => {
-				const dom = new JSDOM("", { runScripts: "dangerously", resources: "usable" });
+				const dom = new JSDOM("", {
+					runScripts: "dangerously",
+					resources: "usable"
+				});
 				dom.window.Log = { log: jest.fn() };
 				dom.window.translations = translations;
 				dom.window.eval(translatorJs);
@@ -150,7 +173,9 @@ describe("translations", () => {
 				await Translator.load(mmm, translations[language], false);
 
 				expect(typeof Translator.translations[mmm.name]).toBe("object");
-				expect(Object.keys(Translator.translations[mmm.name]).length).toBeGreaterThanOrEqual(1);
+				expect(
+					Object.keys(Translator.translations[mmm.name]).length
+				).toBeGreaterThanOrEqual(1);
 			});
 		}
 	});
@@ -178,7 +203,10 @@ describe("translations", () => {
 
 		// Function to initialize JSDOM and load translations
 		const initializeTranslationDOM = (language) => {
-			const dom = new JSDOM("", { runScripts: "dangerously", resources: "usable" });
+			const dom = new JSDOM("", {
+				runScripts: "dangerously",
+				resources: "usable"
+			});
 			dom.window.Log = { log: jest.fn() };
 			dom.window.translations = translations;
 			dom.window.eval(translatorJs);
@@ -212,22 +240,36 @@ describe("translations", () => {
 
 				it(`${language} should not contain keys that are not in base language`, () => {
 					keys.forEach((key) => {
-						expect(base).toContain(key, `Translation key '${key}' in language '${language}' is not present in base language`);
+						expect(base).toContain(
+							key,
+							`Translation key '${key}' in language '${language}' is not present in base language`
+						);
 					});
 				});
 
 				it(`${language} should contain all base keys (excluding defined exceptions)`, () => {
-					let filteredBase = base.filter((key) => !COMMON_EXCEPTIONS.includes(key));
-					let filteredKeys = keys.filter((key) => !COMMON_EXCEPTIONS.includes(key));
+					let filteredBase = base.filter(
+						(key) => !COMMON_EXCEPTIONS.includes(key)
+					);
+					let filteredKeys = keys.filter(
+						(key) => !COMMON_EXCEPTIONS.includes(key)
+					);
 
 					if (LANGUAGE_EXCEPTIONS[language]) {
 						const exceptions = LANGUAGE_EXCEPTIONS[language];
-						filteredBase = filteredBase.filter((key) => !exceptions.includes(key));
-						filteredKeys = filteredKeys.filter((key) => !exceptions.includes(key));
+						filteredBase = filteredBase.filter(
+							(key) => !exceptions.includes(key)
+						);
+						filteredKeys = filteredKeys.filter(
+							(key) => !exceptions.includes(key)
+						);
 					}
 
 					filteredBase.forEach((baseKey) => {
-						expect(filteredKeys).toContain(baseKey, `Translation key '${baseKey}' is missing in language '${language}'`);
+						expect(filteredKeys).toContain(
+							baseKey,
+							`Translation key '${baseKey}' is missing in language '${language}'`
+						);
 					});
 				});
 			});

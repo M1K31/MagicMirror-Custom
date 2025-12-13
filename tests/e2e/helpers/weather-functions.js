@@ -14,6 +14,8 @@ exports.getText = async (element, result) => {
 };
 
 exports.startApp = async (configFileName, additionalMockData) => {
-	await helpers.startApplication(injectMockData(configFileName, additionalMockData));
+	await helpers.startApplication(
+		injectMockData(configFileName, additionalMockData)
+	);
 	await helpers.getDocument();
 };

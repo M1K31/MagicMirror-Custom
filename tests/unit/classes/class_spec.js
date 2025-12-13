@@ -22,7 +22,11 @@ describe("File js/class", () => {
 		});
 
 		it("should clone object", () => {
-			const expected = { name: "Rodrigo", web: "https://rodrigoramirez.com", project: "MagicMirror" };
+			const expected = {
+				name: "Rodrigo",
+				web: "https://rodrigoramirez.com",
+				project: "MagicMirror"
+			};
 			const obj = clone(expected);
 			expect(obj).toEqual(expected);
 			expect(expected === obj).toBe(false);
@@ -88,8 +92,12 @@ describe("File js/class", () => {
 			expect(expected.versions === obj.versions).toBe(false);
 			expect(expected.properties === obj.properties).toBe(false);
 			expect(expected.properties.items === obj.properties.items).toBe(false);
-			expect(expected.properties.items[0] === obj.properties.items[0]).toBe(false);
-			expect(expected.properties.items[1] === obj.properties.items[1]).toBe(false);
+			expect(expected.properties.items[0] === obj.properties.items[0]).toBe(
+				false
+			);
+			expect(expected.properties.items[1] === obj.properties.items[1]).toBe(
+				false
+			);
 		});
 
 		describe("Test lockstring code", () => {

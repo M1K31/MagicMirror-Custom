@@ -9,8 +9,14 @@ class CustomSequencer extends TestSequencer {
 			const reg = ".*/tests/([^/]*).*";
 
 			// move calendar and newsfeed at the end
-			if (testA.path.includes("e2e/modules/calendar_spec") || testA.path.includes("e2e/modules/newsfeed_spec")) return 1;
-			if (testB.path.includes("e2e/modules/calendar_spec") || testB.path.includes("e2e/modules/newsfeed_spec")) return -1;
+			if (
+				testA.path.includes("e2e/modules/calendar_spec")
+				|| testA.path.includes("e2e/modules/newsfeed_spec")
+			) return 1;
+			if (
+				testB.path.includes("e2e/modules/calendar_spec")
+				|| testB.path.includes("e2e/modules/newsfeed_spec")
+			) return -1;
 
 			let matchA = new RegExp(reg, "g").exec(testA.path);
 			if (matchA.length > 0) indexA = orderPath.indexOf(matchA[1]);

@@ -24,7 +24,11 @@ const readMockData = (type, extendedData = {}) => {
 			break;
 	}
 
-	const fileData = JSON.parse(fs.readFileSync(path.resolve(`${__dirname}/../mocks/${fileName}`)).toString());
+	const fileData = JSON.parse(
+		fs
+			.readFileSync(path.resolve(`${__dirname}/../mocks/${fileName}`))
+			.toString()
+	);
 	const mergedData = JSON.stringify({ ...{}, ...fileData, ...extendedData });
 	return mergedData;
 };

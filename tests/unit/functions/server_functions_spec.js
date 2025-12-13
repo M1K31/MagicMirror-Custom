@@ -120,8 +120,14 @@ describe("server_functions tests", () => {
 
 			expect(fetchMock.mock.calls).toHaveLength(1);
 			expect(fetchMock.mock.calls[0][1]).toHaveProperty("headers");
-			expect(fetchMock.mock.calls[0][1].headers).toHaveProperty("header1", "value1");
-			expect(fetchMock.mock.calls[0][1].headers).toHaveProperty("header2", "value2");
+			expect(fetchMock.mock.calls[0][1].headers).toHaveProperty(
+				"header1",
+				"value1"
+			);
+			expect(fetchMock.mock.calls[0][1].headers).toHaveProperty(
+				"header2",
+				"value2"
+			);
 		});
 
 		it("Sends specified headers", async () => {

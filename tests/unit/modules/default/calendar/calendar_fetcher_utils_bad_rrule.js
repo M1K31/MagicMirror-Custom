@@ -16,9 +16,24 @@ describe("Calendar fetcher utils test", () => {
 
 			const filteredEvents = CalendarFetcherUtils.filterEvents(
 				{
-					pastEvent: { type: "VEVENT", start: minusTwoHours, end: minusOneHour, summary: "pastEvent" },
-					ongoingEvent: { type: "VEVENT", start: minusOneHour, end: plusOneHour, summary: "ongoingEvent" },
-					upcomingEvent: { type: "VEVENT", start: plusOneHour, end: plusTwoHours, summary: "upcomingEvent" }
+					pastEvent: {
+						type: "VEVENT",
+						start: minusTwoHours,
+						end: minusOneHour,
+						summary: "pastEvent"
+					},
+					ongoingEvent: {
+						type: "VEVENT",
+						start: minusOneHour,
+						end: plusOneHour,
+						summary: "ongoingEvent"
+					},
+					upcomingEvent: {
+						type: "VEVENT",
+						start: plusOneHour,
+						end: plusTwoHours,
+						summary: "upcomingEvent"
+					}
 				},
 				defaultConfig
 			);

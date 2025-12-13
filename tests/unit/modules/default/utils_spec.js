@@ -1,5 +1,8 @@
 global.moment = require("moment-timezone");
-const { performWebRequest, formatTime } = require("../../../../modules/default/utils");
+const {
+	performWebRequest,
+	formatTime
+} = require("../../../../modules/default/utils");
 
 describe("Default modules utils tests", () => {
 	describe("performWebRequest", () => {
@@ -30,7 +33,9 @@ describe("Default modules utils tests", () => {
 				await performWebRequest(urlToCall, "json", true);
 
 				expect(fetchMock.mock.calls).toHaveLength(1);
-				expect(fetchMock.mock.calls[0][0]).toBe(`${locationProtocol}//${locationHost}/cors?url=${urlToCall}`);
+				expect(fetchMock.mock.calls[0][0]).toBe(
+					`${locationProtocol}//${locationHost}/cors?url=${urlToCall}`
+				);
 			});
 
 			it("Sends correct headers", async () => {
@@ -44,7 +49,9 @@ describe("Default modules utils tests", () => {
 				await performWebRequest(urlToCall, "json", true, headers);
 
 				expect(fetchMock.mock.calls).toHaveLength(1);
-				expect(fetchMock.mock.calls[0][0]).toBe(`${locationProtocol}//${locationHost}/cors?sendheaders=header1:value1,header2:value2&url=${urlToCall}`);
+				expect(fetchMock.mock.calls[0][0]).toBe(
+					`${locationProtocol}//${locationHost}/cors?sendheaders=header1:value1,header2:value2&url=${urlToCall}`
+				);
 			});
 		});
 
@@ -67,7 +74,9 @@ describe("Default modules utils tests", () => {
 
 				await performWebRequest(urlToCall, "json", false, headers);
 
-				const expectedHeaders = { headers: { header1: "value1", header2: "value2" } };
+				const expectedHeaders = {
+					headers: { header1: "value1", header2: "value2" }
+				};
 				expect(fetchMock.mock.calls).toHaveLength(1);
 				expect(fetchMock.mock.calls[0][1]).toStrictEqual(expectedHeaders);
 			});
@@ -93,9 +102,17 @@ describe("Default modules utils tests", () => {
 
 			it("Returns expected headers when data is received", async () => {
 				urlToCall = "www.test.com";
-				fetchResponse = new Response("{\"body\": \"some content\"}", { headers: { header1: "value1", header2: "value2" } });
+				fetchResponse = new Response("{\"body\": \"some content\"}", {
+					headers: { header1: "value1", header2: "value2" }
+				});
 
-				const response = await performWebRequest(urlToCall, "json", false, undefined, ["header1"]);
+				const response = await performWebRequest(
+					urlToCall,
+					"json",
+					false,
+					undefined,
+					["header1"]
+				);
 
 				expect(response.headers).toHaveLength(1);
 				expect(response.headers[0].name).toBe("header1");

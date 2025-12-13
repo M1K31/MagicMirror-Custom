@@ -27,7 +27,9 @@ describe("Weather utils tests", () => {
 		});
 
 		it("should convert windspeed correctly from mph to mps", () => {
-			expect(Math.round(WeatherUtils.convertWindToMetric(93.951324266285))).toBe(42);
+			expect(
+				Math.round(WeatherUtils.convertWindToMetric(93.951324266285))
+			).toBe(42);
 		});
 
 		it("should convert windspeed correctly from kmh to mps", () => {
@@ -44,7 +46,9 @@ describe("Weather utils tests", () => {
 
 	describe("feelsLike calculation", () => {
 		it("should return a calculated feelsLike info (negative value)", () => {
-			expect(WeatherUtils.calculateFeelsLike(0, 20, 40)).toBe(-9.444444444444445);
+			expect(WeatherUtils.calculateFeelsLike(0, 20, 40)).toBe(
+				-9.444444444444445
+			);
 		});
 
 		it("should return a calculated feelsLike info (positive value)", () => {
@@ -58,7 +62,11 @@ describe("Weather utils tests", () => {
 			const units = ["mm", "cm"];
 
 			for (let i = 0; i < values.length; i++) {
-				const result = weather.convertPrecipitationUnit(values[i], units[i], undefined);
+				const result = weather.convertPrecipitationUnit(
+					values[i],
+					units[i],
+					undefined
+				);
 				expect(result).toBe(`${values[i].toFixed(2)} ${units[i]}`);
 			}
 		});
@@ -68,7 +76,11 @@ describe("Weather utils tests", () => {
 			const units = ["mm", "cm"];
 
 			for (let i = 0; i < values.length; i++) {
-				const result = weather.convertPrecipitationUnit(values[i], units[i], "metric");
+				const result = weather.convertPrecipitationUnit(
+					values[i],
+					units[i],
+					"metric"
+				);
 				expect(result).toBe(`${values[i].toFixed(2)} ${units[i]}`);
 			}
 		});
@@ -77,7 +89,11 @@ describe("Weather utils tests", () => {
 			const values = [1, 2];
 
 			for (let i = 0; i < values.length; i++) {
-				const result = weather.convertPrecipitationUnit(values[i], undefined, "metric");
+				const result = weather.convertPrecipitationUnit(
+					values[i],
+					undefined,
+					"metric"
+				);
 				expect(result).toBe(`${values[i].toFixed(2)} mm`);
 			}
 		});
@@ -88,7 +104,11 @@ describe("Weather utils tests", () => {
 			const expectedValues = [0.04, 0.79];
 
 			for (let i = 0; i < values.length; i++) {
-				const result = weather.convertPrecipitationUnit(values[i], units[i], "imperial");
+				const result = weather.convertPrecipitationUnit(
+					values[i],
+					units[i],
+					"imperial"
+				);
 				expect(result).toBe(`${expectedValues[i]} in`);
 			}
 		});
@@ -99,7 +119,9 @@ describe("Weather utils tests", () => {
 			const result = ["0 %", "2 %", "10 %"];
 
 			for (let i = 0; i < values.length; i++) {
-				expect(weather.convertPrecipitationUnit(values[i], "%", output[i])).toBe(result[i]);
+				expect(
+					weather.convertPrecipitationUnit(values[i], "%", output[i])
+				).toBe(result[i]);
 			}
 		});
 	});

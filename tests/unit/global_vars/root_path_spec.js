@@ -5,7 +5,15 @@ const root_path = path.join(__dirname, "../../..");
 const version = require(`${__dirname}/../../../package.json`).version;
 
 describe("'global.root_path' set in js/app.js", () => {
-	const expectedSubPaths = ["modules", "serveronly", "js", "js/app.js", "js/main.js", "js/electron.js", "config"];
+	const expectedSubPaths = [
+		"modules",
+		"serveronly",
+		"js",
+		"js/app.js",
+		"js/main.js",
+		"js/electron.js",
+		"config"
+	];
 
 	expectedSubPaths.forEach((subpath) => {
 		it(`contains a file/folder "${subpath}"`, () => {
@@ -22,7 +30,9 @@ describe("'global.root_path' set in js/app.js", () => {
 	});
 
 	it("should expect the global.version equals package.json file", () => {
-		const versionPackage = JSON.parse(fs.readFileSync("package.json", "utf8")).version;
+		const versionPackage = JSON.parse(
+			fs.readFileSync("package.json", "utf8")
+		).version;
 		expect(version).toBe(versionPackage);
 	});
 });

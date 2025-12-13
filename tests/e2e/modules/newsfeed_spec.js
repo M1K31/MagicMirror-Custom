@@ -4,7 +4,9 @@ const helpers = require("../helpers/global-setup");
 const runTests = async () => {
 	describe("Default configuration", () => {
 		beforeAll(async () => {
-			await helpers.startApplication("tests/configs/modules/newsfeed/default.js");
+			await helpers.startApplication(
+				"tests/configs/modules/newsfeed/default.js"
+			);
 			await helpers.getDocument();
 		});
 
@@ -29,7 +31,9 @@ const runTests = async () => {
 
 	describe("Custom configuration", () => {
 		beforeAll(async () => {
-			await helpers.startApplication("tests/configs/modules/newsfeed/prohibited_words.js");
+			await helpers.startApplication(
+				"tests/configs/modules/newsfeed/prohibited_words.js"
+			);
 			await helpers.getDocument();
 		});
 
@@ -48,20 +52,29 @@ const runTests = async () => {
 
 	describe("Invalid configuration", () => {
 		beforeAll(async () => {
-			await helpers.startApplication("tests/configs/modules/newsfeed/incorrect_url.js");
+			await helpers.startApplication(
+				"tests/configs/modules/newsfeed/incorrect_url.js"
+			);
 			await helpers.getDocument();
 		});
 
 		it("should show malformed url warning", async () => {
-			const elem = await helpers.waitForElement(".newsfeed .small", "No news at the moment.");
+			const elem = await helpers.waitForElement(
+				".newsfeed .small",
+				"No news at the moment."
+			);
 			expect(elem).not.toBeNull();
-			expect(elem.textContent).toContain("Error in the Newsfeed module. Malformed url.");
+			expect(elem.textContent).toContain(
+				"Error in the Newsfeed module. Malformed url."
+			);
 		});
 	});
 
 	describe("Ignore items", () => {
 		beforeAll(async () => {
-			await helpers.startApplication("tests/configs/modules/newsfeed/ignore_items.js");
+			await helpers.startApplication(
+				"tests/configs/modules/newsfeed/ignore_items.js"
+			);
 			await helpers.getDocument();
 		});
 
@@ -84,7 +97,11 @@ describe("Newsfeed module", () => {
 describe("Newsfeed module located in config directory", () => {
 	beforeAll(() => {
 		const baseDir = `${__dirname}/../../..`;
-		fs.cpSync(`${baseDir}/modules/default/newsfeed`, `${baseDir}/config/newsfeed`, { recursive: true });
+		fs.cpSync(
+			`${baseDir}/modules/default/newsfeed`,
+			`${baseDir}/config/newsfeed`,
+			{ recursive: true }
+		);
 		process.env.MM_MODULES_DIR = "config";
 	});
 

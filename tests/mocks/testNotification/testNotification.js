@@ -55,5 +55,4 @@ Module.register("testNotification", {
 		}
 		return wrapper;
 	}
-
 });

@@ -22,9 +22,24 @@ describe("Calendar fetcher utils test", () => {
 
 			const filteredEvents = CalendarFetcherUtils.filterEvents(
 				{
-					pastEvent: { type: "VEVENT", start: minusTwoHours, end: minusOneHour, summary: "pastEvent" },
-					ongoingEvent: { type: "VEVENT", start: minusOneHour, end: plusOneHour, summary: "ongoingEvent" },
-					upcomingEvent: { type: "VEVENT", start: plusOneHour, end: plusTwoHours, summary: "upcomingEvent" }
+					pastEvent: {
+						type: "VEVENT",
+						start: minusTwoHours,
+						end: minusOneHour,
+						summary: "pastEvent"
+					},
+					ongoingEvent: {
+						type: "VEVENT",
+						start: minusOneHour,
+						end: plusOneHour,
+						summary: "ongoingEvent"
+					},
+					upcomingEvent: {
+						type: "VEVENT",
+						start: plusOneHour,
+						end: plusTwoHours,
+						summary: "upcomingEvent"
+					}
 				},
 				defaultConfig
 			);
@@ -41,9 +56,24 @@ describe("Calendar fetcher utils test", () => {
 
 			const filteredEvents = CalendarFetcherUtils.filterEvents(
 				{
-					pastEvent: { type: "VEVENT", start: yesterday, end: yesterday, summary: "pastEvent" },
-					ongoingEvent: { type: "VEVENT", start: today, end: today, summary: "ongoingEvent" },
-					upcomingEvent: { type: "VEVENT", start: tomorrow, end: tomorrow, summary: "upcomingEvent" }
+					pastEvent: {
+						type: "VEVENT",
+						start: yesterday,
+						end: yesterday,
+						summary: "pastEvent"
+					},
+					ongoingEvent: {
+						type: "VEVENT",
+						start: today,
+						end: today,
+						summary: "ongoingEvent"
+					},
+					upcomingEvent: {
+						type: "VEVENT",
+						start: tomorrow,
+						end: tomorrow,
+						summary: "upcomingEvent"
+					}
 				},
 				defaultConfig
 			);
@@ -70,16 +100,27 @@ SUMMARY:Test
 TRANSP:OPAQUE
 END:VEVENT`);
 
-			const filteredEvents = CalendarFetcherUtils.filterEvents(data, defaultConfig);
+			const filteredEvents = CalendarFetcherUtils.filterEvents(
+				data,
+				defaultConfig
+			);
 
-			const januaryFirst = filteredEvents.filter((event) => moment(event.startDate, "x").format("MM-DD") === "01-01");
-			const julyFirst = filteredEvents.filter((event) => moment(event.startDate, "x").format("MM-DD") === "07-01");
+			const januaryFirst = filteredEvents.filter(
+				(event) => moment(event.startDate, "x").format("MM-DD") === "01-01"
+			);
+			const julyFirst = filteredEvents.filter(
+				(event) => moment(event.startDate, "x").format("MM-DD") === "07-01"
+			);
 
-			let januaryMoment = moment(`${moment(januaryFirst[0].startDate, "x").format("YYYY")}-01-01T09:00:00`)
+			let januaryMoment = moment(
+				`${moment(januaryFirst[0].startDate, "x").format("YYYY")}-01-01T09:00:00`
+			)
 				.tz("Europe/Amsterdam", true) // Convert to Europe/Amsterdam timezone (see event ical) but keep 9 o'clock
 				.tz(moment.tz.guess()); // Convert to guessed timezone as that is used in the filterEvents
 
-			let julyMoment = moment(`${moment(julyFirst[0].startDate, "x").format("YYYY")}-07-01T09:00:00`)
+			let julyMoment = moment(
+				`${moment(julyFirst[0].startDate, "x").format("YYYY")}-07-01T09:00:00`
+			)
 				.tz("Europe/Amsterdam", true) // Convert to Europe/Amsterdam timezone (see event ical) but keep 9 o'clock
 				.tz(moment.tz.guess()); // Convert to guessed timezone as that is used in the filterEvents
 
@@ -104,7 +145,11 @@ SUMMARY:Test
 TRANSP:OPAQUE
 END:VEVENT`);
 
-			const moments = CalendarFetcherUtils.getMomentsFromRecurringEvent(data["67e65a1d-b889-4451-8cab-5518cecb9c66"], moment(), moment().add(365, "days"));
+			const moments = CalendarFetcherUtils.getMomentsFromRecurringEvent(
+				data["67e65a1d-b889-4451-8cab-5518cecb9c66"],
+				moment(),
+				moment().add(365, "days")
+			);
 
 			const januaryFirst = moments.filter((m) => m.format("MM-DD") === "01-01");
 			const julyFirst = moments.filter((m) => m.format("MM-DD") === "07-01");

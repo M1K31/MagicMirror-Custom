@@ -12,7 +12,9 @@ describe("Electron app environment", () => {
 
 	it("should open browserwindow", async () => {
 		const module = await helpers.getElement("#module_0_helloworld");
-		await expect(module.textContent()).resolves.toContain("Test Display Header");
+		await expect(module.textContent()).resolves.toContain(
+			"Test Display Header"
+		);
 		expect(global.electronApp.windows()).toHaveLength(1);
 	});
 });

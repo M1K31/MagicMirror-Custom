@@ -52,7 +52,10 @@ exports.stopApplication = async (waitTime = 1000) => {
 exports.getDocument = () => {
 	return new Promise((resolve) => {
 		const url = `http://${config.address || "localhost"}:${config.port || "8080"}`;
-		jsdom.JSDOM.fromURL(url, { resources: "usable", runScripts: "dangerously" }).then((dom) => {
+		jsdom.JSDOM.fromURL(url, {
+			resources: "usable",
+			runScripts: "dangerously"
+		}).then((dom) => {
 			dom.window.name = "jsdom";
 			global.window = dom.window;
 			// Following fixes `navigator is not defined` errors in e2e tests, found here
@@ -132,12 +135,18 @@ exports.fixupIndex = async () => {
 	for (let l in workIndexLines) {
 		if (workIndexLines[l].includes("region top right")) {
 			// insert a new line with new region definition
-			workIndexLines.splice(l, 0, "      <div class=\"region row3 left\"><div class=\"container\"></div></div>");
+			workIndexLines.splice(
+				l,
+				0,
+				"      <div class=\"region row3 left\"><div class=\"container\"></div></div>"
+			);
 			break;
 		}
 	}
 	// write out the new index.html file, not append
-	await fs.promises.writeFile(indexFile, workIndexLines.join(os.EOL), { flush: true });
+	await fs.promises.writeFile(indexFile, workIndexLines.join(os.EOL), {
+		flush: true
+	});
 	// read in the current custom.css
 	cssData = (await fs.promises.readFile(cssFile)).toString();
 	// write out the custom.css for this testcase, matching the new region name
