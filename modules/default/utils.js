@@ -8,11 +8,23 @@
  * @param {string} basePath The base path, default is "/"
  * @returns {Promise} resolved when the fetch is done. The response headers is placed in a headers-property (provided the response does not already contain a headers-property).
  */
-async function performWebRequest (url, type = "json", useCorsProxy = false, requestHeaders = undefined, expectedResponseHeaders = undefined, basePath = "/") {
+async function performWebRequest (
+	url,
+	type = "json",
+	useCorsProxy = false,
+	requestHeaders = undefined,
+	expectedResponseHeaders = undefined,
+	basePath = "/"
+) {
 	const request = {};
 	let requestUrl;
 	if (useCorsProxy) {
-		requestUrl = getCorsUrl(url, requestHeaders, expectedResponseHeaders, basePath);
+		requestUrl = getCorsUrl(
+			url,
+			requestHeaders,
+			expectedResponseHeaders,
+			basePath
+		);
 	} else {
 		requestUrl = url;
 		request.headers = getHeadersToSend(requestHeaders);
@@ -27,7 +39,10 @@ async function performWebRequest (url, type = "json", useCorsProxy = false, requ
 
 		const dataResponse = JSON.parse(data);
 		if (!dataResponse.headers) {
-			dataResponse.headers = getHeadersFromResponse(expectedResponseHeaders, response);
+			dataResponse.headers = getHeadersFromResponse(
+				expectedResponseHeaders,
+				response
+			);
 		}
 		return dataResponse;
 	}
@@ -41,7 +56,12 @@ async function performWebRequest (url, type = "json", useCorsProxy = false, requ
  * @param {string} basePath The base path, default is "/"
  * @returns {string} to be used as URL when calling CORS-method on server.
  */
-const getCorsUrl = function (url, requestHeaders, expectedResponseHeaders, basePath = "/") {
+const getCorsUrl = function (
+	url,
+	requestHeaders,
+	expectedResponseHeaders,
+	basePath = "/"
+) {
 	if (!url || url.length < 1) {
 		throw new Error(`Invalid URL: ${url}`);
 	} else {
@@ -50,7 +70,9 @@ const getCorsUrl = function (url, requestHeaders, expectedResponseHeaders, baseP
 		const requestHeaderString = getRequestHeaderString(requestHeaders);
 		if (requestHeaderString) corsUrl = `${corsUrl}sendheaders=${requestHeaderString}`;
 
-		const expectedResponseHeadersString = getExpectedResponseHeadersString(expectedResponseHeaders);
+		const expectedResponseHeadersString = getExpectedResponseHeadersString(
+			expectedResponseHeaders
+		);
 		if (requestHeaderString && expectedResponseHeadersString) {
 			corsUrl = `${corsUrl}&expectedheaders=${expectedResponseHeadersString}`;
 		} else if (expectedResponseHeadersString) {
