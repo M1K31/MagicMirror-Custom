@@ -1,0 +1,351 @@
+/**
+ * Transit Module Styles
+ *
+ * Follows Apple HIG principles adapted for mirror display:
+ * - High contrast for readability
+ * - Color-coded routes
+ * - Clear time display
+ * - Service alert prominence
+ */
+
+/* Module container */
+.transit-module {
+	min-width: 250px;
+}
+
+.transit-module.compact {
+	min-width: 180px;
+}
+
+/* Error state */
+.transit-error {
+	color: #ff8e99;
+	padding: 10px;
+}
+
+.transit-error i {
+	margin-right: 8px;
+}
+
+/* Alerts section */
+.transit-alerts {
+	margin-bottom: 15px;
+}
+
+.transit-alert {
+	display: flex;
+	align-items: center;
+	gap: 8px;
+	padding: 8px 12px;
+	margin-bottom: 5px;
+	background: rgba(255, 200, 100, 0.1);
+	border-radius: 6px;
+	border-left: 3px solid #ffd699;
+	font-size: var(--font-size-xsmall);
+}
+
+.transit-alert i {
+	color: #ffd699;
+	flex-shrink: 0;
+}
+
+.transit-alert .alert-title {
+	color: var(--color-text);
+	white-space: nowrap;
+	overflow: hidden;
+	text-overflow: ellipsis;
+}
+
+.transit-alert.severe {
+	background: rgba(255, 100, 100, 0.1);
+	border-left-color: #ff8e99;
+}
+
+.transit-alert.severe i {
+	color: #ff8e99;
+}
+
+/* Arrivals section */
+.transit-arrivals {
+	display: flex;
+	flex-direction: column;
+	gap: 15px;
+}
+
+/* Stop container */
+.transit-stop {
+	background: rgba(255, 255, 255, 0.03);
+	border-radius: 8px;
+	padding: 10px 12px;
+}
+
+.stop-header {
+	display: flex;
+	justify-content: space-between;
+	align-items: center;
+	margin-bottom: 8px;
+	padding-bottom: 6px;
+	border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.stop-name {
+	color: var(--color-text-bright);
+	font-size: var(--font-size-small);
+	font-weight: 400;
+}
+
+.stop-walk {
+	display: flex;
+	align-items: center;
+	gap: 4px;
+}
+
+.stop-walk i {
+	font-size: 10px;
+}
+
+/* Arrivals list */
+.arrivals-list {
+	display: flex;
+	flex-direction: column;
+	gap: 6px;
+}
+
+/* Individual arrival */
+.arrival-item {
+	display: flex;
+	align-items: center;
+	gap: 10px;
+	padding: 4px 0;
+}
+
+.arrival-item.scheduled {
+	opacity: 0.8;
+}
+
+/* Vehicle icon */
+.arrival-icon {
+	flex-shrink: 0;
+	width: 20px;
+	text-align: center;
+	color: var(--color-text-dimmed);
+	font-size: 14px;
+}
+
+/* Route badge */
+.arrival-route {
+	flex-shrink: 0;
+	min-width: 28px;
+	padding: 2px 8px;
+	background: rgba(255, 255, 255, 0.2);
+	border-radius: 4px;
+	font-size: var(--font-size-xsmall);
+	font-weight: 600;
+	text-align: center;
+	color: var(--color-text-bright);
+}
+
+/* Destination */
+.arrival-destination {
+	flex: 1;
+	font-size: var(--font-size-xsmall);
+	white-space: nowrap;
+	overflow: hidden;
+	text-overflow: ellipsis;
+}
+
+/* Arrival time */
+.arrival-time {
+	flex-shrink: 0;
+	font-size: var(--font-size-small);
+	font-weight: 400;
+	font-variant-numeric: tabular-nums;
+	min-width: 50px;
+	text-align: right;
+}
+
+.arrival-time.imminent {
+	color: #99ff99;
+	animation: arrival-pulse 1.5s ease-in-out infinite;
+}
+
+@keyframes arrival-pulse {
+	0%,
+	100% {
+		opacity: 1;
+	}
+	50% {
+		opacity: 0.6;
+	}
+}
+
+/* Routes section */
+.transit-routes {
+	margin-top: 15px;
+	padding-top: 15px;
+	border-top: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.transit-route {
+	background: rgba(255, 255, 255, 0.03);
+	border-radius: 8px;
+	padding: 10px 12px;
+	margin-bottom: 10px;
+}
+
+.route-header {
+	margin-bottom: 6px;
+}
+
+.route-name {
+	color: var(--color-text-bright);
+	font-size: var(--font-size-small);
+	font-weight: 400;
+}
+
+.route-details {
+	display: flex;
+	flex-direction: column;
+	gap: 4px;
+}
+
+.route-duration {
+	display: flex;
+	align-items: center;
+	gap: 6px;
+	font-size: var(--font-size-small);
+}
+
+.route-duration i {
+	color: var(--color-text-dimmed);
+	font-size: 12px;
+}
+
+.route-summary {
+	white-space: nowrap;
+	overflow: hidden;
+	text-overflow: ellipsis;
+}
+
+/* Share links */
+.route-share {
+	display: flex;
+	gap: 10px;
+	margin-top: 10px;
+	padding-top: 8px;
+	border-top: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.route-share a {
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	width: 32px;
+	height: 32px;
+	background: rgba(255, 255, 255, 0.1);
+	border-radius: 50%;
+	color: var(--color-text);
+	text-decoration: none;
+	transition: all 0.2s ease;
+}
+
+.route-share a:hover {
+	background: rgba(255, 255, 255, 0.2);
+	color: var(--color-text-bright);
+}
+
+/* Compact mode */
+.transit-module.compact .transit-stop {
+	padding: 6px 8px;
+}
+
+.transit-module.compact .stop-name {
+	font-size: var(--font-size-xsmall);
+}
+
+.transit-module.compact .arrival-item {
+	gap: 6px;
+}
+
+.transit-module.compact .arrival-icon {
+	display: none;
+}
+
+.transit-module.compact .arrival-route {
+	min-width: 24px;
+	padding: 1px 6px;
+	font-size: 11px;
+}
+
+.transit-module.compact .arrival-time {
+	font-size: var(--font-size-xsmall);
+}
+
+.transit-module.compact .transit-alert {
+	padding: 4px 8px;
+	font-size: 11px;
+}
+
+/* Animation for new data */
+.transit-stop,
+.transit-route {
+	animation: transit-fadein 0.3s ease-out;
+}
+
+@keyframes transit-fadein {
+	from {
+		opacity: 0;
+		transform: translateY(-5px);
+	}
+	to {
+		opacity: 1;
+		transform: translateY(0);
+	}
+}
+
+/* Real-time indicator */
+.arrival-item.realtime::before {
+	content: "";
+	width: 6px;
+	height: 6px;
+	background: #99ff99;
+	border-radius: 50%;
+	margin-right: -4px;
+	flex-shrink: 0;
+}
+
+/* Route type colors (customizable) */
+.arrival-route.bus {
+	background: #0039a6;
+}
+
+.arrival-route.subway {
+	background: #ee352e;
+}
+
+.arrival-route.rail {
+	background: #00933c;
+}
+
+.arrival-route.tram {
+	background: #6cbe45;
+}
+
+.arrival-route.ferry {
+	background: #00aeef;
+}
+
+/* Responsive */
+@media (max-width: 300px) {
+	.transit-module {
+		min-width: 150px;
+	}
+
+	.stop-walk {
+		display: none;
+	}
+
+	.arrival-destination {
+		display: none;
+	}
+}
