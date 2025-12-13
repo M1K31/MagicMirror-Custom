@@ -1,0 +1,406 @@
+/**
+ * Fitness Module Styles
+ * Apple HIG-inspired design with activity rings and clean metrics
+ */
+
+/* Main container */
+.fitness-module {
+	font-family: var(--font-primary, "Roboto Condensed", Arial, Helvetica, sans-serif);
+	color: var(--color-text, #fff);
+	padding: 10px 0;
+	min-width: 280px;
+}
+
+.fitness-module.compact {
+	min-width: 200px;
+}
+
+/* Error state */
+.fitness-error {
+	display: flex;
+	align-items: center;
+	gap: 10px;
+	color: var(--color-text-dimmed, rgba(255, 255, 255, 0.5));
+	font-size: 14px;
+}
+
+.fitness-error .fa-exclamation-triangle {
+	color: #ff9500;
+}
+
+/* Activity Rings (Apple-style) */
+.activity-rings {
+	display: flex;
+	align-items: center;
+	gap: 20px;
+	margin-bottom: 20px;
+}
+
+.rings-svg {
+	width: 120px;
+	height: 120px;
+	transform: rotate(-90deg);
+}
+
+.compact .rings-svg {
+	width: 90px;
+	height: 90px;
+}
+
+.ring-bg {
+	fill: none;
+	stroke: rgba(255, 255, 255, 0.1);
+	stroke-width: 8;
+}
+
+.ring-progress {
+	fill: none;
+	stroke-width: 8;
+	stroke-linecap: round;
+	transition: stroke-dasharray 0.5s ease;
+}
+
+.ring-progress.move {
+	stroke: #fa114f;
+}
+
+.ring-progress.exercise {
+	stroke: #92e82a;
+}
+
+.ring-progress.stand {
+	stroke: #1eeaef;
+}
+
+/* Rings legend */
+.rings-legend {
+	display: flex;
+	flex-direction: column;
+	gap: 8px;
+}
+
+.legend-item {
+	display: flex;
+	align-items: center;
+	gap: 8px;
+	font-size: 13px;
+}
+
+.compact .legend-item {
+	font-size: 11px;
+}
+
+.legend-color {
+	width: 10px;
+	height: 10px;
+	border-radius: 50%;
+}
+
+.legend-item.move .legend-color {
+	background: #fa114f;
+}
+
+.legend-item.exercise .legend-color {
+	background: #92e82a;
+}
+
+.legend-item.stand .legend-color {
+	background: #1eeaef;
+}
+
+.legend-label {
+	color: var(--color-text-dimmed, rgba(255, 255, 255, 0.6));
+	min-width: 55px;
+}
+
+.legend-value {
+	font-weight: 500;
+}
+
+/* Metrics grid */
+.metrics-grid {
+	display: flex;
+	flex-direction: column;
+	gap: 12px;
+}
+
+.metric-item {
+	display: flex;
+	align-items: center;
+	gap: 12px;
+	padding: 8px 0;
+	border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.metric-item:last-child {
+	border-bottom: none;
+}
+
+.metric-icon {
+	width: 36px;
+	height: 36px;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	border-radius: 8px;
+	background: rgba(255, 255, 255, 0.08);
+	font-size: 16px;
+}
+
+.compact .metric-icon {
+	width: 28px;
+	height: 28px;
+	font-size: 13px;
+}
+
+.metric-info {
+	flex: 1;
+}
+
+.metric-value {
+	font-size: 20px;
+	font-weight: 500;
+	line-height: 1.2;
+}
+
+.compact .metric-value {
+	font-size: 16px;
+}
+
+.metric-label {
+	font-size: 12px;
+	color: var(--color-text-dimmed, rgba(255, 255, 255, 0.5));
+	text-transform: uppercase;
+	letter-spacing: 0.5px;
+}
+
+.compact .metric-label {
+	font-size: 10px;
+}
+
+/* Progress bar */
+.metric-progress {
+	display: flex;
+	align-items: center;
+	gap: 8px;
+	min-width: 80px;
+}
+
+.progress-bar {
+	flex: 1;
+	height: 4px;
+	background: rgba(255, 255, 255, 0.15);
+	border-radius: 2px;
+	overflow: hidden;
+}
+
+.progress-fill {
+	height: 100%;
+	background: linear-gradient(90deg, #92e82a, #1eeaef);
+	border-radius: 2px;
+	transition: width 0.5s ease;
+}
+
+.progress-text {
+	font-size: 11px;
+	color: var(--color-text-dimmed, rgba(255, 255, 255, 0.5));
+	min-width: 35px;
+	text-align: right;
+}
+
+/* Heart rate section */
+.heart-rate-section {
+	margin-top: 16px;
+	padding: 12px;
+	background: rgba(255, 255, 255, 0.05);
+	border-radius: 10px;
+	text-align: center;
+}
+
+.heart-rate-current {
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	gap: 8px;
+}
+
+.heart-icon {
+	color: #fa114f;
+	font-size: 20px;
+	animation: heartbeat 1s ease infinite;
+}
+
+@keyframes heartbeat {
+	0%, 100% { transform: scale(1); }
+	50% { transform: scale(1.1); }
+}
+
+.heart-value {
+	font-size: 36px;
+	font-weight: 300;
+}
+
+.heart-unit {
+	font-size: 14px;
+	color: var(--color-text-dimmed, rgba(255, 255, 255, 0.5));
+	align-self: flex-end;
+	margin-bottom: 8px;
+}
+
+.heart-rate-resting {
+	margin-top: 8px;
+	font-size: 12px;
+	color: var(--color-text-dimmed, rgba(255, 255, 255, 0.5));
+}
+
+/* Sleep section */
+.sleep-section {
+	margin-top: 16px;
+	padding: 12px;
+	background: rgba(255, 255, 255, 0.05);
+	border-radius: 10px;
+}
+
+.sleep-header {
+	display: flex;
+	align-items: center;
+	gap: 8px;
+	margin-bottom: 10px;
+	font-size: 13px;
+	color: var(--color-text-dimmed, rgba(255, 255, 255, 0.6));
+}
+
+.sleep-header .fa-moon {
+	color: #5856d6;
+}
+
+.sleep-duration {
+	display: flex;
+	align-items: baseline;
+	gap: 4px;
+	justify-content: center;
+}
+
+.sleep-hours,
+.sleep-mins {
+	font-size: 32px;
+	font-weight: 300;
+}
+
+.sleep-unit {
+	font-size: 14px;
+	color: var(--color-text-dimmed, rgba(255, 255, 255, 0.5));
+}
+
+.sleep-quality {
+	margin-top: 8px;
+	text-align: center;
+	font-size: 12px;
+	color: var(--color-text-dimmed, rgba(255, 255, 255, 0.5));
+}
+
+/* Week summary */
+.week-summary {
+	margin-top: 16px;
+	padding: 12px;
+	background: rgba(255, 255, 255, 0.05);
+	border-radius: 10px;
+}
+
+.week-header {
+	font-size: 13px;
+	color: var(--color-text-dimmed, rgba(255, 255, 255, 0.6));
+	margin-bottom: 12px;
+}
+
+.week-bars {
+	display: flex;
+	justify-content: space-between;
+	align-items: flex-end;
+	height: 60px;
+	gap: 4px;
+}
+
+.week-day {
+	flex: 1;
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+	gap: 4px;
+}
+
+.day-bar-container {
+	height: 50px;
+	width: 100%;
+	display: flex;
+	align-items: flex-end;
+	justify-content: center;
+}
+
+.day-bar {
+	width: 8px;
+	background: rgba(255, 255, 255, 0.3);
+	border-radius: 4px 4px 0 0;
+	transition: height 0.5s ease, background 0.3s ease;
+}
+
+.week-day.goal-met .day-bar {
+	background: linear-gradient(180deg, #92e82a, #1eeaef);
+}
+
+.week-day.today .day-bar {
+	background: #fa114f;
+}
+
+.week-day.today.goal-met .day-bar {
+	background: linear-gradient(180deg, #92e82a, #fa114f);
+}
+
+.day-label {
+	font-size: 10px;
+	color: var(--color-text-dimmed, rgba(255, 255, 255, 0.4));
+}
+
+.week-day.today .day-label {
+	color: #fff;
+	font-weight: 500;
+}
+
+/* Loading state */
+.fitness-loading {
+	text-align: center;
+	padding: 20px;
+	color: var(--color-text-dimmed, rgba(255, 255, 255, 0.5));
+}
+
+.fitness-loading .fa-spinner {
+	font-size: 24px;
+	margin-bottom: 10px;
+}
+
+/* Touch mode enhancements */
+.fitness-module.touch-mode .metric-item {
+	cursor: pointer;
+	transition: background 0.2s ease;
+	padding: 12px;
+	margin: 0 -12px;
+	border-radius: 8px;
+}
+
+.fitness-module.touch-mode .metric-item:active {
+	background: rgba(255, 255, 255, 0.1);
+}
+
+/* Responsive adjustments */
+@media (max-width: 400px) {
+	.activity-rings {
+		flex-direction: column;
+		align-items: center;
+	}
+
+	.rings-legend {
+		flex-direction: row;
+		flex-wrap: wrap;
+		justify-content: center;
+	}
+}
