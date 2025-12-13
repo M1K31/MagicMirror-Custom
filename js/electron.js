@@ -33,9 +33,9 @@ let mainWindow;
 function createWindow () {
 
 	/*
-	 * see https://www.electronjs.org/docs/latest/api/screen
-	 * Create a window that fills the screen's available work area.
-	 */
+   * see https://www.electronjs.org/docs/latest/api/screen
+   * Create a window that fills the screen's available work area.
+   */
 	let electronSize = (800, 600);
 	try {
 		electronSize = electron.screen.getPrimaryDisplay().workAreaSize;
@@ -43,8 +43,13 @@ function createWindow () {
 		Log.warn("Could not get display size, using defaults ...");
 	}
 
-	let electronSwitchesDefaults = ["autoplay-policy", "no-user-gesture-required"];
-	app.commandLine.appendSwitch(...new Set(electronSwitchesDefaults, config.electronSwitches));
+	let electronSwitchesDefaults = [
+		"autoplay-policy",
+		"no-user-gesture-required"
+	];
+	app.commandLine.appendSwitch(
+		...new Set(electronSwitchesDefaults, config.electronSwitches)
+	);
 	let electronOptionsDefaults = {
 		width: electronSize.width,
 		height: electronSize.height,
@@ -61,9 +66,9 @@ function createWindow () {
 	};
 
 	/*
-	 * DEPRECATED: "kioskmode" backwards compatibility, to be removed
-	 * settings these options directly instead provides cleaner interface
-	 */
+   * DEPRECATED: "kioskmode" backwards compatibility, to be removed
+   * settings these options directly instead provides cleaner interface
+   */
 	if (config.kioskmode) {
 		electronOptionsDefaults.kiosk = true;
 	} else {
@@ -74,9 +79,16 @@ function createWindow () {
 		electronOptionsDefaults.fullscreen = true;
 	}
 
-	const electronOptions = Object.assign({}, electronOptionsDefaults, config.electronOptions);
+	const electronOptions = Object.assign(
+		{},
+		electronOptionsDefaults,
+		config.electronOptions
+	);
 
-	if (process.env.JEST_WORKER_ID !== undefined && process.env.MOCK_DATE !== undefined) {
+	if (
+		process.env.JEST_WORKER_ID !== undefined
+		&& process.env.MOCK_DATE !== undefined
+	) {
 		// if we are running with jest and we want to mock the current date
 		const fakeNow = new Date(process.env.MOCK_DATE).valueOf();
 		Date = class extends Date {
@@ -97,9 +109,9 @@ function createWindow () {
 	mainWindow = new BrowserWindow(electronOptions);
 
 	/*
-	 * and load the index.html of the app.
-	 * If config.address is not defined or is an empty string (listening on all interfaces), connect to localhost
-	 */
+   * and load the index.html of the app.
+   * If config.address is not defined or is an empty string (listening on all interfaces), connect to localhost
+   */
 
 	let prefix;
 	if ((config.tls !== null && config.tls) || config.useHttps) {
@@ -108,7 +120,12 @@ function createWindow () {
 		prefix = "http://";
 	}
 
-	let address = (config.address === void 0) | (config.address === "") | (config.address === "0.0.0.0") ? (config.address = "localhost") : config.address;
+	let address
+    = (config.address === void 0)
+      | (config.address === "")
+      | (config.address === "0.0.0.0")
+    	? (config.address = "localhost")
+    	: config.address;
 	const port = process.env.MM_PORT || config.port;
 	mainWindow.loadURL(`${prefix}${address}:${port}`);
 
@@ -149,18 +166,28 @@ function createWindow () {
 	}
 
 	//remove response headers that prevent sites of being embedded into iframes if configured
-	mainWindow.webContents.session.webRequest.onHeadersReceived((details, callback) => {
-		let curHeaders = details.responseHeaders;
-		if (config.ignoreXOriginHeader || false) {
-			curHeaders = Object.fromEntries(Object.entries(curHeaders).filter((header) => !(/x-frame-options/i).test(header[0])));
-		}
+	mainWindow.webContents.session.webRequest.onHeadersReceived(
+		(details, callback) => {
+			let curHeaders = details.responseHeaders;
+			if (config.ignoreXOriginHeader || false) {
+				curHeaders = Object.fromEntries(
+					Object.entries(curHeaders).filter(
+						(header) => !(/x-frame-options/i).test(header[0])
+					)
+				);
+			}
 
-		if (config.ignoreContentSecurityPolicy || false) {
-			curHeaders = Object.fromEntries(Object.entries(curHeaders).filter((header) => !(/content-security-policy/i).test(header[0])));
-		}
+			if (config.ignoreContentSecurityPolicy || false) {
+				curHeaders = Object.fromEntries(
+					Object.entries(curHeaders).filter(
+						(header) => !(/content-security-policy/i).test(header[0])
+					)
+				);
+			}
 
-		callback({ responseHeaders: curHeaders });
-	});
+			callback({ responseHeaders: curHeaders });
+		}
+	);
 
 	mainWindow.once("ready-to-show", () => {
 		mainWindow.show();
@@ -180,9 +207,9 @@ app.on("window-all-closed", function () {
 app.on("activate", function () {
 
 	/*
-	 * On OS X it's common to re-create a window in the app when the
-	 * dock icon is clicked and there are no other windows open.
-	 */
+   * On OS X it's common to re-create a window in the app when the
+   * dock icon is clicked and there are no other windows open.
+   */
 	if (mainWindow === null) {
 		createWindow();
 	}
@@ -208,10 +235,13 @@ app.on("before-quit", async (event) => {
 /**
  * Handle errors from self-signed certificates
  */
-app.on("certificate-error", (event, webContents, url, error, certificate, callback) => {
-	event.preventDefault();
-	callback(true);
-});
+app.on(
+	"certificate-error",
+	(event, webContents, url, error, certificate, callback) => {
+		event.preventDefault();
+		callback(true);
+	}
+);
 
 if (process.env.clientonly) {
 	app.whenReady().then(() => {
@@ -224,7 +254,11 @@ if (process.env.clientonly) {
  * Start the core application if server is run on localhost
  * This starts all node helpers and starts the webserver.
  */
-if (["localhost", "127.0.0.1", "::1", "::ffff:127.0.0.1", undefined].includes(config.address)) {
+if (
+	["localhost", "127.0.0.1", "::1", "::ffff:127.0.0.1", undefined].includes(
+		config.address
+	)
+) {
 	core.start().then((c) => {
 		config = c;
 		app.whenReady().then(() => {

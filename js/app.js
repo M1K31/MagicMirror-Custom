@@ -8,13 +8,16 @@ const Log = require("logger");
 
 const Server = require(`${__dirname}/server`);
 const Utils = require(`${__dirname}/utils`);
-const defaultModules = require(`${__dirname}/../modules/default/defaultmodules`);
+const defaultModules = require(
+	`${__dirname}/../modules/default/defaultmodules`
+);
 const { getEnvVarsAsObj } = require(`${__dirname}/server_functions`);
 
 // used to control fetch timeout for node_helpers
 const { setGlobalDispatcher, Agent } = require("undici");
 // common timeout value, provide environment override in case
-const fetch_timeout = process.env.mmFetchTimeout !== undefined ? process.env.mmFetchTimeout : 30000;
+const fetch_timeout
+  = process.env.mmFetchTimeout !== undefined ? process.env.mmFetchTimeout : 30000;
 
 // Get version number.
 global.version = require(`${__dirname}/../package.json`).version;
@@ -28,7 +31,10 @@ Utils.logSystemInformation();
 global.root_path = path.resolve(`${__dirname}/../`);
 
 if (process.env.MM_CONFIG_FILE) {
-	global.configuration_file = process.env.MM_CONFIG_FILE.replace(`${global.root_path}/`, "");
+	global.configuration_file = process.env.MM_CONFIG_FILE.replace(
+		`${global.root_path}/`,
+		""
+	);
 }
 
 // FIXME: Hotfix Pull Request
@@ -44,8 +50,12 @@ process.on("uncaughtException", function (err) {
 	if (!err.stack.includes("node_modules/systeminformation")) {
 		Log.error("Whoops! There was an uncaught exception...");
 		Log.error(err);
-		Log.error("MagicMirror² will not quit, but it might be a good idea to check why this happened. Maybe no internet connection?");
-		Log.error("If you think this really is an issue, please open an issue on GitHub: https://github.com/MagicMirrorOrg/MagicMirror/issues");
+		Log.error(
+			"MagicMirror² will not quit, but it might be a good idea to check why this happened. Maybe no internet connection?"
+		);
+		Log.error(
+			"If you think this really is an issue, please open an issue on GitHub: https://github.com/MagicMirrorOrg/MagicMirror/issues"
+		);
 	}
 });
 
@@ -72,7 +82,9 @@ function App () {
 
 		// For this check proposed to TestSuite
 		// https://forum.magicmirror.builders/topic/1456/test-suite-for-magicmirror/8
-		const configFilename = path.resolve(global.configuration_file || `${global.root_path}/config/config.js`);
+		const configFilename = path.resolve(
+			global.configuration_file || `${global.root_path}/config/config.js`
+		);
 		let templateFile = `${configFilename}.template`;
 
 		// check if templateFile exists
@@ -129,17 +141,25 @@ function App () {
 			fs.accessSync(configFilename, fs.constants.F_OK);
 			const c = require(configFilename);
 			if (Object.keys(c).length === 0) {
-				Log.error("WARNING! Config file appears empty, maybe missing module.exports last line?");
+				Log.error(
+					"WARNING! Config file appears empty, maybe missing module.exports last line?"
+				);
 			}
 			checkDeprecatedOptions(c);
 			return Object.assign(defaults, c);
 		} catch (e) {
 			if (e.code === "ENOENT") {
-				Log.error("WARNING! Could not find config file. Please create one. Starting with default configuration.");
+				Log.error(
+					"WARNING! Could not find config file. Please create one. Starting with default configuration."
+				);
 			} else if (e instanceof ReferenceError || e instanceof SyntaxError) {
-				Log.error(`WARNING! Could not validate config file. Starting with default configuration. Please correct syntax errors at or above this line: ${e.stack}`);
+				Log.error(
+					`WARNING! Could not validate config file. Starting with default configuration. Please correct syntax errors at or above this line: ${e.stack}`
+				);
 			} else {
-				Log.error(`WARNING! Could not load config file. Starting with default configuration. Error found: ${e}`);
+				Log.error(
+					`WARNING! Could not load config file. Starting with default configuration. Error found: ${e}`
+				);
 			}
 		}
 
@@ -158,16 +178,25 @@ function App () {
 		const deprecatedOptions = deprecated.configs;
 		const usedDeprecated = deprecatedOptions.filter((option) => userConfig.hasOwnProperty(option));
 		if (usedDeprecated.length > 0) {
-			Log.warn(`WARNING! Your config is using deprecated option(s): ${usedDeprecated.join(", ")}. Check README and CHANGELOG for more up-to-date ways of getting the same functionality.`);
+			Log.warn(
+				`WARNING! Your config is using deprecated option(s): ${usedDeprecated.join(", ")}. Check README and CHANGELOG for more up-to-date ways of getting the same functionality.`
+			);
 		}
 
 		// check for deprecated module options
 		for (const element of userConfig.modules) {
-			if (deprecated[element.module] !== undefined && element.config !== undefined) {
+			if (
+				deprecated[element.module] !== undefined
+				&& element.config !== undefined
+			) {
 				const deprecatedModuleOptions = deprecated[element.module];
-				const usedDeprecatedModuleOptions = deprecatedModuleOptions.filter((option) => element.config.hasOwnProperty(option));
+				const usedDeprecatedModuleOptions = deprecatedModuleOptions.filter(
+					(option) => element.config.hasOwnProperty(option)
+				);
 				if (usedDeprecatedModuleOptions.length > 0) {
-					Log.warn(`WARNING! Your config for module ${element.module} is using deprecated option(s): ${usedDeprecatedModuleOptions.join(", ")}. Check README and CHANGELOG for more up-to-date ways of getting the same functionality.`);
+					Log.warn(
+						`WARNING! Your config for module ${element.module} is using deprecated option(s): ${usedDeprecatedModuleOptions.join(", ")}. Check README and CHANGELOG for more up-to-date ways of getting the same functionality.`
+					);
 				}
 			}
 		}
@@ -181,10 +210,16 @@ function App () {
 		const elements = module.split("/");
 		const moduleName = elements[elements.length - 1];
 		const env = getEnvVarsAsObj();
-		let moduleFolder = path.resolve(`${__dirname}/../${env.modulesDir}`, module);
+		let moduleFolder = path.resolve(
+			`${__dirname}/../${env.modulesDir}`,
+			module
+		);
 
 		if (defaultModules.includes(moduleName)) {
-			const defaultModuleFolder = path.resolve(`${__dirname}/../modules/default/`, module);
+			const defaultModuleFolder = path.resolve(
+				`${__dirname}/../modules/default/`,
+				module
+			);
 			if (process.env.JEST_WORKER_ID === undefined) {
 				moduleFolder = defaultModuleFolder;
 			} else {
@@ -225,7 +260,9 @@ function App () {
 			let m = new Module();
 
 			if (m.requiresVersion) {
-				Log.log(`Check MagicMirror² version for node helper '${moduleName}' - Minimum version: ${m.requiresVersion} - Current version: ${global.version}`);
+				Log.log(
+					`Check MagicMirror² version for node helper '${moduleName}' - Minimum version: ${m.requiresVersion} - Current version: ${global.version}`
+				);
 				if (cmpVersions(global.version, m.requiresVersion) >= 0) {
 					Log.log("Version is ok!");
 				} else {
@@ -299,16 +336,25 @@ function App () {
 		for (const module of config.modules) {
 			if (module.disabled) continue;
 			if (module.module) {
-				if (Utils.moduleHasValidPosition(module.position) || typeof (module.position) === "undefined") {
+				if (
+					Utils.moduleHasValidPosition(module.position)
+					|| typeof module.position === "undefined"
+				) {
 					// Only add this module to be loaded if it is not a duplicate (repeated instance of the same module)
 					if (!modules.includes(module.module)) {
 						modules.push(module.module);
 					}
 				} else {
-					Log.warn("Invalid module position found for this configuration:" + `\n${JSON.stringify(module, null, 2)}`);
+					Log.warn(
+						"Invalid module position found for this configuration:"
+						+ `\n${JSON.stringify(module, null, 2)}`
+					);
 				}
 			} else {
-				Log.warn("No module name found for this configuration:" + `\n${JSON.stringify(module, null, 2)}`);
+				Log.warn(
+					"No module name found for this configuration:"
+					+ `\n${JSON.stringify(module, null, 2)}`
+				);
 			}
 		}
 
@@ -328,7 +374,9 @@ function App () {
 			try {
 				nodePromises.push(nodeHelper.start());
 			} catch (error) {
-				Log.error(`Error when starting node_helper for module ${nodeHelper.name}:`);
+				Log.error(
+					`Error when starting node_helper for module ${nodeHelper.name}:`
+				);
 				Log.error(error);
 			}
 		}
@@ -363,7 +411,9 @@ function App () {
 					nodePromises.push(nodeHelper.stop());
 				}
 			} catch (error) {
-				Log.error(`Error when stopping node_helper for module ${nodeHelper.name}:`);
+				Log.error(
+					`Error when stopping node_helper for module ${nodeHelper.name}:`
+				);
 				Log.error(error);
 			}
 		}

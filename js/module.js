@@ -22,16 +22,16 @@ const Module = Class.extend({
 	showHideTimer: null,
 
 	/*
-	 * Array to store lockStrings. These strings are used to lock
-	 * visibility when hiding and showing module.
-	 */
+   * Array to store lockStrings. These strings are used to lock
+   * visibility when hiding and showing module.
+   */
 	lockStrings: [],
 
 	/*
-	 * Storage of the nunjucks Environment,
-	 * This should not be referenced directly.
-	 * Use the nunjucksEnvironment() to get it.
-	 */
+   * Storage of the nunjucks Environment,
+   * This should not be referenced directly.
+   * Use the nunjucksEnvironment() to get it.
+   */
 	_nunjucksEnvironment: null,
 
 	/**
@@ -89,18 +89,25 @@ const Module = Class.extend({
 			// Check to see if we need to render a template string or a file.
 			if ((/^.*((\.html)|(\.njk))$/).test(template)) {
 				// the template is a filename
-				this.nunjucksEnvironment().render(template, templateData, function (err, res) {
-					if (err) {
-						Log.error(err);
+				this.nunjucksEnvironment().render(
+					template,
+					templateData,
+					function (err, res) {
+						if (err) {
+							Log.error(err);
+						}
+
+						div.innerHTML = res;
+
+						resolve(div);
 					}
-
-					div.innerHTML = res;
-
-					resolve(div);
-				});
+				);
 			} else {
 				// the template is a template string.
-				div.innerHTML = this.nunjucksEnvironment().renderString(template, templateData);
+				div.innerHTML = this.nunjucksEnvironment().renderString(
+					template,
+					templateData
+				);
 
 				resolve(div);
 			}
@@ -161,10 +168,13 @@ const Module = Class.extend({
 			return this._nunjucksEnvironment;
 		}
 
-		this._nunjucksEnvironment = new nunjucks.Environment(new nunjucks.WebLoader(this.file(""), { async: true }), {
-			trimBlocks: true,
-			lstripBlocks: true
-		});
+		this._nunjucksEnvironment = new nunjucks.Environment(
+			new nunjucks.WebLoader(this.file(""), { async: true }),
+			{
+				trimBlocks: true,
+				lstripBlocks: true
+			}
+		);
 
 		this._nunjucksEnvironment.addFilter("translate", (str, variables) => {
 			return nunjucks.runtime.markSafe(this.translate(str, variables));
@@ -179,7 +189,9 @@ const Module = Class.extend({
 	 * @param {*} payload The payload of the notification.
 	 */
 	socketNotificationReceived (notification, payload) {
-		Log.log(`${this.name} received a socket notification: ${notification} - Payload: ${payload}`);
+		Log.log(
+			`${this.name} received a socket notification: ${notification} - Payload: ${payload}`
+		);
 	},
 
 	/**
@@ -223,7 +235,9 @@ const Module = Class.extend({
 	 * @param {boolean} deep Merge module config in deep.
 	 */
 	setConfig (config, deep) {
-		this.config = deep ? configMerge({}, this.defaults, config) : Object.assign({}, this.defaults, config);
+		this.config = deep
+			? configMerge({}, this.defaults, config)
+			: Object.assign({}, this.defaults, config);
 	},
 
 	/**
@@ -328,7 +342,11 @@ const Module = Class.extend({
 	 */
 	translate (key, defaultValueOrVariables, defaultValue) {
 		if (typeof defaultValueOrVariables === "object") {
-			return Translator.translate(this, key, defaultValueOrVariables) || defaultValue || "";
+			return (
+				Translator.translate(this, key, defaultValueOrVariables)
+				|| defaultValue
+				|| ""
+			);
 		}
 		return Translator.translate(this, key) || defaultValueOrVariables || "";
 	},
@@ -370,7 +388,9 @@ const Module = Class.extend({
 		let usedOptions = options;
 
 		if (typeof callback === "object") {
-			Log.error("Parameter mismatch in module.hide: callback is not an optional parameter!");
+			Log.error(
+				"Parameter mismatch in module.hide: callback is not an optional parameter!"
+			);
 			usedOptions = callback;
 			usedCallback = function () {};
 		}
@@ -397,7 +417,9 @@ const Module = Class.extend({
 		let usedOptions = options;
 
 		if (typeof callback === "object") {
-			Log.error("Parameter mismatch in module.show: callback is not an optional parameter!");
+			Log.error(
+				"Parameter mismatch in module.show: callback is not an optional parameter!"
+			);
 			usedOptions = callback;
 			usedCallback = function () {};
 		}
@@ -444,7 +466,11 @@ function configMerge (result) {
 		item = stack.shift();
 		for (key in item) {
 			if (item.hasOwnProperty(key)) {
-				if (typeof result[key] === "object" && result[key] && Object.prototype.toString.call(result[key]) !== "[object Array]") {
+				if (
+					typeof result[key] === "object"
+					&& result[key]
+					&& Object.prototype.toString.call(result[key]) !== "[object Array]"
+				) {
 					if (typeof item[key] === "object" && item[key] !== null) {
 						result[key] = configMerge({}, result[key], item[key]);
 					} else {
@@ -478,7 +504,9 @@ Module.create = function (name) {
 
 Module.register = function (name, moduleDefinition) {
 	if (moduleDefinition.requiresVersion) {
-		Log.log(`Check MagicMirror² version for module '${name}' - Minimum version:  ${moduleDefinition.requiresVersion} - Current version: ${window.mmVersion}`);
+		Log.log(
+			`Check MagicMirror² version for module '${name}' - Minimum version:  ${moduleDefinition.requiresVersion} - Current version: ${window.mmVersion}`
+		);
 		if (cmpVersions(window.mmVersion, moduleDefinition.requiresVersion) >= 0) {
 			Log.log("Version is ok!");
 		} else {

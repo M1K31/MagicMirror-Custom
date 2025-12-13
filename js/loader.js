@@ -15,7 +15,9 @@ const Loader = (function () {
 	 * @returns {object} with key: values as assembled in js/server_functions.js
 	 */
 	const getEnvVars = async function () {
-		const res = await fetch(`${location.protocol}//${location.host}${config.basePath}env`);
+		const res = await fetch(
+			`${location.protocol}//${location.host}${config.basePath}env`
+		);
 		return JSON.parse(await res.text());
 	};
 
@@ -59,7 +61,11 @@ const Loader = (function () {
 	 * @returns {object[]} module data as configured in config
 	 */
 	const getAllModules = function () {
-		const AllModules = config.modules.filter((module) => (module.module !== undefined) && (MM.getAvailableModulePositions.indexOf(module.position) > -1 || typeof (module.position) === "undefined"));
+		const AllModules = config.modules.filter(
+			(module) => module.module !== undefined
+			  && (MM.getAvailableModulePositions.indexOf(module.position) > -1
+			    || typeof module.position === "undefined")
+		);
 		return AllModules;
 	};
 
@@ -106,10 +112,20 @@ const Loader = (function () {
 				animateOut: moduleData.animateOut,
 				hiddenOnStartup: moduleData.hiddenOnStartup,
 				header: moduleData.header,
-				configDeepMerge: typeof moduleData.configDeepMerge === "boolean" ? moduleData.configDeepMerge : false,
+				configDeepMerge:
+          typeof moduleData.configDeepMerge === "boolean"
+          	? moduleData.configDeepMerge
+          	: false,
 				config: moduleData.config,
-				classes: typeof moduleData.classes !== "undefined" ? `${moduleData.classes} ${module}` : module,
-				order: (typeof moduleData.order === "number" && Number.isInteger(moduleData.order)) ? moduleData.order : 0
+				classes:
+          typeof moduleData.classes !== "undefined"
+          	? `${moduleData.classes} ${module}`
+          	: module,
+				order:
+          typeof moduleData.order === "number"
+          && Number.isInteger(moduleData.order)
+          	? moduleData.order
+          	: 0
 			});
 		});
 
@@ -170,7 +186,9 @@ const Loader = (function () {
 	 * @returns {Promise} resolved when the file is loaded
 	 */
 	const loadFile = async function (fileName) {
-		const extension = fileName.slice((Math.max(0, fileName.lastIndexOf(".")) || Infinity) + 1);
+		const extension = fileName.slice(
+			(Math.max(0, fileName.lastIndexOf(".")) || Infinity) + 1
+		);
 		let script, stylesheet;
 
 		switch (extension.toLowerCase()) {
@@ -249,7 +267,11 @@ const Loader = (function () {
 				return;
 			}
 
-			if (fileName.indexOf("http://") === 0 || fileName.indexOf("https://") === 0 || fileName.indexOf("/") !== -1) {
+			if (
+				fileName.indexOf("http://") === 0
+				|| fileName.indexOf("https://") === 0
+				|| fileName.indexOf("/") !== -1
+			) {
 				// This is an absolute or relative path.
 				// Load it and then return.
 				loadedFiles.push(fileName.toLowerCase());

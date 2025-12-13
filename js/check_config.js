@@ -19,7 +19,9 @@ const ajv = new Ajv();
  */
 function getConfigFile () {
 	// FIXME: This function should be in core. Do you want refactor me ;) ?, be good!
-	return path.resolve(process.env.MM_CONFIG_FILE || `${rootPath}/config/config.js`);
+	return path.resolve(
+		process.env.MM_CONFIG_FILE || `${rootPath}/config/config.js`
+	);
 }
 
 /**
@@ -30,7 +32,9 @@ function checkConfigFile () {
 
 	// Check if file is present
 	if (fs.existsSync(configFileName) === false) {
-		throw new Error(`File not found: ${configFileName}\nNo config file present!`);
+		throw new Error(
+			`File not found: ${configFileName}\nNo config file present!`
+		);
 	}
 
 	// Check permission
@@ -61,7 +65,12 @@ function checkConfigFile () {
 	);
 
 	if (errors.length === 0) {
-		Log.info(styleText("green", "Your configuration file doesn't contain syntax errors :)"));
+		Log.info(
+			styleText(
+				"green",
+				"Your configuration file doesn't contain syntax errors :)"
+			)
+		);
 		validateModulePositions(configFileName);
 	} else {
 		let errorMessage = "Your configuration file contains syntax errors :(";
@@ -112,7 +121,12 @@ function validateModulePositions (configFileName) {
 
 	const valid = validate(data);
 	if (valid) {
-		Log.info(styleText("green", "Your modules structure configuration doesn't contain errors :)"));
+		Log.info(
+			styleText(
+				"green",
+				"Your modules structure configuration doesn't contain errors :)"
+			)
+		);
 	} else {
 		const module = validate.errors[0].instancePath.split("/")[2];
 		const position = validate.errors[0].instancePath.split("/")[3];

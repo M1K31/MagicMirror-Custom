@@ -61,14 +61,23 @@ const Translator = (function () {
 				if (variables.fallback && !template.match(new RegExp("{.+}"))) {
 					templateToUse = variables.fallback;
 				}
-				return templateToUse.replace(new RegExp("{([^}]+)}", "g"), function (_unused, varName) {
-					return varName in variables ? variables[varName] : `{${varName}}`;
-				});
+				return templateToUse.replace(
+					new RegExp("{([^}]+)}", "g"),
+					function (_unused, varName) {
+						return varName in variables ? variables[varName] : `{${varName}}`;
+					}
+				);
 			}
 
-			if (this.translations[module.name] && key in this.translations[module.name]) {
+			if (
+				this.translations[module.name]
+				&& key in this.translations[module.name]
+			) {
 				// Log.log("Got translation for " + key + " from module translation: ");
-				return createStringFromTemplate(this.translations[module.name][key], variables);
+				return createStringFromTemplate(
+					this.translations[module.name][key],
+					variables
+				);
 			}
 
 			if (key in this.coreTranslations) {
@@ -76,14 +85,23 @@ const Translator = (function () {
 				return createStringFromTemplate(this.coreTranslations[key], variables);
 			}
 
-			if (this.translationsFallback[module.name] && key in this.translationsFallback[module.name]) {
+			if (
+				this.translationsFallback[module.name]
+				&& key in this.translationsFallback[module.name]
+			) {
 				// Log.log("Got translation for " + key + " from module translation fallback.");
-				return createStringFromTemplate(this.translationsFallback[module.name][key], variables);
+				return createStringFromTemplate(
+					this.translationsFallback[module.name][key],
+					variables
+				);
 			}
 
 			if (key in this.coreTranslationsFallback) {
 				// Log.log("Got translation for " + key + " from core translation fallback.");
-				return createStringFromTemplate(this.coreTranslationsFallback[key], variables);
+				return createStringFromTemplate(
+					this.coreTranslationsFallback[key],
+					variables
+				);
 			}
 
 			return key;
@@ -96,7 +114,9 @@ const Translator = (function () {
 		 * @param {boolean} isFallback Flag to indicate fallback translations.
 		 */
 		async load (module, file, isFallback) {
-			Log.log(`${module.name} - Load translation${isFallback ? " fallback" : ""}: ${file}`);
+			Log.log(
+				`${module.name} - Load translation${isFallback ? " fallback" : ""}: ${file}`
+			);
 
 			if (this.translationsFallback[module.name]) {
 				return;
@@ -129,7 +149,9 @@ const Translator = (function () {
 		async loadCoreTranslationsFallback () {
 			let first = Object.keys(translations)[0];
 			if (first) {
-				Log.log(`Loading core translation fallback file: ${translations[first]}`);
+				Log.log(
+					`Loading core translation fallback file: ${translations[first]}`
+				);
 				this.coreTranslationsFallback = await loadJSON(translations[first]);
 			}
 		}

@@ -18,7 +18,10 @@ const MM = (function () {
 
 			let haveAnimateIn = null;
 			// check if have valid animateIn in module definition (module.data.animateIn)
-			if (module.data.animateIn && AnimateCSSIn.indexOf(module.data.animateIn) !== -1) haveAnimateIn = module.data.animateIn;
+			if (
+				module.data.animateIn
+				&& AnimateCSSIn.indexOf(module.data.animateIn) !== -1
+			) haveAnimateIn = module.data.animateIn;
 
 			const wrapper = selectWrapper(module.data.position);
 
@@ -30,7 +33,11 @@ const MM = (function () {
 				dom.className = `module ${dom.className} ${module.data.classes}`;
 			}
 
-			dom.style.order = (typeof module.data.order === "number" && Number.isInteger(module.data.order)) ? module.data.order : 0;
+			dom.style.order
+        = typeof module.data.order === "number"
+          && Number.isInteger(module.data.order)
+					? module.data.order
+					: 0;
 
 			dom.opacity = 0;
 			wrapper.appendChild(dom);
@@ -40,7 +47,10 @@ const MM = (function () {
 			moduleHeader.className = "module-header";
 			dom.appendChild(moduleHeader);
 
-			if (typeof module.getHeader() === "undefined" || module.getHeader() !== "") {
+			if (
+				typeof module.getHeader() === "undefined"
+				|| module.getHeader() !== ""
+			) {
 				moduleHeader.style.display = "none;";
 			} else {
 				moduleHeader.style.display = "block;";
@@ -53,7 +63,11 @@ const MM = (function () {
 			// create the domCreationPromise with AnimateCSS (with animateIn of module definition)
 			// or just display it
 			var domCreationPromise;
-			if (haveAnimateIn) domCreationPromise = updateDom(module, { options: { speed: 1000, animate: { in: haveAnimateIn } } }, true);
+			if (haveAnimateIn) domCreationPromise = updateDom(
+				module,
+				{ options: { speed: 1000, animate: { in: haveAnimateIn } } },
+				true
+			);
 			else domCreationPromise = updateDom(module, 0);
 
 			domCreationPromises.push(domCreationPromise);
@@ -110,19 +124,30 @@ const MM = (function () {
 	 * @param {boolean} [createAnimatedDom] for displaying only animateIn (used on first start of MagicMirror)
 	 * @returns {Promise} Resolved when the dom is fully updated.
 	 */
-	const updateDom = function (module, updateOptions, createAnimatedDom = false) {
+	const updateDom = function (
+		module,
+		updateOptions,
+		createAnimatedDom = false
+	) {
 		return new Promise(function (resolve) {
 			let speed = updateOptions;
 			let animateOut = null;
 			let animateIn = null;
 			if (typeof updateOptions === "object") {
-				if (typeof updateOptions.options === "object" && updateOptions.options.speed !== undefined) {
+				if (
+					typeof updateOptions.options === "object"
+					&& updateOptions.options.speed !== undefined
+				) {
 					speed = updateOptions.options.speed;
-					Log.debug(`updateDom: ${module.identifier} Has speed in object: ${speed}`);
+					Log.debug(
+						`updateDom: ${module.identifier} Has speed in object: ${speed}`
+					);
 					if (typeof updateOptions.options.animate === "object") {
 						animateOut = updateOptions.options.animate.out;
 						animateIn = updateOptions.options.animate.in;
-						Log.debug(`updateDom: ${module.identifier} Has animate in object: out->${animateOut}, in->${animateIn}`);
+						Log.debug(
+							`updateDom: ${module.identifier} Has animate in object: out->${animateOut}, in->${animateIn}`
+						);
 					}
 				} else {
 					Log.debug(`updateDom: ${module.identifier} Has no speed in object`);
@@ -140,7 +165,15 @@ const MM = (function () {
 
 			newContentPromise
 				.then(function (newContent) {
-					const updatePromise = updateDomWithContent(module, speed, newHeader, newContent, animateOut, animateIn, createAnimatedDom);
+					const updatePromise = updateDomWithContent(
+						module,
+						speed,
+						newHeader,
+						newContent,
+						animateOut,
+						animateIn,
+						createAnimatedDom
+					);
 
 					updatePromise.then(resolve).catch(Log.error);
 				})
@@ -159,7 +192,15 @@ const MM = (function () {
 	 * @param {boolean} [createAnimatedDom] for displaying only animateIn (used on first start)
 	 * @returns {Promise} Resolved when the module dom has been updated.
 	 */
-	const updateDomWithContent = function (module, speed, newHeader, newContent, animateOut, animateIn, createAnimatedDom = false) {
+	const updateDomWithContent = function (
+		module,
+		speed,
+		newHeader,
+		newContent,
+		animateOut,
+		animateIn,
+		createAnimatedDom = false
+	) {
 		return new Promise(function (resolve) {
 			if (module.hidden || !speed) {
 				updateModuleContent(module, newHeader, newContent);
@@ -216,7 +257,8 @@ const MM = (function () {
 			return false;
 		}
 
-		const contentWrapper = moduleWrapper.getElementsByClassName("module-content");
+		const contentWrapper
+      = moduleWrapper.getElementsByClassName("module-content");
 		const headerWrapper = moduleWrapper.getElementsByClassName("module-header");
 
 		let headerNeedsUpdate = false;
@@ -228,7 +270,8 @@ const MM = (function () {
 
 		const tempContentWrapper = document.createElement("div");
 		tempContentWrapper.appendChild(newContent);
-		contentNeedsUpdate = tempContentWrapper.innerHTML !== contentWrapper[0].innerHTML;
+		contentNeedsUpdate
+      = tempContentWrapper.innerHTML !== contentWrapper[0].innerHTML;
 
 		return headerNeedsUpdate || contentNeedsUpdate;
 	};
@@ -245,7 +288,8 @@ const MM = (function () {
 			return;
 		}
 		const headerWrapper = moduleWrapper.getElementsByClassName("module-header");
-		const contentWrapper = moduleWrapper.getElementsByClassName("module-content");
+		const contentWrapper
+      = moduleWrapper.getElementsByClassName("module-content");
 
 		contentWrapper[0].innerHTML = "";
 		contentWrapper[0].appendChild(newContent);
@@ -280,12 +324,16 @@ const MM = (function () {
 			// reset all animations if needed
 			if (module.hasAnimateOut) {
 				removeAnimateCSS(module.identifier, module.hasAnimateOut);
-				Log.debug(`${module.identifier} Force remove animateOut (in hide): ${module.hasAnimateOut}`);
+				Log.debug(
+					`${module.identifier} Force remove animateOut (in hide): ${module.hasAnimateOut}`
+				);
 				module.hasAnimateOut = false;
 			}
 			if (module.hasAnimateIn) {
 				removeAnimateCSS(module.identifier, module.hasAnimateIn);
-				Log.debug(`${module.identifier} Force remove animateIn (in hide): ${module.hasAnimateIn}`);
+				Log.debug(
+					`${module.identifier} Force remove animateIn (in hide): ${module.hasAnimateIn}`
+				);
 				module.hasAnimateIn = false;
 			}
 			// haveAnimateName for verify if we are using AnimateCSS library
@@ -293,7 +341,10 @@ const MM = (function () {
 			// and finally return the animate name or `null` (for default MM² animation)
 			let haveAnimateName = null;
 			// check if have valid animateOut in module definition (module.data.animateOut)
-			if (module.data.animateOut && AnimateCSSOut.indexOf(module.data.animateOut) !== -1) haveAnimateName = module.data.animateOut;
+			if (
+				module.data.animateOut
+				&& AnimateCSSOut.indexOf(module.data.animateOut) !== -1
+			) haveAnimateName = module.data.animateOut;
 			// can't be override with options.animate
 			else if (options.animate && AnimateCSSOut.indexOf(options.animate) !== -1) haveAnimateName = options.animate;
 
@@ -304,7 +355,9 @@ const MM = (function () {
 				addAnimateCSS(module.identifier, haveAnimateName, speed / 1000);
 				module.showHideTimer = setTimeout(function () {
 					removeAnimateCSS(module.identifier, haveAnimateName);
-					Log.debug(`${module.identifier} Remove animateOut: ${module.hasAnimateOut}`);
+					Log.debug(
+						`${module.identifier} Remove animateOut: ${module.hasAnimateOut}`
+					);
 					// AnimateCSS is now done
 					moduleWrapper.style.opacity = 0;
 					moduleWrapper.classList.add("hidden");
@@ -362,7 +415,9 @@ const MM = (function () {
 		// Check if there are no more lockStrings set, or the force option is set.
 		// Otherwise cancel show action.
 		if (module.lockStrings.length !== 0 && options.force !== true) {
-			Log.log(`Will not show ${module.name}. LockStrings active: ${module.lockStrings.join(",")}`);
+			Log.log(
+				`Will not show ${module.name}. LockStrings active: ${module.lockStrings.join(",")}`
+			);
 			if (typeof options.onError === "function") {
 				options.onError(new Error("LOCK_STRING_ACTIVE"));
 			}
@@ -371,12 +426,16 @@ const MM = (function () {
 		// reset all animations if needed
 		if (module.hasAnimateOut) {
 			removeAnimateCSS(module.identifier, module.hasAnimateOut);
-			Log.debug(`${module.identifier} Force remove animateOut (in show): ${module.hasAnimateOut}`);
+			Log.debug(
+				`${module.identifier} Force remove animateOut (in show): ${module.hasAnimateOut}`
+			);
 			module.hasAnimateOut = false;
 		}
 		if (module.hasAnimateIn) {
 			removeAnimateCSS(module.identifier, module.hasAnimateIn);
-			Log.debug(`${module.identifier} Force remove animateIn (in show): ${module.hasAnimateIn}`);
+			Log.debug(
+				`${module.identifier} Force remove animateIn (in show): ${module.hasAnimateIn}`
+			);
 			module.hasAnimateIn = false;
 		}
 
@@ -397,7 +456,10 @@ const MM = (function () {
 			// and finally return the animate name or `null` (for default MM² animation)
 			let haveAnimateName = null;
 			// check if have valid animateOut in module definition (module.data.animateIn)
-			if (module.data.animateIn && AnimateCSSIn.indexOf(module.data.animateIn) !== -1) haveAnimateName = module.data.animateIn;
+			if (
+				module.data.animateIn
+				&& AnimateCSSIn.indexOf(module.data.animateIn) !== -1
+			) haveAnimateName = module.data.animateIn;
 			// can't be override with options.animate
 			else if (options.animate && AnimateCSSIn.indexOf(options.animate) !== -1) haveAnimateName = options.animate;
 
@@ -419,7 +481,9 @@ const MM = (function () {
 				addAnimateCSS(module.identifier, haveAnimateName, speed / 1000);
 				module.showHideTimer = setTimeout(function () {
 					removeAnimateCSS(module.identifier, haveAnimateName);
-					Log.debug(`${module.identifier} Remove animateIn: ${haveAnimateName}`);
+					Log.debug(
+						`${module.identifier} Remove animateIn: ${haveAnimateName}`
+					);
 					module.hasAnimateIn = false;
 					if (typeof callback === "function") {
 						callback();
@@ -460,7 +524,10 @@ const MM = (function () {
 
 			let showWrapper = false;
 			Array.prototype.forEach.call(moduleWrappers, function (moduleWrapper) {
-				if (moduleWrapper.style.position === "" || moduleWrapper.style.position === "static") {
+				if (
+					moduleWrapper.style.position === ""
+					|| moduleWrapper.style.position === "static"
+				) {
 					showWrapper = true;
 				}
 			});
@@ -561,16 +628,28 @@ const MM = (function () {
 		};
 
 		if (typeof modules.withClass === "undefined") {
-			Object.defineProperty(modules, "withClass", { value: withClass, enumerable: false });
+			Object.defineProperty(modules, "withClass", {
+				value: withClass,
+				enumerable: false
+			});
 		}
 		if (typeof modules.exceptWithClass === "undefined") {
-			Object.defineProperty(modules, "exceptWithClass", { value: exceptWithClass, enumerable: false });
+			Object.defineProperty(modules, "exceptWithClass", {
+				value: exceptWithClass,
+				enumerable: false
+			});
 		}
 		if (typeof modules.exceptModule === "undefined") {
-			Object.defineProperty(modules, "exceptModule", { value: exceptModule, enumerable: false });
+			Object.defineProperty(modules, "exceptModule", {
+				value: exceptModule,
+				enumerable: false
+			});
 		}
 		if (typeof modules.enumerate === "undefined") {
-			Object.defineProperty(modules, "enumerate", { value: enumerate, enumerable: false });
+			Object.defineProperty(modules, "enumerate", {
+				value: enumerate,
+				enumerable: false
+			});
 		}
 	};
 
@@ -611,7 +690,9 @@ const MM = (function () {
 					// if server startup time has changed (which means server was restarted)
 					// the client reloads the mm page
 					try {
-						const res = await fetch(`${location.protocol}//${location.host}${config.basePath}startup`);
+						const res = await fetch(
+							`${location.protocol}//${location.host}${config.basePath}startup`
+						);
 						const curr = await res.text();
 						if (startUp === "") startUp = curr;
 						if (startUp !== curr) {

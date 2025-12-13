@@ -30,7 +30,9 @@ const NodeHelper = Class.extend({
 	 * @param {*}  payload The payload of the notification.
 	 */
 	socketNotificationReceived (notification, payload) {
-		Log.log(`${this.name} received a socket notification: ${notification} - Payload: ${payload}`);
+		Log.log(
+			`${this.name} received a socket notification: ${notification} - Payload: ${payload}`
+		);
 	},
 
 	/**
@@ -50,23 +52,23 @@ const NodeHelper = Class.extend({
 	},
 
 	/*
-	 * sendSocketNotification(notification, payload)
-	 * Send a socket notification to the node helper.
-	 *
-	 * argument notification string - The identifier of the notification.
-	 * argument payload mixed - The payload of the notification.
-	 */
+   * sendSocketNotification(notification, payload)
+   * Send a socket notification to the node helper.
+   *
+   * argument notification string - The identifier of the notification.
+   * argument payload mixed - The payload of the notification.
+   */
 	sendSocketNotification (notification, payload) {
 		this.io.of(this.name).emit(notification, payload);
 	},
 
 	/*
-	 * setExpressApp(app)
-	 * Sets the express app object for this module.
-	 * This allows you to host files from the created webserver.
-	 *
-	 * argument app Express app - The Express app object.
-	 */
+   * setExpressApp(app)
+   * Sets the express app object for this module.
+   * This allows you to host files from the created webserver.
+   *
+   * argument app Express app - The Express app object.
+   */
 	setExpressApp (app) {
 		this.expressApp = app;
 
@@ -74,12 +76,12 @@ const NodeHelper = Class.extend({
 	},
 
 	/*
-	 * setSocketIO(io)
-	 * Sets the socket io object for this module.
-	 * Binds message receiver.
-	 *
-	 * argument io Socket.io - The Socket io object.
-	 */
+   * setSocketIO(io)
+   * Sets the socket io object for this module.
+   * Binds message receiver.
+   *
+   * argument io Socket.io - The Socket io object.
+   */
 	setSocketIO (io) {
 		this.io = io;
 

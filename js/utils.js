@@ -13,10 +13,11 @@ const indexFileName = "index.html";
 const discoveredPositionsJSFilename = "js/positions.js";
 
 module.exports = {
-
-	async logSystemInformation  () {
+	async logSystemInformation () {
 		try {
-			let installedNodeVersion = execSync("node -v", { encoding: "utf-8" }).replace("v", "").replace(/(?:\r\n|\r|\n)/g, "");
+			let installedNodeVersion = execSync("node -v", { encoding: "utf-8" })
+				.replace("v", "")
+				.replace(/(?:\r\n|\r|\n)/g, "");
 
 			const staticData = await si.get({
 				system: "manufacturer, model, virtual",
@@ -27,8 +28,10 @@ module.exports = {
 					### SYSTEM:   manufacturer: ${staticData.system.manufacturer}; model: ${staticData.system.model}; virtual: ${staticData.system.virtual}
 					### OS:       platform: ${staticData.osInfo.platform}; distro: ${staticData.osInfo.distro}; release: ${staticData.osInfo.release}; arch: ${staticData.osInfo.arch}; kernel: ${staticData.versions.kernel}
 					### VERSIONS: electron: ${process.versions.electron}; used node: ${staticData.versions.node}; installed node: ${installedNodeVersion}; npm: ${staticData.versions.npm}; pm2: ${staticData.versions.pm2}
-					### OTHER:    timeZone: ${Intl.DateTimeFormat().resolvedOptions().timeZone}; ELECTRON_ENABLE_GPU: ${process.env.ELECTRON_ENABLE_GPU}`
-				.replace(/\t/g, "");
+					### OTHER:    timeZone: ${Intl.DateTimeFormat().resolvedOptions().timeZone}; ELECTRON_ENABLE_GPU: ${process.env.ELECTRON_ENABLE_GPU}`.replace(
+						/\t/g,
+						""
+					);
 			Log.info(systemDataString);
 
 			// Return is currently only for jest
@@ -67,10 +70,14 @@ module.exports = {
 				}
 			});
 			try {
-				fs.writeFileSync(discoveredPositionsJSFilename, `const modulePositions=${JSON.stringify(modulePositions)}`);
-			}
-			catch (error) {
-				Log.error("unable to write js/positions.js with the discovered module positions\nmake the MagicMirror/js folder writeable by the user starting MagicMirror");
+				fs.writeFileSync(
+					discoveredPositionsJSFilename,
+					`const modulePositions=${JSON.stringify(modulePositions)}`
+				);
+			} catch (error) {
+				Log.error(
+					"unable to write js/positions.js with the discovered module positions\nmake the MagicMirror/js folder writeable by the user starting MagicMirror"
+				);
 			}
 		}
 		// return the list to the caller

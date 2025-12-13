@@ -69,8 +69,12 @@ async function cors (req, res) {
  * @returns {object} An object specifying name and value of the headers.
  */
 function getHeadersToSend (url) {
-	const headersToSend = { "User-Agent": `Mozilla/5.0 MagicMirror/${global.version}` };
-	const headersToSendMatch = new RegExp("sendheaders=(.+?)(&|$)", "g").exec(url);
+	const headersToSend = {
+		"User-Agent": `Mozilla/5.0 MagicMirror/${global.version}`
+	};
+	const headersToSendMatch = new RegExp("sendheaders=(.+?)(&|$)", "g").exec(
+		url
+	);
 	if (headersToSendMatch) {
 		const headers = headersToSendMatch[1].split(",");
 		for (const header of headers) {
@@ -91,7 +95,10 @@ function getHeadersToSend (url) {
  */
 function geExpectedReceivedHeaders (url) {
 	const expectedReceivedHeaders = ["Content-Type"];
-	const expectedReceivedHeadersMatch = new RegExp("expectedheaders=(.+?)(&|$)", "g").exec(url);
+	const expectedReceivedHeadersMatch = new RegExp(
+		"expectedheaders=(.+?)(&|$)",
+		"g"
+	).exec(url);
 	if (expectedReceivedHeadersMatch) {
 		const headers = expectedReceivedHeadersMatch[1].split(",");
 		for (const header of headers) {
@@ -107,7 +114,9 @@ function geExpectedReceivedHeaders (url) {
  * @param {Response} res - the result
  */
 function getHtml (req, res) {
-	let html = fs.readFileSync(path.resolve(`${global.root_path}/index.html`), { encoding: "utf8" });
+	let html = fs.readFileSync(path.resolve(`${global.root_path}/index.html`), {
+		encoding: "utf8"
+	});
 	html = html.replace("#VERSION#", global.version);
 	html = html.replace("#TESTMODE#", global.mmTestMode);
 
@@ -134,12 +143,21 @@ function getVersion (req, res) {
  * @returns {object} environment variables key: values
  */
 function getEnvVarsAsObj () {
-	const obj = { modulesDir: `${config.foreignModulesDir}`, customCss: `${config.customCss}` };
+	const obj = {
+		modulesDir: `${config.foreignModulesDir}`,
+		customCss: `${config.customCss}`
+	};
 	if (process.env.MM_MODULES_DIR) {
-		obj.modulesDir = process.env.MM_MODULES_DIR.replace(`${global.root_path}/`, "");
+		obj.modulesDir = process.env.MM_MODULES_DIR.replace(
+			`${global.root_path}/`,
+			""
+		);
 	}
 	if (process.env.MM_CUSTOMCSS_FILE) {
-		obj.customCss = process.env.MM_CUSTOMCSS_FILE.replace(`${global.root_path}/`, "");
+		obj.customCss = process.env.MM_CUSTOMCSS_FILE.replace(
+			`${global.root_path}/`,
+			""
+		);
 	}
 
 	return obj;
@@ -155,4 +173,12 @@ function getEnvVars (req, res) {
 	res.send(obj);
 }
 
-module.exports = { cors, getConfig, getHtml, getVersion, getStartup, getEnvVars, getEnvVarsAsObj };
+module.exports = {
+	cors,
+	getConfig,
+	getHtml,
+	getVersion,
+	getStartup,
+	getEnvVars,
+	getEnvVarsAsObj
+};

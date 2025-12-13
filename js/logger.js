@@ -71,7 +71,10 @@
 			warn: Function.prototype.bind.call(console.warn, console),
 			error: Function.prototype.bind.call(console.error, console),
 			group: Function.prototype.bind.call(console.group, console),
-			groupCollapsed: Function.prototype.bind.call(console.groupCollapsed, console),
+			groupCollapsed: Function.prototype.bind.call(
+				console.groupCollapsed,
+				console
+			),
 			groupEnd: Function.prototype.bind.call(console.groupEnd, console),
 			time: Function.prototype.bind.call(console.time, console),
 			timeEnd: Function.prototype.bind.call(console.timeEnd, console),

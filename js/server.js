@@ -7,7 +7,14 @@ const ipfilter = require("express-ipfilter").IpFilter;
 const helmet = require("helmet");
 const socketio = require("socket.io");
 const Log = require("logger");
-const { cors, getConfig, getHtml, getVersion, getStartup, getEnvVars } = require("./server_functions");
+const {
+	cors,
+	getConfig,
+	getHtml,
+	getVersion,
+	getStartup,
+	getEnvVars
+} = require("./server_functions");
 
 const vendor = require(`${__dirname}/vendor`);
 
@@ -55,32 +62,57 @@ function Server (config) {
 			Log.log(`Starting server on port ${port} ... `);
 			server.listen(port, config.address || "localhost");
 
-			if (config.ipWhitelist instanceof Array && config.ipWhitelist.length === 0) {
-				Log.warn("You're using a full whitelist configuration to allow for all IPs");
+			if (
+				config.ipWhitelist instanceof Array
+				&& config.ipWhitelist.length === 0
+			) {
+				Log.warn(
+					"You're using a full whitelist configuration to allow for all IPs"
+				);
 			}
 
 			app.use(function (req, res, next) {
-				ipfilter(config.ipWhitelist, { mode: config.ipWhitelist.length === 0 ? "deny" : "allow", log: false })(req, res, function (err) {
+				ipfilter(config.ipWhitelist, {
+					mode: config.ipWhitelist.length === 0 ? "deny" : "allow",
+					log: false
+				})(req, res, function (err) {
 					if (err === undefined) {
 						res.header("Access-Control-Allow-Origin", "*");
 						return next();
 					}
 					Log.log(err.message);
-					res.status(403).send("This device is not allowed to access your mirror. <br> Please check your config.js or config.js.sample to change this.");
+					res
+						.status(403)
+						.send(
+							"This device is not allowed to access your mirror. <br> Please check your config.js or config.js.sample to change this."
+						);
 				});
 			});
 
 			app.use(helmet(config.httpHeaders));
 			app.use("/js", express.static(__dirname));
 
-			let directories = ["/config", "/css", "/modules", "/node_modules/animate.css", "/node_modules/@fontsource", "/node_modules/@fortawesome", "/translations", "/tests/configs", "/tests/mocks"];
+			let directories = [
+				"/config",
+				"/css",
+				"/modules",
+				"/node_modules/animate.css",
+				"/node_modules/@fontsource",
+				"/node_modules/@fortawesome",
+				"/translations",
+				"/tests/configs",
+				"/tests/mocks"
+			];
 			for (const [key, value] of Object.entries(vendor)) {
 				const dirArr = value.split("/");
 				if (dirArr[0] === "node_modules") directories.push(`/${dirArr[0]}/${dirArr[1]}`);
 			}
 			const uniqDirs = [...new Set(directories)];
 			for (const directory of uniqDirs) {
-				app.use(directory, express.static(path.resolve(global.root_path + directory)));
+				app.use(
+					directory,
+					express.static(path.resolve(global.root_path + directory))
+				);
 			}
 
 			app.get("/cors", async (req, res) => await cors(req, res));
