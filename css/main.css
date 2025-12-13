@@ -31,7 +31,8 @@ html {
 }
 
 body {
-  margin: var(--gap-body-top) var(--gap-body-right) var(--gap-body-bottom) var(--gap-body-left);
+  margin: var(--gap-body-top) var(--gap-body-right) var(--gap-body-bottom)
+    var(--gap-body-left);
   position: absolute;
   height: calc(100% - var(--gap-body-top) - var(--gap-body-bottom));
   width: calc(100% - var(--gap-body-right) - var(--gap-body-left));
@@ -171,7 +172,8 @@ sup {
 
 .region.fullscreen {
   position: absolute;
-  inset: calc(-1 * var(--gap-body-top)) calc(-1 * var(--gap-body-right)) calc(-1 * var(--gap-body-bottom)) calc(-1 * var(--gap-body-left));
+  inset: calc(-1 * var(--gap-body-top)) calc(-1 * var(--gap-body-right))
+    calc(-1 * var(--gap-body-bottom)) calc(-1 * var(--gap-body-left));
   pointer-events: none;
 }
 
