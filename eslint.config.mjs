@@ -8,7 +8,12 @@ import packageJson from "eslint-plugin-package-json";
 import stylistic from "@stylistic/eslint-plugin";
 
 export default defineConfig([
-	globalIgnores(["config/**", "modules/**/*", "!modules/default/**", "js/positions.js"]),
+	globalIgnores([
+		"config/**",
+		"modules/**/*",
+		"!modules/default/**",
+		"js/positions.js"
+	]),
 	{
 		files: ["**/*.js"],
 		languageOptions: {
@@ -24,7 +29,13 @@ export default defineConfig([
 			}
 		},
 		plugins: {js, jsdoc, stylistic},
-		extends: [importX.recommended, jest.configs["flat/recommended"], "js/recommended", jsdoc.configs["flat/recommended"], "stylistic/all"],
+		extends: [
+			importX.recommended,
+			jest.configs["flat/recommended"],
+			"js/recommended",
+			jsdoc.configs["flat/recommended"],
+			"stylistic/all"
+		],
 		rules: {
 			"@stylistic/array-element-newline": ["error", "consistent"],
 			"@stylistic/arrow-parens": ["error", "always"],
@@ -38,11 +49,17 @@ export default defineConfig([
 			"@stylistic/max-statements-per-line": ["error", {max: 2}],
 			"@stylistic/multiline-comment-style": "off",
 			"@stylistic/multiline-ternary": ["error", "always-multiline"],
-			"@stylistic/newline-per-chained-call": ["error", {ignoreChainWithDepth: 4}],
+			"@stylistic/newline-per-chained-call": [
+				"error",
+				{ignoreChainWithDepth: 4}
+			],
 			"@stylistic/no-extra-parens": "off",
 			"@stylistic/no-tabs": "off",
 			"@stylistic/object-curly-spacing": ["error", "always"],
-			"@stylistic/object-property-newline": ["error", {allowAllPropertiesOnSameLine: true}],
+			"@stylistic/object-property-newline": [
+				"error",
+				{allowAllPropertiesOnSameLine: true}
+			],
 			"@stylistic/operator-linebreak": ["error", "before"],
 			"@stylistic/padded-blocks": "off",
 			"@stylistic/quote-props": ["error", "as-needed"],
@@ -113,7 +130,10 @@ export default defineConfig([
 		rules: {
 			"@stylistic/array-element-newline": "off",
 			"@stylistic/indent": ["error", "tab"],
-			"@stylistic/object-property-newline": ["error", {allowAllPropertiesOnSameLine: true}],
+			"@stylistic/object-property-newline": [
+				"error",
+				{allowAllPropertiesOnSameLine: true}
+			],
 			"@stylistic/padded-blocks": ["error", "never"],
 			"@stylistic/quote-props": ["error", "as-needed"],
 			"import-x/no-unresolved": ["error", {ignore: ["eslint/config"]}],
