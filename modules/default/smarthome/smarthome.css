@@ -1,0 +1,429 @@
+/**
+ * Smart Home Module Styles
+ *
+ * Follows Apple HIG principles adapted for mirror display:
+ * - Clear device status at a glance
+ * - High contrast on/off states
+ * - Grouped by room
+ * - Touch-friendly controls
+ */
+
+/* Module container */
+.smarthome-module {
+	min-width: 250px;
+}
+
+.smarthome-module.compact {
+	min-width: 180px;
+}
+
+/* Loading state */
+.smarthome-loading {
+	display: flex;
+	align-items: center;
+	gap: 10px;
+	padding: 15px;
+	color: var(--color-text-dimmed);
+}
+
+.smarthome-loading i {
+	font-size: 16px;
+}
+
+/* Error state */
+.smarthome-error {
+	display: flex;
+	align-items: center;
+	gap: 10px;
+	padding: 15px;
+	color: #ff8e99;
+	background: rgba(255, 100, 100, 0.1);
+	border-radius: 8px;
+}
+
+.smarthome-error i {
+	font-size: 16px;
+}
+
+/* Empty state */
+.smarthome-empty {
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+	gap: 10px;
+	padding: 20px;
+	color: var(--color-text-dimmed);
+}
+
+.smarthome-empty i {
+	font-size: 24px;
+	opacity: 0.5;
+}
+
+/* Connection status */
+.smarthome-status {
+	display: flex;
+	align-items: center;
+	gap: 6px;
+	padding: 6px 10px;
+	margin-bottom: 10px;
+	font-size: var(--font-size-xsmall);
+	border-radius: 4px;
+}
+
+.smarthome-status.disconnected {
+	background: rgba(255, 100, 100, 0.1);
+	color: #ff8e99;
+}
+
+/* Rooms container */
+.smarthome-rooms {
+	display: flex;
+	flex-direction: column;
+	gap: 15px;
+}
+
+/* Single room */
+.smarthome-room {
+	background: rgba(255, 255, 255, 0.03);
+	border-radius: 8px;
+	padding: 10px 12px;
+}
+
+.room-header {
+	display: flex;
+	justify-content: space-between;
+	align-items: center;
+	margin-bottom: 10px;
+	padding-bottom: 8px;
+	border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.room-name {
+	color: var(--color-text-bright);
+	font-size: var(--font-size-small);
+	font-weight: 500;
+}
+
+.room-count {
+	color: var(--color-text-dimmed);
+	font-size: var(--font-size-xsmall);
+	background: rgba(255, 255, 255, 0.1);
+	padding: 2px 8px;
+	border-radius: 10px;
+}
+
+/* Device list */
+.device-list {
+	display: flex;
+	flex-direction: column;
+	gap: 8px;
+}
+
+/* Single device */
+.device-item {
+	display: flex;
+	align-items: center;
+	gap: 12px;
+	padding: 8px 10px;
+	border-radius: 6px;
+	background: rgba(255, 255, 255, 0.02);
+	transition: all 0.2s ease;
+}
+
+.device-item.on {
+	background: rgba(255, 255, 255, 0.06);
+}
+
+.device-item.unavailable {
+	opacity: 0.5;
+}
+
+/* Device icon */
+.device-icon {
+	flex-shrink: 0;
+	width: 32px;
+	height: 32px;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	border-radius: 50%;
+	background: rgba(255, 255, 255, 0.1);
+	color: var(--color-text-dimmed);
+	font-size: 14px;
+	transition: all 0.3s ease;
+}
+
+.device-item.on .device-icon {
+	background: rgba(255, 215, 0, 0.2);
+	color: #ffd700;
+}
+
+/* Type-specific icon colors when on */
+.device-item.light.on .device-icon {
+	background: rgba(255, 215, 0, 0.2);
+	color: #ffd700;
+}
+
+.device-item.switch.on .device-icon,
+.device-item.outlet.on .device-icon {
+	background: rgba(0, 200, 150, 0.2);
+	color: #00c896;
+}
+
+.device-item.climate.on .device-icon,
+.device-item.thermostat.on .device-icon {
+	background: rgba(100, 180, 255, 0.2);
+	color: #64b4ff;
+}
+
+.device-item.lock.on .device-icon {
+	background: rgba(100, 200, 100, 0.2);
+	color: #64c864;
+}
+
+.device-item.lock.off .device-icon {
+	background: rgba(255, 100, 100, 0.2);
+	color: #ff6464;
+}
+
+.device-item.fan.on .device-icon {
+	background: rgba(100, 200, 255, 0.2);
+	color: #64c8ff;
+	animation: fan-spin 2s linear infinite;
+}
+
+@keyframes fan-spin {
+	from {
+		transform: rotate(0deg);
+	}
+	to {
+		transform: rotate(360deg);
+	}
+}
+
+.device-item.motion.on .device-icon {
+	background: rgba(255, 150, 50, 0.2);
+	color: #ff9632;
+	animation: motion-pulse 1s ease-in-out infinite;
+}
+
+@keyframes motion-pulse {
+	0%,
+	100% {
+		opacity: 1;
+	}
+	50% {
+		opacity: 0.5;
+	}
+}
+
+/* Device info */
+.device-info {
+	flex: 1;
+	min-width: 0;
+}
+
+.device-name {
+	color: var(--color-text);
+	font-size: var(--font-size-small);
+	white-space: nowrap;
+	overflow: hidden;
+	text-overflow: ellipsis;
+}
+
+.device-state {
+	color: var(--color-text-dimmed);
+	font-size: var(--font-size-xsmall);
+	margin-top: 2px;
+}
+
+.device-item.on .device-state {
+	color: var(--color-text);
+}
+
+/* Device controls */
+.device-controls {
+	display: flex;
+	align-items: center;
+	gap: 8px;
+	flex-shrink: 0;
+}
+
+.control-btn {
+	width: 36px;
+	height: 36px;
+	border: none;
+	border-radius: 50%;
+	background: rgba(255, 255, 255, 0.1);
+	color: var(--color-text);
+	cursor: pointer;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	transition: all 0.2s ease;
+}
+
+.control-btn:hover,
+.control-btn:active {
+	background: rgba(255, 255, 255, 0.2);
+}
+
+.control-btn.toggle.on {
+	background: rgba(255, 215, 0, 0.2);
+	color: #ffd700;
+}
+
+.control-btn.lock.locked {
+	background: rgba(100, 200, 100, 0.2);
+	color: #64c864;
+}
+
+.control-btn.lock.unlocked {
+	background: rgba(255, 100, 100, 0.2);
+	color: #ff6464;
+}
+
+/* Temperature controls */
+.control-btn.temp-down,
+.control-btn.temp-up {
+	width: 28px;
+	height: 28px;
+	font-size: 12px;
+}
+
+.temp-display {
+	min-width: 40px;
+	text-align: center;
+	font-size: var(--font-size-small);
+	font-variant-numeric: tabular-nums;
+	color: var(--color-text-bright);
+}
+
+/* Brightness slider */
+.brightness-slider {
+	width: 80px;
+	height: 4px;
+	-webkit-appearance: none;
+	appearance: none;
+	background: rgba(255, 255, 255, 0.2);
+	border-radius: 2px;
+	outline: none;
+}
+
+.brightness-slider::-webkit-slider-thumb {
+	-webkit-appearance: none;
+	appearance: none;
+	width: 16px;
+	height: 16px;
+	border-radius: 50%;
+	background: #ffd700;
+	cursor: pointer;
+}
+
+.brightness-slider::-moz-range-thumb {
+	width: 16px;
+	height: 16px;
+	border-radius: 50%;
+	background: #ffd700;
+	cursor: pointer;
+	border: none;
+}
+
+/* Compact mode */
+.smarthome-module.compact .smarthome-room {
+	padding: 8px;
+}
+
+.smarthome-module.compact .room-header {
+	margin-bottom: 6px;
+	padding-bottom: 4px;
+}
+
+.smarthome-module.compact .room-name {
+	font-size: var(--font-size-xsmall);
+}
+
+.smarthome-module.compact .device-item {
+	padding: 4px 6px;
+	gap: 8px;
+}
+
+.smarthome-module.compact .device-icon {
+	width: 24px;
+	height: 24px;
+	font-size: 11px;
+}
+
+.smarthome-module.compact .device-name {
+	font-size: var(--font-size-xsmall);
+}
+
+.smarthome-module.compact .device-state {
+	font-size: 10px;
+}
+
+.smarthome-module.compact .device-controls {
+	display: none;
+}
+
+/* Animation for state changes */
+.device-item {
+	animation: device-fadein 0.3s ease-out;
+}
+
+@keyframes device-fadein {
+	from {
+		opacity: 0;
+		transform: translateY(-5px);
+	}
+	to {
+		opacity: 1;
+		transform: translateY(0);
+	}
+}
+
+/* Responsive */
+@media (max-width: 300px) {
+	.smarthome-module {
+		min-width: 150px;
+	}
+
+	.device-controls {
+		display: none;
+	}
+
+	.device-icon {
+		width: 24px;
+		height: 24px;
+		font-size: 11px;
+	}
+}
+
+/* Scene button (if used) */
+.scene-button {
+	display: flex;
+	align-items: center;
+	gap: 8px;
+	padding: 10px 15px;
+	background: rgba(255, 255, 255, 0.05);
+	border: 1px solid rgba(255, 255, 255, 0.1);
+	border-radius: 8px;
+	color: var(--color-text);
+	cursor: pointer;
+	transition: all 0.2s ease;
+}
+
+.scene-button:hover,
+.scene-button:active {
+	background: rgba(255, 255, 255, 0.1);
+	border-color: rgba(255, 255, 255, 0.2);
+}
+
+.scene-button i {
+	color: var(--color-text-dimmed);
+}
+
+.scene-button span {
+	flex: 1;
+}
