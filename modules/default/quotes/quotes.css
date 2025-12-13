@@ -1,0 +1,234 @@
+/**
+ * Quotes Module Styles
+ *
+ * Follows Apple HIG principles adapted for mirror display:
+ * - Elegant, readable typography
+ * - Subtle quote icon decoration
+ * - Smooth fade transitions
+ * - High contrast for readability
+ */
+
+/* Module container */
+.quotes-module {
+	max-width: 600px;
+	padding: 10px;
+}
+
+/* Text alignment variants */
+.quotes-module.align-left {
+	text-align: left;
+}
+
+.quotes-module.align-center {
+	text-align: center;
+}
+
+.quotes-module.align-right {
+	text-align: right;
+}
+
+/* Quote text */
+.quote-text {
+	line-height: 1.5;
+	letter-spacing: 0.3px;
+	position: relative;
+}
+
+/* Quote icon */
+.quote-icon {
+	font-size: 0.6em;
+	opacity: 0.4;
+	margin-right: 8px;
+	vertical-align: top;
+}
+
+/* Author attribution */
+.quote-author {
+	margin-top: 12px;
+	font-style: italic;
+	letter-spacing: 0.5px;
+}
+
+/* Category label */
+.quote-category {
+	margin-top: 8px;
+	text-transform: uppercase;
+	letter-spacing: 2px;
+}
+
+/* Touch controls */
+.quote-controls {
+	display: flex;
+	justify-content: center;
+	gap: 20px;
+	margin-top: 15px;
+	opacity: 0;
+	transition: opacity 0.3s ease;
+}
+
+.quotes-module:hover .quote-controls {
+	opacity: 1;
+}
+
+.quote-controls button {
+	background: rgba(255, 255, 255, 0.1);
+	border: none;
+	border-radius: 50%;
+	width: 40px;
+	height: 40px;
+	color: var(--color-text);
+	cursor: pointer;
+	transition: all 0.2s ease;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+}
+
+.quote-controls button:hover,
+.quote-controls button:active {
+	background: rgba(255, 255, 255, 0.2);
+	color: var(--color-text-bright);
+}
+
+/* Animation for quote transitions */
+.quotes-module {
+	animation: quote-fadein 0.5s ease-out;
+}
+
+@keyframes quote-fadein {
+	from {
+		opacity: 0;
+	}
+	to {
+		opacity: 1;
+	}
+}
+
+/* Decorative quote marks variant */
+.quotes-module.decorative .quote-text::before {
+	content: "\201C";
+	font-size: 3em;
+	position: absolute;
+	left: -30px;
+	top: -20px;
+	opacity: 0.15;
+	font-family: Georgia, serif;
+}
+
+.quotes-module.decorative .quote-text::after {
+	content: "\201D";
+	font-size: 3em;
+	opacity: 0.15;
+	font-family: Georgia, serif;
+	vertical-align: bottom;
+	margin-left: 5px;
+}
+
+/* Large quote variant */
+.quotes-module.large .quote-text {
+	font-size: var(--font-size-large);
+	line-height: 1.3;
+}
+
+.quotes-module.large .quote-author {
+	font-size: var(--font-size-small);
+	margin-top: 20px;
+}
+
+/* Compact quote variant */
+.quotes-module.compact {
+	max-width: 400px;
+	padding: 5px;
+}
+
+.quotes-module.compact .quote-text {
+	font-size: var(--font-size-small);
+	line-height: 1.4;
+}
+
+.quotes-module.compact .quote-author {
+	font-size: var(--font-size-xsmall);
+	margin-top: 8px;
+}
+
+.quotes-module.compact .quote-icon {
+	display: none;
+}
+
+/* Card style variant */
+.quotes-module.card {
+	background: rgba(255, 255, 255, 0.03);
+	border-radius: 12px;
+	padding: 25px;
+	border-left: 3px solid rgba(255, 255, 255, 0.2);
+}
+
+/* Minimal style variant */
+.quotes-module.minimal .quote-icon {
+	display: none;
+}
+
+.quotes-module.minimal .quote-author::before {
+	content: "— ";
+}
+
+/* Highlight style for certain words */
+.quote-text em,
+.quote-text strong {
+	color: var(--color-text-bright);
+}
+
+/* Responsive adjustments */
+@media (max-width: 500px) {
+	.quotes-module {
+		max-width: 100%;
+		padding: 5px;
+	}
+
+	.quote-text {
+		font-size: var(--font-size-small);
+	}
+
+	.quote-author {
+		font-size: var(--font-size-xsmall);
+		margin-top: 8px;
+	}
+
+	.quote-icon {
+		display: none;
+	}
+}
+
+/* Dark mode enhancements (already dark, but can be customized) */
+.quotes-module .quote-text {
+	text-shadow: 0 1px 2px rgba(0, 0, 0, 0.5);
+}
+
+/* Progress indicator for auto-advance */
+.quote-progress {
+	height: 2px;
+	background: rgba(255, 255, 255, 0.1);
+	border-radius: 1px;
+	margin-top: 15px;
+	overflow: hidden;
+}
+
+.quote-progress-fill {
+	height: 100%;
+	background: var(--color-text-dimmed);
+	animation: quote-progress-animation linear forwards;
+}
+
+@keyframes quote-progress-animation {
+	from {
+		width: 0%;
+	}
+	to {
+		width: 100%;
+	}
+}
+
+/* Display-only mode: hide controls */
+.quotes-module:not(.touch-mode) .quote-controls {
+	display: none;
+}
