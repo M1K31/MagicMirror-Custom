@@ -1,0 +1,131 @@
+# MagicMirror .gitignore
+
+# =========================================
+# SENSITIVE FILES - NEVER COMMIT
+# =========================================
+
+# Environment variables (contains secrets)
+.env
+.env.local
+.env.*.local
+
+# User configuration (may contain API keys, passwords)
+config/config.js
+
+# Token storage files (OAuth tokens, session data)
+modules/default/**/.*.json
+modules/default/**/.*_config.json
+.magicmirror/
+
+# SSL/TLS certificates
+*.pem
+*.key
+*.crt
+*.p12
+certs/
+
+# =========================================
+# DEPENDENCIES
+# =========================================
+
+node_modules/
+package-lock.json
+
+# =========================================
+# BUILD & RUNTIME
+# =========================================
+
+# Logs
+logs/
+*.log
+npm-debug.log*
+
+# Runtime data
+pids/
+*.pid
+*.seed
+
+# Coverage reports
+coverage/
+.nyc_output/
+
+# =========================================
+# SYSTEM FILES
+# =========================================
+
+# macOS
+.DS_Store
+.AppleDouble
+.LSOverride
+._*
+
+# Windows
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+$RECYCLE.BIN/
+
+# Linux
+*~
+.directory
+
+# =========================================
+# IDE & EDITORS
+# =========================================
+
+# VS Code
+.vscode/
+!.vscode/extensions.json
+!.vscode/settings.json.example
+
+# JetBrains IDEs
+.idea/
+*.iml
+*.iws
+*.ipr
+
+# Sublime Text
+*.sublime-project
+*.sublime-workspace
+
+# Vim
+*.swp
+*.swo
+*~
+Session.vim
+.netrwhist
+
+# =========================================
+# TESTING
+# =========================================
+
+# Jest
+.jest/
+jest-results/
+
+# Playwright
+test-results/
+playwright-report/
+playwright/.cache/
+
+# =========================================
+# MISCELLANEOUS
+# =========================================
+
+# Temporary files
+tmp/
+temp/
+*.tmp
+*.temp
+
+# Backup files
+*.bak
+*.backup
+*.old
+
+# Debug files
+*.debug
+
+# Custom CSS (user-specific styling)
+# Uncomment if you want to track custom.css
+# css/custom.css
