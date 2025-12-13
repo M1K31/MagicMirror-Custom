@@ -8,7 +8,8 @@ require("module-alias/register");
 
 const CalendarFetcher = require("./calendarfetcher");
 
-const url = "https://calendar.google.com/calendar/ical/pkm1t2uedjbp0uvq1o7oj1jouo%40group.calendar.google.com/private-08ba559f89eec70dd74bbd887d0a3598/basic.ics"; // Standard test URL
+const url
+  = "https://calendar.google.com/calendar/ical/pkm1t2uedjbp0uvq1o7oj1jouo%40group.calendar.google.com/private-08ba559f89eec70dd74bbd887d0a3598/basic.ics"; // Standard test URL
 //const url = "https://www.googleapis.com/calendar/v3/calendars/primary/events/"; // URL for Bearer auth (must be configured  in Google OAuth2 first)
 const fetchInterval = 60 * 60 * 1000;
 const maximumEntries = 10;
@@ -22,7 +23,14 @@ const auth = {
 
 console.log("Create fetcher ...");
 
-const fetcher = new CalendarFetcher(url, fetchInterval, [], maximumEntries, maximumNumberOfDays, auth);
+const fetcher = new CalendarFetcher(
+	url,
+	fetchInterval,
+	[],
+	maximumEntries,
+	maximumNumberOfDays,
+	auth
+);
 
 fetcher.onReceive(function (fetcher) {
 	console.log(fetcher.events());

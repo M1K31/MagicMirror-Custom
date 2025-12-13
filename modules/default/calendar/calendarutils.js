@@ -25,7 +25,9 @@ const CalendarUtils = {
 				return { longDateFormat: { LT: "HH:mm" } };
 			}
 			default: {
-				return { longDateFormat: { LT: moment.localeData().longDateFormat("LT") } };
+				return {
+					longDateFormat: { LT: moment.localeData().longDateFormat("LT") }
+				};
 			}
 		}
 	},
@@ -51,7 +53,10 @@ const CalendarUtils = {
 
 			for (let i = 0; i < words.length; i++) {
 				const word = words[i];
-				if (currentLine.length + word.length < (typeof maxLength === "number" ? maxLength : 25) - 1) {
+				if (
+					currentLine.length + word.length
+					< (typeof maxLength === "number" ? maxLength : 25) - 1
+				) {
 					// max - 1 to account for a space
 					currentLine += `${word} `;
 				} else {
@@ -74,7 +79,11 @@ const CalendarUtils = {
 
 			return (temp + currentLine).trim();
 		} else {
-			if (maxLength && typeof maxLength === "number" && string.length > maxLength) {
+			if (
+				maxLength
+				&& typeof maxLength === "number"
+				&& string.length > maxLength
+			) {
 				return `${string.trim().slice(0, maxLength)}…`;
 			} else {
 				return string.trim();
@@ -98,7 +107,11 @@ const CalendarUtils = {
 		for (let tr in titleReplace) {
 			let transform = titleReplace[tr];
 			if (typeof transform === "object") {
-				if (typeof transform.search !== "undefined" && transform.search !== "" && typeof transform.replace !== "undefined") {
+				if (
+					typeof transform.search !== "undefined"
+					&& transform.search !== ""
+					&& typeof transform.replace !== "undefined"
+				) {
 					let regParts = transform.search.match(/^\/(.+)\/([gim]*)$/);
 					let needle = new RegExp(transform.search, "g");
 					if (regParts) {
@@ -107,10 +120,18 @@ const CalendarUtils = {
 					}
 
 					let replacement = transform.replace;
-					if (typeof transform.yearmatchgroup !== "undefined" && transform.yearmatchgroup !== "") {
+					if (
+						typeof transform.yearmatchgroup !== "undefined"
+						&& transform.yearmatchgroup !== ""
+					) {
 						const yearmatch = [...title.matchAll(needle)];
-						if (yearmatch[0].length >= transform.yearmatchgroup + 1 && yearmatch[0][transform.yearmatchgroup] * 1 >= 1900) {
-							let calcage = new Date().getFullYear() - yearmatch[0][transform.yearmatchgroup] * 1;
+						if (
+							yearmatch[0].length >= transform.yearmatchgroup + 1
+							&& yearmatch[0][transform.yearmatchgroup] * 1 >= 1900
+						) {
+							let calcage
+                = new Date().getFullYear()
+                  - yearmatch[0][transform.yearmatchgroup] * 1;
 							let searchstr = `$${transform.yearmatchgroup}`;
 							replacement = replacement.replace(searchstr, calcage);
 						}

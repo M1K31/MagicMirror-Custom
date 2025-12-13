@@ -16,7 +16,16 @@ const CalendarFetcherUtils = require("./calendarfetcherutils");
  * @param {boolean} selfSignedCert If true, the server certificate is not verified against the list of supplied CAs.
  * @class
  */
-const CalendarFetcher = function (url, reloadInterval, excludedEvents, maximumEntries, maximumNumberOfDays, auth, includePastEvents, selfSignedCert) {
+const CalendarFetcher = function (
+	url,
+	reloadInterval,
+	excludedEvents,
+	maximumEntries,
+	maximumNumberOfDays,
+	auth,
+	includePastEvents,
+	selfSignedCert
+) {
 	let reloadTimer = null;
 	let events = [];
 
@@ -103,7 +112,9 @@ const CalendarFetcher = function (url, reloadInterval, excludedEvents, maximumEn
 	 * Broadcast the existing events.
 	 */
 	this.broadcastEvents = function () {
-		Log.info(`Calendar-Fetcher: Broadcasting ${events.length} events from ${url}.`);
+		Log.info(
+			`Calendar-Fetcher: Broadcasting ${events.length} events from ${url}.`
+		);
 		eventsReceivedCallback(this);
 	};
 

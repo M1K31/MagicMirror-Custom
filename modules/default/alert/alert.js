@@ -16,7 +16,11 @@ Module.register("alert", {
 	},
 
 	getStyles () {
-		return ["font-awesome.css", this.file("./styles/notificationFx.css"), this.file(`./styles/${this.config.position}.css`)];
+		return [
+			"font-awesome.css",
+			this.file("./styles/notificationFx.css"),
+			this.file(`./styles/${this.config.position}.css`)
+		];
 	},
 
 	getTranslations () {
@@ -47,8 +51,14 @@ Module.register("alert", {
 		}
 
 		if (this.config.welcome_message) {
-			const message = this.config.welcome_message === true ? this.translate("welcome") : this.config.welcome_message;
-			await this.showNotification({ title: this.translate("sysTitle"), message });
+			const message
+        = this.config.welcome_message === true
+        	? this.translate("welcome")
+        	: this.config.welcome_message;
+			await this.showNotification({
+				title: this.translate("sysTitle"),
+				message
+			});
 		}
 	},
 
@@ -65,7 +75,10 @@ Module.register("alert", {
 	},
 
 	async showNotification (notification) {
-		const message = await this.renderMessage(notification.templateName || "notification", notification);
+		const message = await this.renderMessage(
+			notification.templateName || "notification",
+			notification
+		);
 
 		new NotificationFx({
 			message,
@@ -86,7 +99,10 @@ Module.register("alert", {
 			this.toggleBlur(true);
 		}
 
-		const message = await this.renderMessage(alert.templateName || "alert", alert);
+		const message = await this.renderMessage(
+			alert.templateName || "alert",
+			alert
+		);
 
 		// Store alert in this.alerts
 		this.alerts[sender.name] = new NotificationFx({
@@ -122,13 +138,17 @@ Module.register("alert", {
 
 	renderMessage (type, data) {
 		return new Promise((resolve) => {
-			this.nunjucksEnvironment().render(this.getTemplate(type), data, function (err, res) {
-				if (err) {
-					Log.error("Failed to render alert", err);
-				}
+			this.nunjucksEnvironment().render(
+				this.getTemplate(type),
+				data,
+				function (err, res) {
+					if (err) {
+						Log.error("Failed to render alert", err);
+					}
 
-				resolve(res);
-			});
+					resolve(res);
+				}
+			);
 		});
 	},
 

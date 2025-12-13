@@ -53,7 +53,9 @@ Module.register("clock", {
 			if (this.config.displaySeconds) {
 				return 1000 - moment().milliseconds() + EXTRA_DELAY;
 			} else {
-				return (60 - reducedSeconds) * 1000 - moment().milliseconds() + EXTRA_DELAY;
+				return (
+					(60 - reducedSeconds) * 1000 - moment().milliseconds() + EXTRA_DELAY
+				);
 			}
 		};
 
@@ -93,16 +95,16 @@ Module.register("clock", {
 		wrapper.classList.add("clock-grid");
 
 		/************************************
-		 * Create wrappers for analog and digital clock
-		 */
+     * Create wrappers for analog and digital clock
+     */
 		const analogWrapper = document.createElement("div");
 		analogWrapper.className = "clock-circle";
 		const digitalWrapper = document.createElement("div");
 		digitalWrapper.className = "digital";
 
 		/************************************
-		 * Create wrappers for DIGITAL clock
-		 */
+     * Create wrappers for DIGITAL clock
+     */
 		const dateWrapper = document.createElement("div");
 		const timeWrapper = document.createElement("div");
 		const hoursWrapper = document.createElement("span");
@@ -166,8 +168,8 @@ Module.register("clock", {
 		}
 
 		/****************************************************************
-		 * Create wrappers for Sun Times, only if specified in config
-		 */
+     * Create wrappers for Sun Times, only if specified in config
+     */
 		if (this.config.showSunTimes) {
 			const sunTimes = SunCalc.getTimes(now, this.config.lat, this.config.lon);
 			const isVisible = now.isBetween(sunTimes.sunrise, sunTimes.sunset);
@@ -180,7 +182,11 @@ Module.register("clock", {
 				} else if (now.isBefore(sunTimes.sunset)) {
 					nextEvent = sunTimes.sunset;
 				} else {
-					const tomorrowSunTimes = SunCalc.getTimes(now.clone().add(1, "day"), this.config.lat, this.config.lon);
+					const tomorrowSunTimes = SunCalc.getTimes(
+						now.clone().add(1, "day"),
+						this.config.lat,
+						this.config.lon
+					);
 					nextEvent = tomorrowSunTimes.sunrise;
 				}
 				const untilNextEvent = moment.duration(moment(nextEvent).diff(now));
@@ -189,53 +195,71 @@ Module.register("clock", {
 				sunWrapperInnerHTML = `<span class="${isVisible ? "bright" : ""}"><i class="fas fa-sun" aria-hidden="true"></i> ${untilNextEventString}</span>`;
 			}
 
-			sunWrapperInnerHTML += `<span><i class="fas fa-arrow-up" aria-hidden="true"></i> ${formatTime(this.config, sunTimes.sunrise)}</span>`
-			  + `<span><i class="fas fa-arrow-down" aria-hidden="true"></i> ${formatTime(this.config, sunTimes.sunset)}</span>`;
+			sunWrapperInnerHTML
+        += `<span><i class="fas fa-arrow-up" aria-hidden="true"></i> ${formatTime(this.config, sunTimes.sunrise)}</span>`
+          + `<span><i class="fas fa-arrow-down" aria-hidden="true"></i> ${formatTime(this.config, sunTimes.sunset)}</span>`;
 
 			sunWrapper.innerHTML = sunWrapperInnerHTML;
 			digitalWrapper.appendChild(sunWrapper);
 		}
 
 		/****************************************************************
-		 * Create wrappers for Moon Times, only if specified in config
-		 */
+     * Create wrappers for Moon Times, only if specified in config
+     */
 		if (this.config.showMoonTimes) {
 			const moonIllumination = SunCalc.getMoonIllumination(now.toDate());
-			const moonTimes = SunCalc.getMoonTimes(now, this.config.lat, this.config.lon);
+			const moonTimes = SunCalc.getMoonTimes(
+				now,
+				this.config.lat,
+				this.config.lon
+			);
 			const moonRise = moonTimes.rise;
 			let moonSet;
 			if (moment(moonTimes.set).isAfter(moonTimes.rise)) {
 				moonSet = moonTimes.set;
 			} else {
-				const nextMoonTimes = SunCalc.getMoonTimes(now.clone().add(1, "day"), this.config.lat, this.config.lon);
+				const nextMoonTimes = SunCalc.getMoonTimes(
+					now.clone().add(1, "day"),
+					this.config.lat,
+					this.config.lon
+				);
 				moonSet = nextMoonTimes.set;
 			}
-			const isVisible = now.isBetween(moonRise, moonSet) || moonTimes.alwaysUp === true;
-			const showFraction = ["both", "percent"].includes(this.config.showMoonTimes);
+			const isVisible
+        = now.isBetween(moonRise, moonSet) || moonTimes.alwaysUp === true;
+			const showFraction = ["both", "percent"].includes(
+				this.config.showMoonTimes
+			);
 			const showUnicode = ["both", "phase"].includes(this.config.showMoonTimes);
 			const illuminatedFractionString = `${Math.round(moonIllumination.fraction * 100)}%`;
-			const image = showUnicode ? [..."🌑🌒🌓🌔🌕🌖🌗🌘"][Math.floor(moonIllumination.phase * 8)] : "<i class=\"fas fa-moon\" aria-hidden=\"true\"></i>";
+			const image = showUnicode
+				? [..."🌑🌒🌓🌔🌕🌖🌗🌘"][Math.floor(moonIllumination.phase * 8)]
+				: "<i class=\"fas fa-moon\" aria-hidden=\"true\"></i>";
 
 			moonWrapper.innerHTML
-				= `<span class="${isVisible ? "bright" : ""}">${image} ${showFraction ? illuminatedFractionString : ""}</span>`
-				  + `<span><i class="fas fa-arrow-up" aria-hidden="true"></i> ${moonRise ? formatTime(this.config, moonRise) : "..."}</span>`
-				  + `<span><i class="fas fa-arrow-down" aria-hidden="true"></i> ${moonSet ? formatTime(this.config, moonSet) : "..."}</span>`;
+        = `<span class="${isVisible ? "bright" : ""}">${image} ${showFraction ? illuminatedFractionString : ""}</span>`
+          + `<span><i class="fas fa-arrow-up" aria-hidden="true"></i> ${moonRise ? formatTime(this.config, moonRise) : "..."}</span>`
+          + `<span><i class="fas fa-arrow-down" aria-hidden="true"></i> ${moonSet ? formatTime(this.config, moonSet) : "..."}</span>`;
 			digitalWrapper.appendChild(moonWrapper);
 		}
 
 		if (this.config.showWeek) {
 			if (this.config.showWeek === "short") {
-				weekWrapper.innerHTML = this.translate("WEEK_SHORT", { weekNumber: now.week() });
+				weekWrapper.innerHTML = this.translate("WEEK_SHORT", {
+					weekNumber: now.week()
+				});
 			} else {
-				weekWrapper.innerHTML = this.translate("WEEK", { weekNumber: now.week() });
+				weekWrapper.innerHTML = this.translate("WEEK", {
+					weekNumber: now.week()
+				});
 			}
 
 			digitalWrapper.appendChild(weekWrapper);
 		}
 
 		/****************************************************************
-		 * Create wrappers for ANALOG clock, only if specified in config
-		 */
+     * Create wrappers for ANALOG clock, only if specified in config
+     */
 		if (this.config.displayType !== "digital") {
 			// If it isn't 'digital', then an 'analog' clock was also requested
 
@@ -251,7 +275,11 @@ Module.register("clock", {
 			analogWrapper.style.width = this.config.analogSize;
 			analogWrapper.style.height = this.config.analogSize;
 
-			if (this.config.analogFace !== "" && this.config.analogFace !== "simple" && this.config.analogFace !== "none") {
+			if (
+				this.config.analogFace !== ""
+				&& this.config.analogFace !== "simple"
+				&& this.config.analogFace !== "none"
+			) {
 				analogWrapper.style.background = `url(${this.data.path}faces/${this.config.analogFace}.svg)`;
 				analogWrapper.style.backgroundSize = "100%";
 
@@ -282,15 +310,16 @@ Module.register("clock", {
 				clockSecond.id = "clock-second";
 				clockSecond.style.transform = `rotate(${second}deg)`;
 				clockSecond.className = "clock-second";
-				clockSecond.style.backgroundColor = this.config.secondsColor; /* DEPRECATED, to be removed in a future version , use CSS instead */
+				clockSecond.style.backgroundColor
+          = this.config.secondsColor; /* DEPRECATED, to be removed in a future version , use CSS instead */
 				clockFace.appendChild(clockSecond);
 			}
 			analogWrapper.appendChild(clockFace);
 		}
 
 		/*******************************************
-		 * Update placement, respect old analogShowDate even if it's not needed anymore
-		 */
+     * Update placement, respect old analogShowDate even if it's not needed anymore
+     */
 		if (this.config.displayType === "analog") {
 			// Display only an analog clock
 			if (this.config.showDate) {

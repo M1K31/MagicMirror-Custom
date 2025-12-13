@@ -5,7 +5,11 @@ Module.register("compliments", {
 	defaults: {
 		compliments: {
 			anytime: ["Hey there sexy!"],
-			morning: ["Good morning, handsome!", "Enjoy your day!", "How was your sleep?"],
+			morning: [
+				"Good morning, handsome!",
+				"Enjoy your day!",
+				"How was your sleep?"
+			],
 			afternoon: ["Hello, beauty!", "You look sexy!", "Looking good today!"],
 			evening: ["Wow, you look hot!", "You look nice!", "Hi, sexy!"],
 			"....-01-01": ["Happy new year!"]
@@ -27,8 +31,10 @@ Module.register("compliments", {
 	lastIndexUsed: -1,
 	// Set currentweather from module
 	currentWeatherType: "",
-	cron_regex: /^(((\d+,)+\d+|((\d+|[*])[/]\d+|((JAN|FEB|APR|MA[RY]|JU[LN]|AUG|SEP|OCT|NOV|DEC)(-(JAN|FEB|APR|MA[RY]|JU[LN]|AUG|SEP|OCT|NOV|DEC))?))|(\d+-\d+)|\d+(-\d+)?[/]\d+(-\d+)?|\d+|[*]|(MON|TUE|WED|THU|FRI|SAT|SUN)(-(MON|TUE|WED|THU|FRI|SAT|SUN))?) ?){5}$/i,
-	date_regex: "[1-9.][0-9.][0-9.]{2}-([0][1-9]|[1][0-2])-([1-2][0-9]|[0][1-9]|[3][0-1])",
+	cron_regex:
+    /^(((\d+,)+\d+|((\d+|[*])[/]\d+|((JAN|FEB|APR|MA[RY]|JU[LN]|AUG|SEP|OCT|NOV|DEC)(-(JAN|FEB|APR|MA[RY]|JU[LN]|AUG|SEP|OCT|NOV|DEC))?))|(\d+-\d+)|\d+(-\d+)?[/]\d+(-\d+)?|\d+|[*]|(MON|TUE|WED|THU|FRI|SAT|SUN)(-(MON|TUE|WED|THU|FRI|SAT|SUN))?) ?){5}$/i,
+	date_regex:
+    "[1-9.][0-9.][0-9.]{2}-([0][1-9]|[1][0-2])-([1-2][0-9]|[0][1-9]|[3][0-1])",
 	pre_defined_types: ["anytime", "morning", "afternoon", "evening"],
 	// Define required scripts.
 	getScripts () {
@@ -46,17 +52,18 @@ Module.register("compliments", {
 			this.config.compliments = JSON.parse(response);
 			this.updateDom();
 			if (this.config.remoteFileRefreshInterval !== 0) {
-				if ((this.config.remoteFileRefreshInterval >= this.refreshMinimumDelay) || window.mmTestMode === "true") {
+				if (
+					this.config.remoteFileRefreshInterval >= this.refreshMinimumDelay
+					|| window.mmTestMode === "true"
+				) {
 					setInterval(async () => {
 						const response = await this.loadComplimentFile();
 						if (response) {
 							this.compliments_new = JSON.parse(response);
-						}
-						else {
+						} else {
 							Log.error(`${this.name} remoteFile refresh failed`);
 						}
-					},
-					this.config.remoteFileRefreshInterval);
+					}, this.config.remoteFileRefreshInterval);
 				} else {
 					Log.error(`${this.name} remoteFileRefreshInterval less than minimum`);
 				}
@@ -68,7 +75,7 @@ Module.register("compliments", {
 			// if it is a cron entry
 			if (this.isCronEntry(m)) {
 				// we need to synch our interval cycle to the minute
-				minute_sync_delay = (60 - (moment().second())) * 1000;
+				minute_sync_delay = (60 - moment().second()) * 1000;
 				break;
 			}
 		}
@@ -77,8 +84,7 @@ Module.register("compliments", {
 			setInterval(() => {
 				this.updateDom(this.config.fadeSpeed);
 			}, this.config.updateInterval);
-		},
-		minute_sync_delay);
+		}, minute_sync_delay);
 	},
 
 	// check to see if this entry could be a cron entry wich contains spaces
@@ -140,9 +146,15 @@ Module.register("compliments", {
 
 		// Add time of day compliments
 		let timeOfDay;
-		if (hour >= this.config.morningStartTime && hour < this.config.morningEndTime) {
+		if (
+			hour >= this.config.morningStartTime
+			&& hour < this.config.morningEndTime
+		) {
 			timeOfDay = "morning";
-		} else if (hour >= this.config.afternoonStartTime && hour < this.config.afternoonEndTime) {
+		} else if (
+			hour >= this.config.afternoonStartTime
+			&& hour < this.config.afternoonEndTime
+		) {
 			timeOfDay = "afternoon";
 		} else {
 			timeOfDay = "evening";
@@ -154,7 +166,10 @@ Module.register("compliments", {
 
 		// Add compliments based on weather
 		if (this.currentWeatherType in this.config.compliments) {
-			Array.prototype.push.apply(compliments, this.config.compliments[this.currentWeatherType]);
+			Array.prototype.push.apply(
+				compliments,
+				this.config.compliments[this.currentWeatherType]
+			);
 			// if the predefine list doesn't include it (yet)
 			if (!this.pre_defined_types.includes(this.currentWeatherType)) {
 				// add it
@@ -179,13 +194,24 @@ Module.register("compliments", {
 				// make sure the regex is valid
 				if (new RegExp(this.cron_regex).test(entry)) {
 					// check if we are in the time range for the cron entry
-					if (this.getSecondsUntilNextCronRun(entry, now.set("seconds", 0).toDate()) <= 1) {
+					if (
+						this.getSecondsUntilNextCronRun(
+							entry,
+							now.set("seconds", 0).toDate()
+						) <= 1
+					) {
 						// if so, use its notice entries
-						Array.prototype.push.apply(date_compliments, this.config.compliments[entry]);
+						Array.prototype.push.apply(
+							date_compliments,
+							this.config.compliments[entry]
+						);
 					}
 				} else Log.error(`compliments cron syntax invalid=${JSON.stringify(entry)}`);
 			} else if (new RegExp(entry).test(date)) {
-				Array.prototype.push.apply(date_compliments, this.config.compliments[entry]);
+				Array.prototype.push.apply(
+					date_compliments,
+					this.config.compliments[entry]
+				);
 			}
 		}
 
@@ -208,8 +234,12 @@ Module.register("compliments", {
 	 * @returns {Promise} Resolved when the file is loaded
 	 */
 	async loadComplimentFile () {
-		const isRemote = this.config.remoteFile.indexOf("http://") === 0 || this.config.remoteFile.indexOf("https://") === 0,
-			url = isRemote ? this.config.remoteFile : this.file(this.config.remoteFile);
+		const isRemote
+        = this.config.remoteFile.indexOf("http://") === 0
+          || this.config.remoteFile.indexOf("https://") === 0,
+			url = isRemote
+				? this.config.remoteFile
+				: this.file(this.config.remoteFile);
 		// because we may be fetching the same url,
 		// we need to force the server to not give us the cached result
 		// create an extra property (ignored by the server handler) just so the url string is different
@@ -240,7 +270,8 @@ Module.register("compliments", {
 		} else {
 			// no, sequential
 			// if doing sequential, don't fall off the end
-			index = this.lastIndexUsed >= compliments.length - 1 ? 0 : ++this.lastIndexUsed;
+			index
+        = this.lastIndexUsed >= compliments.length - 1 ? 0 : ++this.lastIndexUsed;
 		}
 
 		return compliments[index] || "";
@@ -249,7 +280,9 @@ Module.register("compliments", {
 	// Override dom generator.
 	getDom () {
 		const wrapper = document.createElement("div");
-		wrapper.className = this.config.classes ? this.config.classes : "thin xlarge bright pre-line";
+		wrapper.className = this.config.classes
+			? this.config.classes
+			: "thin xlarge bright pre-line";
 		// get the compliment text
 		const complimentText = this.getRandomCompliment();
 		// split it into parts on newline text
@@ -275,7 +308,10 @@ Module.register("compliments", {
 		// we do this here to make sure no other function is using the compliments list
 		if (this.compliments_new) {
 			// use them
-			if (JSON.stringify(this.config.compliments) !== JSON.stringify(this.compliments_new)) {
+			if (
+				JSON.stringify(this.config.compliments)
+				!== JSON.stringify(this.compliments_new)
+			) {
 				// only reset if the contents changes
 				this.config.compliments = this.compliments_new;
 				// reset the index
@@ -287,7 +323,10 @@ Module.register("compliments", {
 		// only in test mode
 		if (window.mmTestMode === "true") {
 			// check for (undocumented) remoteFile2 to test new file load
-			if (this.config.remoteFile2 !== null && this.config.remoteFileRefreshInterval !== 0) {
+			if (
+				this.config.remoteFile2 !== null
+				&& this.config.remoteFileRefreshInterval !== 0
+			) {
 				// switch the file so that next time it will be loaded from a changed file
 				this.config.remoteFile = this.config.remoteFile2;
 			}

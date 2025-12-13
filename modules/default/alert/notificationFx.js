@@ -85,7 +85,10 @@
 		this.ntf.innerHTML = strinner;
 
 		// append to body or the element specified in options.wrapper
-		this.options.wrapper.insertBefore(this.ntf, this.options.wrapper.nextSibling);
+		this.options.wrapper.insertBefore(
+			this.ntf,
+			this.options.wrapper.nextSibling
+		);
 
 		// dismiss after [options.ttl]ms
 		if (this.options.ttl) {

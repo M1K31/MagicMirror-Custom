@@ -12,12 +12,24 @@ module.exports = NodeHelper.create({
 	// Override socketNotificationReceived method.
 	socketNotificationReceived (notification, payload) {
 		if (notification === "ADD_CALENDAR") {
-			this.createFetcher(payload.url, payload.fetchInterval, payload.excludedEvents, payload.maximumEntries, payload.maximumNumberOfDays, payload.auth, payload.broadcastPastEvents, payload.selfSignedCert, payload.id);
+			this.createFetcher(
+				payload.url,
+				payload.fetchInterval,
+				payload.excludedEvents,
+				payload.maximumEntries,
+				payload.maximumNumberOfDays,
+				payload.auth,
+				payload.broadcastPastEvents,
+				payload.selfSignedCert,
+				payload.id
+			);
 		} else if (notification === "FETCH_CALENDAR") {
 			const key = payload.id + payload.url;
 			if (typeof this.fetchers[key] === "undefined") {
 				Log.error("Calendar Error. No fetcher exists with key: ", key);
-				this.sendSocketNotification("CALENDAR_ERROR", { error_type: "MODULE_ERROR_UNSPECIFIED" });
+				this.sendSocketNotification("CALENDAR_ERROR", {
+					error_type: "MODULE_ERROR_UNSPECIFIED"
+				});
 				return;
 			}
 			this.fetchers[key].startFetch();
@@ -37,12 +49,24 @@ module.exports = NodeHelper.create({
 	 * @param {boolean} selfSignedCert If true, the server certificate is not verified against the list of supplied CAs.
 	 * @param {string} identifier ID of the module
 	 */
-	createFetcher (url, fetchInterval, excludedEvents, maximumEntries, maximumNumberOfDays, auth, broadcastPastEvents, selfSignedCert, identifier) {
+	createFetcher (
+		url,
+		fetchInterval,
+		excludedEvents,
+		maximumEntries,
+		maximumNumberOfDays,
+		auth,
+		broadcastPastEvents,
+		selfSignedCert,
+		identifier
+	) {
 		try {
 			new URL(url);
 		} catch (error) {
 			Log.error("Calendar Error. Malformed calendar url: ", url, error);
-			this.sendSocketNotification("CALENDAR_ERROR", { error_type: "MODULE_ERROR_MALFORMED_URL" });
+			this.sendSocketNotification("CALENDAR_ERROR", {
+				error_type: "MODULE_ERROR_MALFORMED_URL"
+			});
 			return;
 		}
 
@@ -53,15 +77,30 @@ module.exports = NodeHelper.create({
 				Log.warn(`fetchInterval for url ${url} must be >= 60000`);
 				fetchIntervalCorrected = 60000;
 			}
-			Log.log(`Create new calendarfetcher for url: ${url} - Interval: ${fetchIntervalCorrected || fetchInterval}`);
-			fetcher = new CalendarFetcher(url, fetchIntervalCorrected || fetchInterval, excludedEvents, maximumEntries, maximumNumberOfDays, auth, broadcastPastEvents, selfSignedCert);
+			Log.log(
+				`Create new calendarfetcher for url: ${url} - Interval: ${fetchIntervalCorrected || fetchInterval}`
+			);
+			fetcher = new CalendarFetcher(
+				url,
+				fetchIntervalCorrected || fetchInterval,
+				excludedEvents,
+				maximumEntries,
+				maximumNumberOfDays,
+				auth,
+				broadcastPastEvents,
+				selfSignedCert
+			);
 
 			fetcher.onReceive((fetcher) => {
 				this.broadcastEvents(fetcher, identifier);
 			});
 
 			fetcher.onError((fetcher, error) => {
-				Log.error("Calendar Error. Could not fetch calendar: ", fetcher.url(), error);
+				Log.error(
+					"Calendar Error. Could not fetch calendar: ",
+					fetcher.url(),
+					error
+				);
 				let error_type = NodeHelper.checkFetchError(error);
 				this.sendSocketNotification("CALENDAR_ERROR", {
 					id: identifier,
