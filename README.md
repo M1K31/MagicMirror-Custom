@@ -19,6 +19,23 @@ MagicMirror² focuses on a modular plugin system and uses [Electron](https://www
 
 For the full documentation including **[installation instructions](https://docs.magicmirror.builders/getting-started/installation.html)**, please visit our dedicated documentation website: [https://docs.magicmirror.builders](https://docs.magicmirror.builders).
 
+### Custom Modules
+
+This fork includes additional custom modules with Apple HIG design principles:
+
+| Module | Description |
+|--------|-------------|
+| Timer | Countdown timer with presets and sounds |
+| Countdown | Event countdowns with recurring support |
+| Quotes | Inspirational quotes with categories |
+| Transit | Real-time transit (Google/Apple/Citymapper) |
+| Music | Now playing + controls (Spotify/Apple Music) |
+| Smart Home | Device control (Home Assistant/HomeKit) |
+| Fitness | Health tracking (Fitbit/Garmin/Strava) |
+| Packages | Delivery tracking (AfterShip/USPS/FedEx/UPS) |
+
+📖 **[Full Custom Modules Documentation](docs/CUSTOM_MODULES.md)** - Hardware requirements, provider setup, configuration options, and troubleshooting.
+
 ## Links
 
 - Website: [https://magicmirror.builders](https://magicmirror.builders)
