@@ -139,6 +139,23 @@ temp/
 # css/custom.css
 
 # =========================================
+# DOCUMENTATION (INTERNAL ONLY)
+# =========================================
+# Keep only README.md and CHANGELOG.md public
+# Other docs are for internal development
+
+CLAUDE.md
+Collaboration.md
+CONTRIBUTING.md
+TODO.md
+LICENSE.md
+docs/
+config/newsfeed/README.md
+modules/default/*/README.md
+modules/default/weather/providers/README.md
+modules/default/timer/sounds/README.md
+
+# =========================================
 # MOBILE COMPANION APPS (CLOSED SOURCE)
 # =========================================
 # The mobile apps are not open source and should not be committed
