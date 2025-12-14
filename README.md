@@ -1,23 +1,23 @@
-# ![MagicMirror²: The open source modular smart mirror platform.](.github/header.png)
+# MagicMirror³
+
+**The Next Generation Smart Mirror Platform**
 
 <!-- 
   Copyright (c) 2025 Mikel Smart
-  This file is part of MagicMirror-Custom.
-  Original MagicMirror² by Michael Teeuw and contributors.
+  This file is part of MagicMirror³.
+  Based on MagicMirror² by Michael Teeuw and contributors.
 -->
 
 <p style="text-align: center">
   <a href="https://choosealicense.com/licenses/mit">
-  <img src="https://img.shields.io/badge/license-MIT-blue.svg" alt="License">
- </a>
- <img src="https://img.shields.io/github/actions/workflow/status/magicmirrororg/magicmirror/automated-tests.yaml" alt="GitHub Actions">
- <img src="https://img.shields.io/github/check-runs/magicmirrororg/magicmirror/master" alt="Build Status">
- <a href="https://github.com/MagicMirrorOrg/MagicMirror">
-  <img src="https://img.shields.io/github/stars/magicmirrororg/magicmirror?style=social" alt="GitHub Stars">
- </a>
+    <img src="https://img.shields.io/badge/license-MIT-blue.svg" alt="License">
+  </a>
+  <a href="https://github.com/M1K31/MagicMirror-Custom">
+    <img src="https://img.shields.io/github/stars/M1K31/MagicMirror-Custom?style=social" alt="GitHub Stars">
+  </a>
 </p>
 
-**MagicMirror² Custom** is an enhanced fork of the open source modular smart mirror platform with AI integration, mobile companion apps, and smart home security features. Built on top of [the original MagicMirror²](https://github.com/MagicMirrorOrg/MagicMirror) by Michael Teeuw.
+**MagicMirror³** is an enhanced smart mirror platform with AI integration, mobile companion apps, and smart home security features. Based on the original MagicMirror² by Michael Teeuw.
 
 ## ✨ What's New in This Fork
 
@@ -377,37 +377,27 @@ Contributions welcome! See:
 
 - 📖 **[Contributing Guide](CONTRIBUTING.md)** - Development setup
 - 📖 **[TODO.md](TODO.md)** - Feature roadmap
-- 📖 **[CLAUDE.md](CLAUDE.md)** - AI assistant context
 
-## Links
+## 📚 Resources
 
-- Website: [https://magicmirror.builders](https://magicmirror.builders)
-- Documentation: [https://docs.magicmirror.builders](https://docs.magicmirror.builders)
-- Forum: [https://forum.magicmirror.builders](https://forum.magicmirror.builders)
-  - Technical discussions: <https://forum.magicmirror.builders/category/11/core-system>
-- Discord: [https://discord.gg/J5BAtvx](https://discord.gg/J5BAtvx)
-- Blog: [https://michaelteeuw.nl/tagged/magicmirror](https://michaelteeuw.nl/tagged/magicmirror)
-- Donations: [https://magicmirror.builders/#donate](https://magicmirror.builders/#donate)
+- **[Original MagicMirror²](https://github.com/MagicMirrorOrg/MagicMirror)** - The project this fork is based on
+- **[MagicMirror Forum](https://forum.magicmirror.builders)** - Community discussions
+- **[OpenEye Security](https://github.com/M1K31/OpenEye-OpenCV_Home_Security)** - AI surveillance integration
 
-## Contributing Guidelines
+---
 
-Contributions of all kinds are welcome, not only in the form of code but also with regards to
+## 📜 License
 
-- bug reports
-- documentation
-- translations
+MIT License - See [LICENSE.md](LICENSE.md) for details.
 
-For the full contribution guidelines, check out: [https://docs.magicmirror.builders/about/contributing.html](https://docs.magicmirror.builders/about/contributing.html)
+Based on MagicMirror² by Michael Teeuw and contributors.
 
-## Enjoying MagicMirror? Consider a donation!
-
-MagicMirror² is Open Source and free. That doesn't mean we don't need any money.
-
-Please consider a donation to help us cover the ongoing costs like webservers and email services.
-If we receive enough donations we might even be able to free up some working hours and spend some extra time improving the MagicMirror² core.
-
-To donate, please follow [this](https://www.paypal.com/cgi-bin/webscr?cmd=_s-xclick&hosted_button_id=G5D8E9MR5DTD2&source=url) link.
+---
 
 <p style="text-align: center">
-  <a href="https://forum.magicmirror.builders/topic/728/magicmirror-is-voted-number-1-in-the-magpi-top-50"><img src="https://magicmirror.builders/img/magpi-best-watermark-custom.png" width="150" alt="MagPi Top 50"></a>
+  <em>Maintained with help from Claude</em>
+</p>
+
+<p style="text-align: center">
+  <img src=".github/logo.png" width="300" alt="MagicMirror³ Logo">
 </p>

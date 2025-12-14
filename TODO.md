@@ -1,11 +1,11 @@
-# MagicMirror-Custom TODO
+# MagicMirror³ TODO
 
 <!-- 
   Copyright (c) 2025 Mikel Smart
-  This file is part of MagicMirror-Custom.
+  This file is part of MagicMirror³.
 -->
 
-Feature roadmap and planned improvements for MagicMirror-Custom.
+Feature roadmap and planned improvements for MagicMirror³.
 
 ## 🎯 High Priority
 
