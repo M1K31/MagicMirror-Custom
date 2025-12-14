@@ -150,6 +150,7 @@ CONTRIBUTING.md
 TODO.md
 LICENSE.md
 docs/
+!docs/VOICE_COMMANDS.md
 config/newsfeed/README.md
 modules/default/*/README.md
 modules/default/weather/providers/README.md

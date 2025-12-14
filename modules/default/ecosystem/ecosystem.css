@@ -1,0 +1,424 @@
+/**
+ * Ecosystem Module Styles
+ *
+ * Copyright (c) 2025 Mikel Smart
+ * This file is part of MagicMirror-Custom.
+ */
+
+/* Ecosystem Status Indicator */
+.ecosystem-module {
+	position: relative;
+}
+
+.ecosystem-status {
+	display: flex;
+	align-items: center;
+	gap: 8px;
+	padding: 8px 16px;
+	background: rgba(76, 175, 80, 0.2);
+	border-radius: 20px;
+	font-size: 12px;
+	color: rgba(255, 255, 255, 0.8);
+}
+
+.ecosystem-status i {
+	color: #4caf50;
+}
+
+/* Settings Panel - Ecosystem Section */
+.ecosystem-section {
+	display: flex;
+	flex-direction: column;
+	gap: 20px;
+}
+
+.ecosystem-category {
+	background: rgba(255, 255, 255, 0.05);
+	border-radius: 12px;
+	padding: 20px;
+}
+
+.ecosystem-category h3 {
+	margin: 0 0 16px 0;
+	font-size: 16px;
+	color: rgba(255, 255, 255, 0.9);
+	display: flex;
+	align-items: center;
+	gap: 10px;
+}
+
+.ecosystem-category h3 i {
+	width: 24px;
+	text-align: center;
+	color: #64b5f6;
+}
+
+/* Discovered Apps */
+.discovered-apps {
+	display: grid;
+	grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+	gap: 16px;
+}
+
+.app-card {
+	background: rgba(255, 255, 255, 0.08);
+	border-radius: 10px;
+	padding: 16px;
+	border: 1px solid rgba(255, 255, 255, 0.1);
+	transition: all 0.3s ease;
+}
+
+.app-card:hover {
+	background: rgba(255, 255, 255, 0.12);
+	border-color: rgba(255, 255, 255, 0.2);
+}
+
+.app-card.connected {
+	border-color: #4caf50;
+}
+
+.app-header {
+	display: flex;
+	align-items: center;
+	gap: 12px;
+	margin-bottom: 12px;
+}
+
+.app-icon {
+	width: 48px;
+	height: 48px;
+	border-radius: 12px;
+	background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	font-size: 24px;
+}
+
+.app-icon.openeye {
+	background: linear-gradient(135deg, #11998e 0%, #38ef7d 100%);
+}
+
+.app-icon.homebridge {
+	background: linear-gradient(135deg, #ff6b6b 0%, #feca57 100%);
+}
+
+.app-info {
+	flex: 1;
+}
+
+.app-name {
+	font-weight: 600;
+	font-size: 14px;
+	color: white;
+	margin-bottom: 4px;
+}
+
+.app-status {
+	font-size: 12px;
+	color: rgba(255, 255, 255, 0.6);
+}
+
+.app-status.connected {
+	color: #4caf50;
+}
+
+.app-status.discovered {
+	color: #ff9800;
+}
+
+.app-description {
+	font-size: 13px;
+	color: rgba(255, 255, 255, 0.7);
+	margin-bottom: 12px;
+}
+
+.app-host {
+	font-size: 11px;
+	color: rgba(255, 255, 255, 0.5);
+	font-family: monospace;
+	margin-bottom: 12px;
+}
+
+.app-actions {
+	display: flex;
+	gap: 8px;
+}
+
+.app-actions button {
+	flex: 1;
+	padding: 8px 12px;
+	border: none;
+	border-radius: 6px;
+	font-size: 12px;
+	cursor: pointer;
+	transition: all 0.2s ease;
+}
+
+.btn-connect {
+	background: #4caf50;
+	color: white;
+}
+
+.btn-connect:hover {
+	background: #43a047;
+}
+
+.btn-sync {
+	background: rgba(255, 255, 255, 0.1);
+	color: white;
+}
+
+.btn-sync:hover {
+	background: rgba(255, 255, 255, 0.2);
+}
+
+.btn-disconnect {
+	background: rgba(244, 67, 54, 0.2);
+	color: #f44336;
+}
+
+.btn-disconnect:hover {
+	background: rgba(244, 67, 54, 0.3);
+}
+
+/* Notification Settings */
+.notification-settings {
+	display: flex;
+	flex-direction: column;
+	gap: 16px;
+}
+
+.notification-method {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	padding: 12px;
+	background: rgba(255, 255, 255, 0.05);
+	border-radius: 8px;
+}
+
+.method-info {
+	display: flex;
+	align-items: center;
+	gap: 12px;
+}
+
+.method-info i {
+	width: 32px;
+	height: 32px;
+	border-radius: 8px;
+	background: rgba(255, 255, 255, 0.1);
+	display: flex;
+	align-items: center;
+	justify-content: center;
+}
+
+.method-details {
+	display: flex;
+	flex-direction: column;
+	gap: 2px;
+}
+
+.method-name {
+	font-weight: 500;
+	color: white;
+}
+
+.method-description {
+	font-size: 12px;
+	color: rgba(255, 255, 255, 0.5);
+}
+
+.notification-types {
+	display: grid;
+	grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+	gap: 10px;
+}
+
+.notification-type {
+	display: flex;
+	align-items: center;
+	gap: 8px;
+	padding: 10px;
+	background: rgba(255, 255, 255, 0.05);
+	border-radius: 6px;
+	cursor: pointer;
+}
+
+.notification-type input[type="checkbox"] {
+	width: 16px;
+	height: 16px;
+}
+
+.notification-type label {
+	font-size: 13px;
+	color: rgba(255, 255, 255, 0.8);
+	cursor: pointer;
+}
+
+/* Quiet Hours */
+.quiet-hours {
+	display: flex;
+	align-items: center;
+	gap: 16px;
+	padding: 12px;
+	background: rgba(255, 255, 255, 0.05);
+	border-radius: 8px;
+}
+
+.quiet-hours-toggle {
+	display: flex;
+	align-items: center;
+	gap: 8px;
+}
+
+.quiet-hours-times {
+	display: flex;
+	align-items: center;
+	gap: 8px;
+}
+
+.quiet-hours-times input[type="time"] {
+	padding: 6px 10px;
+	border-radius: 6px;
+	border: 1px solid rgba(255, 255, 255, 0.2);
+	background: rgba(255, 255, 255, 0.1);
+	color: white;
+	font-size: 13px;
+}
+
+/* Sync Options */
+.sync-options {
+	display: flex;
+	flex-direction: column;
+	gap: 12px;
+}
+
+.sync-option {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	padding: 12px;
+	background: rgba(255, 255, 255, 0.05);
+	border-radius: 8px;
+}
+
+.sync-info {
+	display: flex;
+	flex-direction: column;
+	gap: 2px;
+}
+
+.sync-name {
+	font-weight: 500;
+	color: white;
+}
+
+.sync-description {
+	font-size: 12px;
+	color: rgba(255, 255, 255, 0.5);
+}
+
+/* No Apps Found */
+.no-apps {
+	text-align: center;
+	padding: 40px 20px;
+	color: rgba(255, 255, 255, 0.5);
+}
+
+.no-apps i {
+	font-size: 48px;
+	margin-bottom: 16px;
+	opacity: 0.3;
+}
+
+.no-apps p {
+	margin: 0;
+}
+
+.no-apps .hint {
+	font-size: 12px;
+	margin-top: 8px;
+}
+
+/* Scanning Animation */
+.scanning {
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	gap: 12px;
+	padding: 20px;
+	color: rgba(255, 255, 255, 0.7);
+}
+
+.scanning i {
+	animation: pulse 1.5s infinite;
+}
+
+@keyframes pulse {
+	0%, 100% { opacity: 0.5; }
+	50% { opacity: 1; }
+}
+
+/* Toggle Switch */
+.toggle-switch {
+	position: relative;
+	display: inline-block;
+	width: 44px;
+	height: 24px;
+}
+
+.toggle-switch input {
+	opacity: 0;
+	width: 0;
+	height: 0;
+}
+
+.toggle-slider {
+	position: absolute;
+	cursor: pointer;
+	top: 0;
+	left: 0;
+	right: 0;
+	bottom: 0;
+	background-color: rgba(255, 255, 255, 0.2);
+	transition: 0.3s;
+	border-radius: 24px;
+}
+
+.toggle-slider:before {
+	position: absolute;
+	content: "";
+	height: 18px;
+	width: 18px;
+	left: 3px;
+	bottom: 3px;
+	background-color: white;
+	transition: 0.3s;
+	border-radius: 50%;
+}
+
+.toggle-switch input:checked + .toggle-slider {
+	background-color: #4caf50;
+}
+
+.toggle-switch input:checked + .toggle-slider:before {
+	transform: translateX(20px);
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+	.discovered-apps {
+		grid-template-columns: 1fr;
+	}
+
+	.notification-types {
+		grid-template-columns: 1fr 1fr;
+	}
+
+	.quiet-hours {
+		flex-direction: column;
+		align-items: flex-start;
+	}
+}

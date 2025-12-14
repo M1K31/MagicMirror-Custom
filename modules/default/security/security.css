@@ -440,3 +440,252 @@
 		justify-content: center;
 	}
 }
+
+/* ============================================
+ * Fullscreen Camera View
+ * Triggered by voice commands like "Show front door camera"
+ * ============================================ */
+
+.camera-fullscreen-overlay {
+	position: fixed;
+	top: 0;
+	left: 0;
+	width: 100%;
+	height: 100%;
+	background: rgba(0, 0, 0, 0.95);
+	z-index: 10000;
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+	justify-content: center;
+	opacity: 0;
+	pointer-events: none;
+	transition: opacity 0.4s ease-in-out;
+}
+
+.camera-fullscreen-overlay.visible {
+	opacity: 1;
+	pointer-events: auto;
+}
+
+.camera-fullscreen-header {
+	position: absolute;
+	top: 0;
+	left: 0;
+	right: 0;
+	display: flex;
+	justify-content: space-between;
+	align-items: center;
+	padding: 20px 30px;
+	background: linear-gradient(to bottom, rgba(0,0,0,0.8), transparent);
+	z-index: 1;
+}
+
+.camera-fullscreen-title {
+	font-size: 1.5em;
+	font-weight: 300;
+	display: flex;
+	align-items: center;
+	gap: 10px;
+}
+
+.camera-fullscreen-title .fa {
+	color: #00ff88;
+}
+
+.camera-fullscreen-close {
+	background: rgba(255, 255, 255, 0.1);
+	border: none;
+	color: #fff;
+	width: 50px;
+	height: 50px;
+	border-radius: 50%;
+	font-size: 1.5em;
+	cursor: pointer;
+	transition: background 0.2s ease;
+}
+
+.camera-fullscreen-close:hover {
+	background: rgba(255, 255, 255, 0.2);
+}
+
+.camera-fullscreen-feed {
+	max-width: 90%;
+	max-height: 80%;
+	border-radius: 10px;
+	box-shadow: 0 10px 50px rgba(0, 0, 0, 0.5);
+	animation: cameraZoomIn 0.4s ease-out;
+}
+
+@keyframes cameraZoomIn {
+	from {
+		opacity: 0;
+		transform: scale(0.9);
+	}
+	to {
+		opacity: 1;
+		transform: scale(1);
+	}
+}
+
+.camera-fullscreen-overlay.leaving .camera-fullscreen-feed {
+	animation: cameraZoomOut 0.3s ease-in forwards;
+}
+
+@keyframes cameraZoomOut {
+	from {
+		opacity: 1;
+		transform: scale(1);
+	}
+	to {
+		opacity: 0;
+		transform: scale(0.9);
+	}
+}
+
+.camera-fullscreen-controls {
+	position: absolute;
+	bottom: 30px;
+	display: flex;
+	gap: 15px;
+}
+
+.camera-control-btn {
+	background: rgba(255, 255, 255, 0.1);
+	border: 1px solid rgba(255, 255, 255, 0.2);
+	color: #fff;
+	padding: 12px 20px;
+	border-radius: 25px;
+	font-size: 0.9em;
+	cursor: pointer;
+	transition: all 0.2s ease;
+	display: flex;
+	align-items: center;
+	gap: 8px;
+}
+
+.camera-control-btn:hover {
+	background: rgba(255, 255, 255, 0.2);
+	transform: translateY(-2px);
+}
+
+.camera-control-btn.recording {
+	background: rgba(255, 0, 0, 0.3);
+	border-color: #ff4444;
+	color: #ff4444;
+}
+
+.camera-control-btn.recording .fa {
+	animation: pulse 1s ease-in-out infinite;
+}
+
+/* Face Training UI */
+.face-training-overlay {
+	position: fixed;
+	top: 0;
+	left: 0;
+	width: 100%;
+	height: 100%;
+	background: rgba(0, 0, 0, 0.95);
+	z-index: 10001;
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+	justify-content: center;
+	opacity: 0;
+	pointer-events: none;
+	transition: opacity 0.4s ease-in-out;
+}
+
+.face-training-overlay.visible {
+	opacity: 1;
+	pointer-events: auto;
+}
+
+.face-training-camera {
+	width: 400px;
+	height: 300px;
+	border-radius: 10px;
+	overflow: hidden;
+	position: relative;
+	border: 3px solid #00aaff;
+	box-shadow: 0 0 30px rgba(0, 170, 255, 0.3);
+}
+
+.face-training-camera video {
+	width: 100%;
+	height: 100%;
+	object-fit: cover;
+}
+
+.face-guide-overlay {
+	position: absolute;
+	top: 50%;
+	left: 50%;
+	transform: translate(-50%, -50%);
+	width: 150px;
+	height: 200px;
+	border: 2px dashed rgba(0, 255, 136, 0.5);
+	border-radius: 50% 50% 45% 45%;
+}
+
+.face-training-instructions {
+	margin-top: 20px;
+	text-align: center;
+	max-width: 400px;
+}
+
+.face-training-instructions h3 {
+	margin: 0 0 10px 0;
+	font-weight: 300;
+	color: #00aaff;
+}
+
+.face-training-instructions p {
+	color: rgba(255, 255, 255, 0.7);
+	font-size: 0.9em;
+	margin: 0;
+}
+
+.face-training-progress {
+	display: flex;
+	gap: 10px;
+	margin-top: 20px;
+}
+
+.face-training-dot {
+	width: 12px;
+	height: 12px;
+	border-radius: 50%;
+	background: rgba(255, 255, 255, 0.2);
+	transition: all 0.3s ease;
+}
+
+.face-training-dot.captured {
+	background: #00ff88;
+	box-shadow: 0 0 10px rgba(0, 255, 136, 0.5);
+}
+
+.face-training-dot.active {
+	background: #00aaff;
+	animation: pulse 1s ease-in-out infinite;
+}
+
+/* Photo capture flash effect */
+@keyframes cameraFlash {
+	0% { opacity: 0; }
+	10% { opacity: 1; }
+	100% { opacity: 0; }
+}
+
+.camera-flash {
+	position: fixed;
+	top: 0;
+	left: 0;
+	width: 100%;
+	height: 100%;
+	background: white;
+	z-index: 10002;
+	pointer-events: none;
+	animation: cameraFlash 0.3s ease-out forwards;
+}

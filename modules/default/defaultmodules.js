@@ -9,6 +9,7 @@ const defaultModules = [
 	"clock",
 	"compliments",
 	"countdown",
+	"ecosystem",
 	"fitness",
 	"helloworld",
 	"music",

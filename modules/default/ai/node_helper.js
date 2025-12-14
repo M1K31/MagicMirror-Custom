@@ -78,7 +78,390 @@ module.exports = NodeHelper.create({
 			case "AI_SAVE_API_KEY":
 				this.saveApiKey(payload.provider, payload.apiKey);
 				break;
+
+			// Voice command handlers
+			case "AI_ADD_PACKAGE":
+				this.addPackage(payload.trackingNumber);
+				break;
+
+			case "AI_GET_PACKAGES":
+				this.getPackages();
+				break;
+
+			case "AI_REMOVE_PACKAGE":
+				this.removePackage(payload.trackingNumber);
+				break;
+
+			case "AI_GET_WEATHER":
+				this.getWeatherForLocation(payload.location);
+				break;
+
+			case "AI_ADD_LOCATION":
+				this.addLocation(payload.type, payload.location);
+				break;
+
+			case "AI_GET_NEWS":
+				this.getNews();
+				break;
+
+			case "AI_ADD_NEWS_SOURCE":
+				this.addNewsSource(payload.source);
+				break;
+
+			case "AI_GET_CALENDAR":
+				this.getCalendarEvents();
+				break;
 		}
+	},
+
+	/**
+	 * Add package to tracking
+	 */
+	addPackage: async function (trackingNumber) {
+		try {
+			// Load current packages
+			const packagesPath = path.join(__dirname, "..", "..", "..", "config", "packages.json");
+			let packages = [];
+			try {
+				const data = await fs.readFile(packagesPath, "utf8");
+				packages = JSON.parse(data).packages || [];
+			} catch {
+				packages = [];
+			}
+
+			// Detect carrier from tracking number pattern
+			const carrier = this.detectCarrier(trackingNumber);
+
+			// Add new package
+			packages.push({
+				tracking: trackingNumber,
+				carrier: carrier,
+				name: `Package ${packages.length + 1}`,
+				addedAt: new Date().toISOString()
+			});
+
+			await fs.writeFile(packagesPath, JSON.stringify({ packages }, null, 2));
+
+			this.sendSocketNotification("AI_PACKAGES_RESPONSE", {
+				success: true,
+				message: `Package ${trackingNumber} added`,
+				carrier: carrier
+			});
+
+			// Notify packages module to refresh
+			// This is a broadcast to all modules
+			Log.info(`[${this.name}] Package added: ${trackingNumber} (${carrier})`);
+		} catch (error) {
+			this.sendSocketNotification("AI_PACKAGES_RESPONSE", {
+				success: false,
+				error: error.message
+			});
+		}
+	},
+
+	/**
+	 * Detect carrier from tracking number format
+	 */
+	detectCarrier: function (tracking) {
+		const patterns = {
+			usps: [
+				/^94\d{20,22}$/,      // USPS tracking
+				/^92\d{20,22}$/,      // USPS certified mail
+				/^[A-Z]{2}\d{9}US$/i  // International
+			],
+			ups: [
+				/^1Z[A-Z0-9]{16}$/i,  // UPS
+				/^T\d{10}$/,          // UPS freight
+				/^[0-9]{26}$/         // UPS mail innovations
+			],
+			fedex: [
+				/^\d{12,15}$/,        // FedEx Express/Ground
+				/^\d{20,22}$/,        // FedEx SmartPost
+				/^96\d{20}$/          // FedEx 96
+			],
+			dhl: [
+				/^\d{10,11}$/,        // DHL Express
+				/^[A-Z]{3}\d{7}$/i    // DHL eCommerce
+			],
+			amazon: [
+				/^TBA\d+$/i           // Amazon logistics
+			]
+		};
+
+		for (const [carrier, regexes] of Object.entries(patterns)) {
+			for (const regex of regexes) {
+				if (regex.test(tracking)) {
+					return carrier;
+				}
+			}
+		}
+
+		return "other";
+	},
+
+	/**
+	 * Get all tracked packages
+	 */
+	getPackages: async function () {
+		try {
+			const packagesPath = path.join(__dirname, "..", "..", "..", "config", "packages.json");
+			let packages = [];
+			try {
+				const data = await fs.readFile(packagesPath, "utf8");
+				packages = JSON.parse(data).packages || [];
+			} catch {
+				packages = [];
+			}
+
+			if (packages.length === 0) {
+				this.sendSocketNotification("AI_PACKAGES_LIST", {
+					packages: [],
+					speech: "You have no packages being tracked."
+				});
+			} else {
+				const speech = `You have ${packages.length} package${packages.length > 1 ? "s" : ""} being tracked. ` +
+					packages.map((p, i) => `Package ${i + 1}: ${p.carrier.toUpperCase()}, tracking ${p.tracking.split("").slice(-4).join(" ")}`).join(". ");
+
+				this.sendSocketNotification("AI_PACKAGES_LIST", {
+					packages,
+					speech
+				});
+			}
+		} catch (error) {
+			this.sendSocketNotification("AI_PACKAGES_LIST", {
+				packages: [],
+				speech: "Error reading packages",
+				error: error.message
+			});
+		}
+	},
+
+	/**
+	 * Remove a package
+	 */
+	removePackage: async function (trackingNumber) {
+		try {
+			const packagesPath = path.join(__dirname, "..", "..", "..", "config", "packages.json");
+			let packages = [];
+			try {
+				const data = await fs.readFile(packagesPath, "utf8");
+				packages = JSON.parse(data).packages || [];
+			} catch {
+				packages = [];
+			}
+
+			const original = packages.length;
+			packages = packages.filter((p) => p.tracking.toUpperCase() !== trackingNumber.toUpperCase());
+
+			if (packages.length < original) {
+				await fs.writeFile(packagesPath, JSON.stringify({ packages }, null, 2));
+				this.sendSocketNotification("AI_PACKAGES_RESPONSE", {
+					success: true,
+					message: `Package removed`
+				});
+			} else {
+				this.sendSocketNotification("AI_PACKAGES_RESPONSE", {
+					success: false,
+					error: "Package not found"
+				});
+			}
+		} catch (error) {
+			this.sendSocketNotification("AI_PACKAGES_RESPONSE", {
+				success: false,
+				error: error.message
+			});
+		}
+	},
+
+	/**
+	 * Get weather for a location
+	 */
+	getWeatherForLocation: async function (location) {
+		try {
+			// Use OpenMeteo geocoding to get coordinates
+			const geoUrl = `https://geocoding-api.open-meteo.com/v1/search?name=${encodeURIComponent(location)}&count=1`;
+
+			const geoResponse = await this.httpGet(geoUrl);
+			const geoData = JSON.parse(geoResponse);
+
+			if (!geoData.results || geoData.results.length === 0) {
+				this.sendSocketNotification("AI_WEATHER_RESPONSE", {
+					success: false,
+					speech: `Could not find location ${location}`
+				});
+				return;
+			}
+
+			const { latitude, longitude, name } = geoData.results[0];
+
+			// Get weather from OpenMeteo
+			const weatherUrl = `https://api.open-meteo.com/v1/forecast?latitude=${latitude}&longitude=${longitude}&current=temperature_2m,weather_code&temperature_unit=fahrenheit`;
+
+			const weatherResponse = await this.httpGet(weatherUrl);
+			const weather = JSON.parse(weatherResponse);
+
+			const temp = Math.round(weather.current.temperature_2m);
+			const condition = this.weatherCodeToText(weather.current.weather_code);
+
+			this.sendSocketNotification("AI_WEATHER_RESPONSE", {
+				success: true,
+				location: name,
+				temperature: temp,
+				condition,
+				speech: `In ${name}, it's currently ${temp} degrees and ${condition}.`
+			});
+		} catch (error) {
+			this.sendSocketNotification("AI_WEATHER_RESPONSE", {
+				success: false,
+				speech: `Error getting weather: ${error.message}`
+			});
+		}
+	},
+
+	/**
+	 * Convert weather code to text
+	 */
+	weatherCodeToText: function (code) {
+		const codes = {
+			0: "clear",
+			1: "mainly clear",
+			2: "partly cloudy",
+			3: "overcast",
+			45: "foggy",
+			48: "foggy",
+			51: "light drizzle",
+			53: "drizzle",
+			55: "heavy drizzle",
+			61: "light rain",
+			63: "rain",
+			65: "heavy rain",
+			71: "light snow",
+			73: "snow",
+			75: "heavy snow",
+			95: "thunderstorms"
+		};
+		return codes[code] || "unknown conditions";
+	},
+
+	/**
+	 * Add a location for weather/news
+	 */
+	addLocation: async function (type, location) {
+		try {
+			const locationsPath = path.join(__dirname, "..", "..", "..", "config", "locations.json");
+			let locations = { weather: [], news: [] };
+			try {
+				const data = await fs.readFile(locationsPath, "utf8");
+				locations = JSON.parse(data);
+			} catch {
+				locations = { weather: [], news: [] };
+			}
+
+			// Get coordinates if it's a weather location
+			if (type === "weather") {
+				const geoUrl = `https://geocoding-api.open-meteo.com/v1/search?name=${encodeURIComponent(location)}&count=1`;
+				const geoResponse = await this.httpGet(geoUrl);
+				const geoData = JSON.parse(geoResponse);
+
+				if (geoData.results && geoData.results.length > 0) {
+					const { latitude, longitude, name, country } = geoData.results[0];
+					locations.weather.push({
+						name: name,
+						country: country,
+						lat: latitude,
+						lon: longitude,
+						addedAt: new Date().toISOString()
+					});
+				}
+			} else {
+				locations.news.push({
+					location: location,
+					addedAt: new Date().toISOString()
+				});
+			}
+
+			await fs.writeFile(locationsPath, JSON.stringify(locations, null, 2));
+
+			this.sendSocketNotification("AI_LOCATION_ADDED", {
+				success: true,
+				type,
+				location
+			});
+		} catch (error) {
+			this.sendSocketNotification("AI_LOCATION_ADDED", {
+				success: false,
+				error: error.message
+			});
+		}
+	},
+
+	/**
+	 * Get news headlines
+	 */
+	getNews: async function () {
+		// This would typically read from a cached news feed
+		// For now, send a message indicating the feature
+		this.sendSocketNotification("AI_NEWS_RESPONSE", {
+			speech: "Checking news headlines. The news module displays current headlines on your mirror."
+		});
+	},
+
+	/**
+	 * Add a news source
+	 */
+	addNewsSource: async function (source) {
+		// Common RSS feeds by source name
+		const knownFeeds = {
+			"bbc": "http://feeds.bbci.co.uk/news/rss.xml",
+			"cnn": "http://rss.cnn.com/rss/edition.rss",
+			"nyt": "https://rss.nytimes.com/services/xml/rss/nyt/HomePage.xml",
+			"new york times": "https://rss.nytimes.com/services/xml/rss/nyt/HomePage.xml",
+			"reuters": "https://feeds.reuters.com/reuters/topNews",
+			"ap": "https://feeds.apnews.com/rss/apf-topnews",
+			"associated press": "https://feeds.apnews.com/rss/apf-topnews",
+			"guardian": "https://www.theguardian.com/world/rss",
+			"washington post": "https://feeds.washingtonpost.com/rss/national"
+		};
+
+		const feedUrl = knownFeeds[source.toLowerCase()];
+
+		if (feedUrl) {
+			this.sendSocketNotification("AI_NEWS_SOURCE_ADDED", {
+				success: true,
+				source,
+				url: feedUrl,
+				speech: `Added ${source} to your news feeds. Restart to apply changes.`
+			});
+		} else {
+			this.sendSocketNotification("AI_NEWS_SOURCE_ADDED", {
+				success: false,
+				speech: `I don't know the RSS feed for ${source}. You can add it manually in settings.`
+			});
+		}
+	},
+
+	/**
+	 * Get calendar events
+	 */
+	getCalendarEvents: async function () {
+		// This reads from a local cache or triggers calendar module
+		this.sendSocketNotification("AI_CALENDAR_RESPONSE", {
+			speech: "Checking your calendar. Today's events are displayed on your mirror."
+		});
+	},
+
+	/**
+	 * Simple HTTP GET helper
+	 */
+	httpGet: function (url) {
+		return new Promise((resolve, reject) => {
+			const client = url.startsWith("https") ? https : http;
+			client.get(url, (res) => {
+				let data = "";
+				res.on("data", (chunk) => data += chunk);
+				res.on("end", () => resolve(data));
+			}).on("error", reject);
+		});
 	},
 
 	/**
