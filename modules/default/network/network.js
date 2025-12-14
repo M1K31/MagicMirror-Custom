@@ -1,6 +1,9 @@
 /**
  * Network Module for MagicMirror
  *
+ * Copyright (c) 2025 Mikel Smart
+ * This file is part of MagicMirror-Custom.
+ *
  * Monitors network devices, speed, and connectivity:
  * - Device discovery (ARP scanning)
  * - Known vs unknown device tracking
@@ -87,10 +90,7 @@ Module.register("network", {
 	 * @returns {string[]} Array of script paths
 	 */
 	getScripts: function () {
-		return [
-			this.file("../../shared/utils.js"),
-			this.file("../../shared/touch-handler.js")
-		];
+		return [];
 	},
 
 	/**

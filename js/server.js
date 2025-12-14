@@ -15,6 +15,7 @@ const {
 	getStartup,
 	getEnvVars
 } = require("./server_functions");
+const { createApiRouter, logApiToken, generateToken } = require("./api");
 
 const vendor = require(`${__dirname}/vendor`);
 
@@ -186,6 +187,26 @@ function Server (config) {
 			app.get("/env", (req, res) => getEnvVars(req, res));
 
 			app.get("/", (req, res) => getHtml(req, res));
+
+			// REST API for mobile apps and remote control
+			const apiPrefix = config.api?.prefix || "/api/v1";
+			const apiToken = config.api?.token || generateToken();
+			app.use(apiPrefix, createApiRouter(config, io));
+			
+			// Log API token on first startup for setup and save to file for Settings module
+			if (config.api?.enabled !== false) {
+				logApiToken(apiToken);
+				// Save token to file so Settings module can display it
+				const tokenFilePath = path.join(__dirname, "..", "config", ".api_token");
+				const tokenData = JSON.stringify({
+					token: apiToken,
+					host: `${config.address || "localhost"}:${port}`,
+					prefix: apiPrefix,
+					createdAt: new Date().toISOString()
+				});
+				fs.writeFileSync(tokenFilePath, tokenData);
+				Log.info("[API] Token saved for companion app setup");
+			}
 
 			server.on("listening", () => {
 				resolve({

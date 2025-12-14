@@ -7,6 +7,75 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ❤️ **Donate:** Enjoying MagicMirror²? [Please consider a donation!](https://magicmirror.builders/#donate) With your help we can continue to improve the MagicMirror².
 
+## [2.32.0-custom] - 2025-12-13
+
+Custom fork by Mikel Smart with AI integration, mobile apps, and enhanced security.
+
+### Added
+
+- [ai] New AI Assistant module with natural language control
+  - Multi-provider support: OpenAI GPT-4, Anthropic Claude, Ollama (local LLMs)
+  - Voice recognition using Web Speech API
+  - Wake word detection ("mirror" by default)
+  - Chat interface with message history
+  - Natural language commands parsed to module actions
+  - Text-to-speech responses
+- [api] REST API for mobile app and remote control
+  - Bearer token authentication
+  - Module control endpoints (show/hide/refresh/configure)
+  - Display settings (brightness, zoom, color scheme)
+  - Service configuration endpoints
+  - WebSocket support for real-time updates
+- [mobile] iOS companion app (SwiftUI)
+  - Dashboard with mirror status
+  - Module management
+  - Display controls
+  - AI assistant integration
+  - Service configuration
+  - App Store compliance (privacy policy, PrivacyInfo.xcprivacy)
+- [mobile] Android companion app (Jetpack Compose)
+  - Material 3 design
+  - Dashboard with mirror status
+  - Module management
+  - Display controls
+  - AI assistant integration
+  - Play Store compliance (privacy policy, data safety)
+- [settings] Enhanced settings module
+  - API token display for companion app setup
+  - Copy to clipboard functionality
+  - System information display
+  - Service connection management
+- [network] Network monitoring module
+  - Device discovery (arp-scan, nmap, arp fallback)
+  - Internet speed testing (speedtest-cli with fallback)
+  - Connectivity monitoring
+  - New device notifications
+  - Known device management
+- [security] OpenEye AI surveillance integration
+  - Live camera feed display
+  - Motion/face detection alerts
+  - Event timeline
+  - WebSocket real-time updates
+- [docs] Comprehensive documentation
+  - AUTHENTICATION.md - API authentication guide
+  - API.md - REST API reference
+  - CUSTOM_MODULES.md - Module documentation
+  - TODO.md - Feature roadmap
+
+### Changed
+
+- [config] API configuration section added to config.js
+- [server] Token persistence for companion app setup
+- [gitignore] Mobile apps excluded (closed source)
+- [gitignore] API token file excluded for security
+
+### Security
+
+- Bearer token authentication for all API endpoints
+- Auto-generated 64-character hex tokens
+- IP whitelist support maintained
+- Secure token storage guidance for mobile apps
+
 ## [2.32.0] - 2025-07-01
 
 Thanks to: @bughaver, @bugsounet, @khassel, @KristjanESPERANTO, @plebcity, @rejas, @sdetweil.

@@ -1,6 +1,9 @@
 /**
  * Security Module for MagicMirror
  *
+ * Copyright (c) 2025 Mikel Smart
+ * This file is part of MagicMirror-Custom.
+ *
  * Integrates with OpenEye surveillance system for:
  * - Live camera feeds
  * - Motion event notifications
@@ -21,8 +24,8 @@ Module.register("security", {
 	defaults: {
 		// OpenEye server configuration
 		openeyeHost: "http://localhost:8000",
-		// JWT token for authentication (set via env var or config)
-		token: process.env.OPENEYE_TOKEN || "",
+		// JWT token for authentication (set in config or via node_helper from env)
+		token: "",
 
 		// Display mode: "cameras", "events", "combined"
 		displayMode: "combined",

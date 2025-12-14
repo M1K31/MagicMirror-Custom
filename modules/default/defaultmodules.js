@@ -3,6 +3,7 @@
  * Modules listed below can be loaded without the 'default/' prefix. Omitting the default folder name.
  */
 const defaultModules = [
+	"ai",
 	"alert",
 	"calendar",
 	"clock",
@@ -11,9 +12,12 @@ const defaultModules = [
 	"fitness",
 	"helloworld",
 	"music",
+	"network",
 	"newsfeed",
 	"packages",
 	"quotes",
+	"security",
+	"settings",
 	"smarthome",
 	"timer",
 	"transit",

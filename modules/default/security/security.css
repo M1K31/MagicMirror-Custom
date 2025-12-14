@@ -1,4 +1,9 @@
-/* Security Module - OpenEye Integration Styles */
+/**
+ * Security Module - OpenEye Integration Styles
+ *
+ * Copyright (c) 2025 Mikel Smart
+ * Licensed under the MIT License
+ */
 
 .security-module {
 	font-family: var(--font-primary, "Roboto Condensed", Arial, sans-serif);

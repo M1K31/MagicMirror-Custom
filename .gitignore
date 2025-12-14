@@ -12,6 +12,9 @@
 # User configuration (may contain API keys, passwords)
 config/config.js
 
+# API token file (contains bearer token for companion apps)
+config/.api_token
+
 # Token storage files (OAuth tokens, session data)
 # Plaintext JSON (legacy)
 modules/default/**/.*.json
@@ -134,3 +137,20 @@ temp/
 # Custom CSS (user-specific styling)
 # Uncomment if you want to track custom.css
 # css/custom.css
+
+# =========================================
+# MOBILE COMPANION APPS (CLOSED SOURCE)
+# =========================================
+# The mobile apps are not open source and should not be committed
+# Only the API documentation and README files are public
+
+# iOS App
+mobile/ios/
+
+# Android App
+mobile/android/
+
+# Keep only the documentation
+!mobile/README.md
+!mobile/ios/MagicMirrorRemote/README.md
+!mobile/android/README.md

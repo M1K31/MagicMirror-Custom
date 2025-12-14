@@ -100,7 +100,7 @@ fi
 
 # Method 2: Find by process name (fallback)
 if [ "$STOPPED" = false ]; then
-    PIDS=$(pgrep -f "node.*serveronly" 2>/dev/null)
+    PIDS=$(pgrep -f "serveronly" 2>/dev/null)
     if [ -n "$PIDS" ]; then
         for PID in $PIDS; do
             if stop_process "$PID" "MagicMirror server"; then

@@ -1,6 +1,9 @@
 /**
  * Security Node Helper
  *
+ * Copyright (c) 2025 Mikel Smart
+ * Licensed under the MIT License
+ *
  * Handles server-side integration with OpenEye surveillance system:
  * - REST API communication
  * - WebSocket connection for real-time events

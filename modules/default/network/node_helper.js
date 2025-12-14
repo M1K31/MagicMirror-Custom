@@ -1,6 +1,9 @@
 /**
  * Network Node Helper
  *
+ * Copyright (c) 2025 Mikel Smart
+ * Licensed under the MIT License
+ *
  * Handles server-side network operations:
  * - ARP scanning for device discovery
  * - Speed tests
