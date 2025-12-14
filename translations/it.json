@@ -39,7 +39,7 @@
 
   "NEWSFEED_NO_ITEMS": "Al momento non ci sono notizie.",
 
-  "UPDATE_NOTIFICATION": "E' disponibile un aggiornamento di MagicMirror².",
+  "UPDATE_NOTIFICATION": "E' disponibile un aggiornamento di MagicMirror³.",
   "UPDATE_NOTIFICATION_MODULE": "E' disponibile un aggiornamento del modulo {MODULE_NAME}.",
   "UPDATE_INFO_SINGLE": "L'installazione è {COMMIT_COUNT} commit indietro rispetto all'attuale branch {BRANCH_NAME}.",
   "UPDATE_INFO_MULTIPLE": "L'installazione è {COMMIT_COUNT} commits indietro rispetto all'attuale branch {BRANCH_NAME}.",

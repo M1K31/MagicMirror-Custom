@@ -51,7 +51,7 @@ process.on("uncaughtException", function (err) {
 		Log.error("Whoops! There was an uncaught exception...");
 		Log.error(err);
 		Log.error(
-			"MagicMirror² will not quit, but it might be a good idea to check why this happened. Maybe no internet connection?"
+			"MagicMirror³ will not quit, but it might be a good idea to check why this happened. Maybe no internet connection?"
 		);
 		Log.error(
 			"If you think this really is an issue, please open an issue on GitHub: https://github.com/MagicMirrorOrg/MagicMirror/issues"
@@ -261,7 +261,7 @@ function App () {
 
 			if (m.requiresVersion) {
 				Log.log(
-					`Check MagicMirror² version for node helper '${moduleName}' - Minimum version: ${m.requiresVersion} - Current version: ${global.version}`
+					`Check MagicMirror³ version for node helper '${moduleName}' - Minimum version: ${m.requiresVersion} - Current version: ${global.version}`
 				);
 				if (cmpVersions(global.version, m.requiresVersion) >= 0) {
 					Log.log("Version is ok!");

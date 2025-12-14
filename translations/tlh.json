@@ -40,7 +40,7 @@
 
   "NEWSFEED_NO_ITEMS": "DaHghachmey ghobe' yImev.",
 
-  "UPDATE_NOTIFICATION": " De'chu' MagicMirror² lI'laH.",
+  "UPDATE_NOTIFICATION": " De'chu' MagicMirror³ lI'laH.",
   "UPDATE_NOTIFICATION_MODULE": "bobcho' {MODULE_NAME} lI'laH De'chu.",
   "UPDATE_INFO_SINGLE": "{BRANCH_NAME} ghoghDaq {COMMIT_COUNT} commit lIjwI'pu'.",
   "UPDATE_INFO_MULTIPLE": "{BRANCH_NAME} ghoghDaq {COMMIT_COUNT} commit lIjwI'pu'.",

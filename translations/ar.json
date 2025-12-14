@@ -38,7 +38,7 @@
 
   "NEWSFEED_NO_ITEMS": "لا توجد أخبار في الوقت الحالي.",
 
-  "UPDATE_NOTIFICATION": "تحديث MagicMirror² متاح.",
+  "UPDATE_NOTIFICATION": "تحديث MagicMirror³ متاح.",
   "UPDATE_NOTIFICATION_MODULE": "تحديث متاح لوحدة {MODULE_NAME}.",
   "UPDATE_INFO_SINGLE": "التثبيت الحالي متخلف عن تحديث واحد على فرع {BRANCH_NAME}.",
   "UPDATE_INFO_MULTIPLE": "التثبيت الحالي متخلف عن {COMMIT_COUNT} تحديثات على فرع {BRANCH_NAME}.",

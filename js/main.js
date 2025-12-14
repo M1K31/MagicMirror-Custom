@@ -661,7 +661,7 @@ const MM = (function () {
 		 * Main init method.
 		 */
 		async init () {
-			Log.info("Initializing MagicMirror².");
+			Log.info("Initializing MagicMirror³.");
 			loadConfig();
 
 			Log.setLogLevel(config.logLevel);

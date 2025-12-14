@@ -1,5 +1,5 @@
 /*
- * MagicMirror² Test calendar exdate
+ * MagicMirror³ Test calendar exdate
  *
  * By jkriegshauser
  * MIT Licensed.

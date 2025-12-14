@@ -40,7 +40,7 @@
 
   "NEWSFEED_NO_ITEMS": "現在ニュースはありません。",
 
-  "UPDATE_NOTIFICATION": "MagicMirror² のアップデートが利用可能です。",
+  "UPDATE_NOTIFICATION": "MagicMirror³ のアップデートが利用可能です。",
   "UPDATE_NOTIFICATION_MODULE": "モジュール {MODULE_NAME} のアップデートが利用可能です。",
   "UPDATE_INFO_SINGLE": "現在のインストールは {BRANCH_NAME} ブランチから {COMMIT_COUNT} コミット遅れています。",
   "UPDATE_INFO_MULTIPLE": "現在のインストールは {BRANCH_NAME} ブランチから {COMMIT_COUNT} コミット遅れています。",

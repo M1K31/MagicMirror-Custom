@@ -304,7 +304,7 @@ WeatherProvider.register("smhi", {
 	},
 
 	/**
-	 * Map the icon value from SMHI to an icon that MagicMirror² understands.
+	 * Map the icon value from SMHI to an icon that MagicMirror³ understands.
 	 * Uses different icons depending on if its daytime or nighttime.
 	 * SMHI's description of what the numeric value means is the comment after the case.
 	 * @param {number} input The SMHI icon value

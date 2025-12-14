@@ -40,7 +40,7 @@
 
   "NEWSFEED_NO_ITEMS": "Non hai novas no momento.",
 
-  "UPDATE_NOTIFICATION": "Actualización dispoñible para MagicMirror².",
+  "UPDATE_NOTIFICATION": "Actualización dispoñible para MagicMirror³.",
   "UPDATE_NOTIFICATION_MODULE": "Actualización dispoñible para o módulo {MODULE_NAME}.",
   "UPDATE_INFO_SINGLE": "A instalación actual está {COMMIT_COUNT} commits detrás da rama {BRANCH_NAME}.",
   "UPDATE_INFO_MULTIPLE": "A instalación actual está {COMMIT_COUNT} commits detrás da rama {BRANCH_NAME}.",

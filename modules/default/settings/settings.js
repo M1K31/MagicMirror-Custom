@@ -439,8 +439,8 @@ Module.register("settings", {
 
 		section.innerHTML = `
 			<div class="about-header">
-				<h3>MagicMirror² Custom</h3>
-				<p class="version">Version 2.32.0</p>
+				<h3>MagicMirror³</h3>
+				<p class="version">Version 3.0.0</p>
 			</div>
 			
 			<div class="companion-app-section">

@@ -40,7 +40,7 @@
 
   "NEWSFEED_NO_ITEMS": "Hetkel ei ole uudiseid.",
 
-  "UPDATE_NOTIFICATION": "MagicMirror²'le on uuendus saadaval.",
+  "UPDATE_NOTIFICATION": "MagicMirror³'le on uuendus saadaval.",
   "UPDATE_NOTIFICATION_MODULE": "Uuendus saadaval {MODULE_NAME} moodulile.",
   "UPDATE_INFO_SINGLE": "Praegune paigaldus on {COMMIT_COUNT} muudatust tagapool {BRANCH_NAME} harus.",
   "UPDATE_INFO_MULTIPLE": "Praegune paigaldus on {COMMIT_COUNT} muudatust tagapool {BRANCH_NAME} harus.",

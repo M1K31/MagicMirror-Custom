@@ -40,7 +40,7 @@
 
   "NEWSFEED_NO_ITEMS": "હાલમાં કોઈ સમાચાર નથી.",
 
-  "UPDATE_NOTIFICATION": "MagicMirror² અપડેટ ઉપલબ્ધ છે.",
+  "UPDATE_NOTIFICATION": "MagicMirror³ અપડેટ ઉપલબ્ધ છે.",
   "UPDATE_NOTIFICATION_MODULE": "{MODULE_NAME} મોડ્યુલ માટે અપડેટ ઉપલબ્ધ છે.",
   "UPDATE_INFO_SINGLE": "વર્તમાન ઇન્સ્ટોલેશન  એ  {BRANCH_NAME} શાખા  ની {COMMIT_COUNT} કમીટ પાછળ છે. ",
   "UPDATE_INFO_MULTIPLE": "વર્તમાન ઇન્સ્ટોલેશન  એ  {BRANCH_NAME} શાખા  ની {COMMIT_COUNT} કમીટ પાછળ છે. ",

@@ -35,8 +35,8 @@ exports.startApplication = async (
 
 	for (const win of global.electronApp.windows()) {
 		const title = await win.title();
-		expect(["MagicMirror²", "DevTools"]).toContain(title);
-		if (title === "MagicMirror²") {
+		expect(["MagicMirror³", "DevTools"]).toContain(title);
+		if (title === "MagicMirror³") {
 			global.page = win;
 			if (systemDate) {
 				await global.page.evaluate((systemDate) => {

@@ -19,9 +19,9 @@ describe("App environment", () => {
 		expect(res.status).toBe(404);
 	});
 
-	it("should show the title MagicMirror²", async () => {
+	it("should show the title MagicMirror³", async () => {
 		const elem = await helpers.waitForElement("title");
 		expect(elem).not.toBeNull();
-		expect(elem.textContent).toBe("MagicMirror²");
+		expect(elem.textContent).toBe("MagicMirror³");
 	});
 });

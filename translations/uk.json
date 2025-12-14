@@ -40,7 +40,7 @@
 
   "NEWSFEED_NO_ITEMS": "Немає новин на даний момент.",
 
-  "UPDATE_NOTIFICATION": "Є оновлення для MagicMirror².",
+  "UPDATE_NOTIFICATION": "Є оновлення для MagicMirror³.",
   "UPDATE_NOTIFICATION_MODULE": "Є оновлення для модуля {MODULE_NAME}.",
   "UPDATE_INFO_SINGLE": "Поточна версія на {COMMIT_COUNT} комміт позаду від гілки {BRANCH_NAME}.",
   "UPDATE_INFO_MULTIPLE": "Поточна інсталяція на {COMMIT_COUNT} комітів позаду від гілки {BRANCH_NAME}.",

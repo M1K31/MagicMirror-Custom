@@ -41,7 +41,7 @@
 
   "NEWSFEED_NO_ITEMS": "Momente neniu novaĵoj.",
 
-  "UPDATE_NOTIFICATION": "Ĝisdatigo por MagicMirror² disponebla.",
+  "UPDATE_NOTIFICATION": "Ĝisdatigo por MagicMirror³ disponebla.",
   "UPDATE_NOTIFICATION_MODULE": "Ĝisdatigo por la modulo „{MODULE_NAME}“ disponebla.",
   "UPDATE_INFO_SINGLE": "La nuna instalado estas unu komito malantaŭ la {BRANCH_NAME}-branĉo.",
   "UPDATE_INFO_MULTIPLE": "La nuna instalado estas {COMMIT_COUNT} komitoj malantaŭ la {BRANCH_NAME}-branĉo.",

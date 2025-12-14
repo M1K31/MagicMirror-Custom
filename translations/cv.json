@@ -39,7 +39,7 @@
 
   "NEWSFEED_NO_ITEMS": "Пулас ҫӗнтер ҫук.",
 
-  "UPDATE_NOTIFICATION": "MagicMirror² валли ҫӗнетӳ пур.",
+  "UPDATE_NOTIFICATION": "MagicMirror³ валли ҫӗнетӳ пур.",
   "UPDATE_NOTIFICATION_MODULE": "{MODULE_NAME} модуль валли ҫӗнетӳ пур.",
   "UPDATE_INFO_SINGLE": "Ҫак инсталляци {BRANCH_NAME} commit турат {COMMIT_COUNT} коммитпа кая уйрӑлса тӑрать.",
   "UPDATE_INFO_MULTIPLE": "Ҫак инсталляци {BRANCH_NAME} commit турат {COMMIT_COUNT} коммитпа кая уйрӑлса тӑрать.",

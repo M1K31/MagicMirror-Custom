@@ -40,7 +40,7 @@
 
   "NEWSFEED_NO_ITEMS": "Engar fréttir í boði núna.",
 
-  "UPDATE_NOTIFICATION": "MagicMirror² uppfærsla í boði.",
+  "UPDATE_NOTIFICATION": "MagicMirror³ uppfærsla í boði.",
   "UPDATE_NOTIFICATION_MODULE": "Uppfærsla í boði fyrir {MODULE_NAME} module.",
   "UPDATE_INFO_SINGLE": "Núverandi kerfi er {COMMIT_COUNT} commit á eftir {BRANCH_NAME} branchinu.",
   "UPDATE_INFO_MULTIPLE": "Núverandi kerfi er {COMMIT_COUNT} commits á eftir {BRANCH_NAME} branchinu.",

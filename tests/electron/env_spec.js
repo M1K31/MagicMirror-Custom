@@ -33,7 +33,7 @@ describe("Development console tests", () => {
 		const pageArray = await global.electronApp.windows();
 		expect(pageArray).toHaveLength(2);
 		for (const page of pageArray) {
-			expect(["MagicMirror²", "DevTools"]).toContain(await page.title());
+			expect(["MagicMirror³", "DevTools"]).toContain(await page.title());
 		}
 	});
 });

@@ -40,7 +40,7 @@
 
   "NEWSFEED_NO_ITEMS": "Momentálne žiadne správy.",
 
-  "UPDATE_NOTIFICATION": "Dostupná aktualizácia pre MagicMirror².",
+  "UPDATE_NOTIFICATION": "Dostupná aktualizácia pre MagicMirror³.",
   "UPDATE_NOTIFICATION_MODULE": "Dostupná aktualizácia pre modul {MODULE_NAME}.",
   "UPDATE_INFO_SINGLE": "Súčasná inštalácia je na vetve {BRANCH_NAME} pozadu o {COMMIT_COUNT} commit.",
   "UPDATE_INFO_MULTIPLE": "Súčasná inštalácia je na vetve {BRANCH_NAME} pozadu o {COMMIT_COUNT} commitov.",

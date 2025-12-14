@@ -39,7 +39,7 @@
 
   "NEWSFEED_NO_ITEMS": "Op it stuit gjin nijsberjochten.",
 
-  "UPDATE_NOTIFICATION": "Der is in update beskikber foar MagicMirror².",
+  "UPDATE_NOTIFICATION": "Der is in update beskikber foar MagicMirror³.",
   "UPDATE_NOTIFICATION_MODULE": "Der is in update beskikber foar it {MODULE_NAME} module.",
   "UPDATE_INFO_SINGLE": "Dizze ynstallaasje is {BRANCH_NAME} commit efter op {COMMIT_COUNT} commits.",
   "UPDATE_INFO_MULTIPLE": "Dizze ynstallaasje is {BRANCH_NAME} commits achter op {COMMIT_COUNT} commits.",

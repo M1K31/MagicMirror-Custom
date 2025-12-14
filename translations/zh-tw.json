@@ -40,7 +40,7 @@
 
   "NEWSFEED_NO_ITEMS": "目前沒有新聞。",
 
-  "UPDATE_NOTIFICATION": "MagicMirror² 有可用更新。",
+  "UPDATE_NOTIFICATION": "MagicMirror³ 有可用更新。",
   "UPDATE_NOTIFICATION_MODULE": "{MODULE_NAME} 模組有可用更新。",
   "UPDATE_INFO_SINGLE": "目前版本在 {BRANCH_NAME} 分支上已落後了 {COMMIT_COUNT} 次 commit。",
   "UPDATE_INFO_MULTIPLE": "目前版本在 {BRANCH_NAME} 分支上已落後了 {COMMIT_COUNT} 次 commit。",

@@ -40,7 +40,7 @@
 
   "NEWSFEED_NO_ITEMS": "Δεν υπάρχουν ειδήσεις αυτή τη στιγμή.",
 
-  "UPDATE_NOTIFICATION": "Διατίθεται ενημέρωση MagicMirror².",
+  "UPDATE_NOTIFICATION": "Διατίθεται ενημέρωση MagicMirror³.",
   "UPDATE_NOTIFICATION_MODULE": "Διατίθεται ενημέρωση για το module {MODULE_NAME}.",
   "UPDATE_INFO_SINGLE": "Η τρέχουσα εγκατάσταση είναι {COMMIT_COUNT} commit πίσω στο branch {BRANCH_NAME}.",
   "UPDATE_INFO_MULTIPLE": "Η τρέχουσα εγκατάσταση είναι {COMMIT_COUNT} commit πίσω στο branch {BRANCH_NAME}",

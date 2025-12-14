@@ -40,7 +40,7 @@
 
   "NEWSFEED_NO_ITEMS": "ไม่มีข่าวในขณะนี้",
 
-  "UPDATE_NOTIFICATION": "MagicMirror² มีการอัปเดต",
+  "UPDATE_NOTIFICATION": "MagicMirror³ มีการอัปเดต",
   "UPDATE_NOTIFICATION_MODULE": "มีการอัปเดตสำหรับโมดูล {MODULE_NAME}",
   "UPDATE_INFO_SINGLE": "การติดตั้งปัจจุบันถูกคอมมิท {COMMIT_COUNT} รายการในสาขา {BRANCH_NAME}",
   "UPDATE_INFO_MULTIPLE": "การติดตั้งปัจจุบันคือ {COMMIT_COUNT} เป็นคอมมิทที่อยู่เบื้องหลังในสาขา {BRANCH_NAME}",

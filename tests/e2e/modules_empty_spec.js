@@ -9,12 +9,12 @@ describe("Check configuration without modules", () => {
 		await helpers.stopApplication();
 	});
 
-	it("shows the message MagicMirror² title", async () => {
+	it("shows the message MagicMirror³ title", async () => {
 		const elem = await helpers.waitForElement(
 			"#module_1_helloworld .module-content"
 		);
 		expect(elem).not.toBeNull();
-		expect(elem.textContent).toContain("MagicMirror²");
+		expect(elem.textContent).toContain("MagicMirror³");
 	});
 
 	it("shows the project URL", async () => {

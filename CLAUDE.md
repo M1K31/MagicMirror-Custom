@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-MagicMirror² (v2.32.0) is a modular smart mirror platform built with Node.js and Electron. It provides a web-based interface for displaying customizable information modules.
+MagicMirror³ (v2.32.0) is a modular smart mirror platform built with Node.js and Electron. It provides a web-based interface for displaying customizable information modules.
 
 **Architecture:** Three-layer system:
 

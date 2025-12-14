@@ -28,7 +28,7 @@ Complete documentation for all custom MagicMirror modules with Apple Human Inter
 
 ## Overview
 
-This collection adds 10 feature-rich modules to MagicMirror², designed with:
+This collection adds 10 feature-rich modules to MagicMirror³, designed with:
 
 - **Apple HIG Principles**: Clean typography, high contrast, glanceable information
 - **Three Interaction Modes**: Display-only, touch, and voice control
@@ -107,7 +107,7 @@ This collection adds 10 feature-rich modules to MagicMirror², designed with:
 |----------|---------|----------|
 | Node.js | 18.x+ | Yes |
 | npm | 9.x+ | Yes |
-| MagicMirror² | 2.32.0+ | Yes |
+| MagicMirror³ | 2.32.0+ | Yes |
 | Electron | 30+ | For standalone |
 
 ### Operating Systems
@@ -1255,4 +1255,4 @@ journalctl -u magicmirror
 ---
 
 *Last updated: December 2024*
-*MagicMirror² v2.32.0+*
+*MagicMirror³ v2.32.0+*

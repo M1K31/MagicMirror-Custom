@@ -45,7 +45,7 @@ const defaults = {
 			position: "upper_third",
 			classes: "large thin",
 			config: {
-				text: "MagicMirror²"
+				text: "MagicMirror³"
 			}
 		},
 		{
@@ -70,7 +70,7 @@ const defaults = {
 			config: {
 				text:
           "If you get this message while your config file is already created,<br>"
-          + "it probably contains an error. To validate your config file run in your MagicMirror² directory<br>"
+          + "it probably contains an error. To validate your config file run in your MagicMirror³ directory<br>"
           + "<pre>node --run config:check</pre>"
 			}
 		},

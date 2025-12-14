@@ -40,7 +40,7 @@
 
   "NEWSFEED_NO_ITEMS": "Ingen nyhende tilgjengeleg no.",
 
-  "UPDATE_NOTIFICATION": "MagicMirror² oppdatering er tilgjengeleg.",
+  "UPDATE_NOTIFICATION": "MagicMirror³ oppdatering er tilgjengeleg.",
   "UPDATE_NOTIFICATION_MODULE": "Oppdatering tilgjengeleg for modulen {MODULE_NAME}.",
   "UPDATE_INFO_SINGLE": "noverande installasjon er {COMMIT_COUNT} commit bak {BRANCH_NAME} greinen.",
   "UPDATE_INFO_MULTIPLE": "noverande installasjon er {COMMIT_COUNT} commits bak {BRANCH_NAME} greinen.",
