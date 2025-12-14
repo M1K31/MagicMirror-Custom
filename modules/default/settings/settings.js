@@ -44,19 +44,37 @@ Module.register("settings", {
 				fields: ["host", "token"],
 				description: "Smart home control"
 			},
+			googlecalendar: {
+				name: "Google Calendar",
+				icon: "fa-calendar",
+				enabled: true,
+				fields: ["icalUrl"],
+				description: "Sync your Google Calendar (no API needed)",
+				helpText: "Get your calendar's secret iCal URL from Google Calendar settings"
+			},
+			outlookcalendar: {
+				name: "Outlook Calendar",
+				icon: "fa-calendar-days",
+				enabled: true,
+				fields: ["icalUrl"],
+				description: "Sync your Outlook/Microsoft calendar",
+				helpText: "Get your calendar's ICS link from Outlook settings"
+			},
+			applecalendar: {
+				name: "Apple Calendar",
+				icon: "fa-apple",
+				enabled: true,
+				fields: ["icalUrl"],
+				description: "Sync your iCloud calendar",
+				helpText: "Share your calendar and copy the public URL"
+			},
 			spotify: {
 				name: "Spotify",
 				icon: "fa-spotify",
 				enabled: true,
 				oauth: true,
-				description: "Music playback and control"
-			},
-			googlecalendar: {
-				name: "Google Calendar",
-				icon: "fa-google",
-				enabled: true,
-				oauth: true,
-				description: "Calendar events sync"
+				description: "Music playback (requires Spotify Developer account)",
+				helpText: "Spotify requires OAuth - create app at developer.spotify.com"
 			},
 			openweathermap: {
 				name: "OpenWeatherMap",
@@ -272,24 +290,24 @@ Module.register("settings", {
 					</span>
 				</div>
 				<p class="service-description">${service.description}</p>
+				<div class="service-help" id="help-${key}">
+					${this.getSetupHelpText(key)}
+				</div>
 				<div class="service-config" id="config-${key}">
 					${this.createServiceFields(key, service, config)}
 				</div>
-				${service.oauth ? `<div class="oauth-info">
-					<p class="oauth-note"><i class="fas fa-info-circle"></i> ${this.getOAuthSetupInfo(key)}</p>
-				</div>` : ""}
 				<div class="service-actions">
 					${service.oauth && config.clientId
 		? `<button class="btn btn-primary oauth-btn" data-service="${key}">
-								<i class="fas fa-link"></i> Connect
+								<i class="fas fa-link"></i> Connect Account
 							 </button>`
 		: `<button class="btn btn-primary save-btn" data-service="${key}">
 								<i class="fas fa-save"></i> Save
 							 </button>`
 }
-					<button class="btn btn-secondary test-btn" data-service="${key}">
+					${!service.oauth ? `<button class="btn btn-secondary test-btn" data-service="${key}">
 						<i class="fas fa-vial"></i> Test
-					</button>
+					</button>` : ""}
 				</div>
 			`;
 
@@ -829,22 +847,79 @@ Module.register("settings", {
 	},
 
 	/**
-	 * Get OAuth setup information for a service
+	 * Get setup help text for a service
+	 */
+	getSetupHelpText: function (service) {
+		const helpTexts = {
+			googlecalendar: `
+				<strong>How to get your Google Calendar URL:</strong>
+				<ol>
+					<li>Open <a href="https://calendar.google.com" target="_blank">Google Calendar</a></li>
+					<li>Click ⚙️ Settings → Select your calendar</li>
+					<li>Scroll to "Integrate calendar"</li>
+					<li>Copy "Secret address in iCal format"</li>
+				</ol>
+			`,
+			outlookcalendar: `
+				<strong>How to get your Outlook Calendar URL:</strong>
+				<ol>
+					<li>Open <a href="https://outlook.live.com/calendar" target="_blank">Outlook Calendar</a></li>
+					<li>Click ⚙️ → View all Outlook settings</li>
+					<li>Go to Calendar → Shared calendars</li>
+					<li>Publish a calendar and copy the ICS link</li>
+				</ol>
+			`,
+			applecalendar: `
+				<strong>How to get your Apple Calendar URL:</strong>
+				<ol>
+					<li>Open Calendar on Mac or iCloud.com</li>
+					<li>Right-click your calendar → Share Calendar</li>
+					<li>Check "Public Calendar" and copy the URL</li>
+				</ol>
+			`,
+			spotify: `
+				<strong>Spotify requires developer credentials:</strong>
+				<ol>
+					<li>Go to <a href="https://developer.spotify.com/dashboard" target="_blank">Spotify Developer</a></li>
+					<li>Create an app and get Client ID/Secret</li>
+					<li>Add redirect URI: http://localhost:8080/oauth/callback/spotify</li>
+				</ol>
+			`,
+			openweathermap: `
+				<strong>Get a free weather API key:</strong>
+				<ol>
+					<li>Sign up at <a href="https://openweathermap.org/api" target="_blank">OpenWeatherMap</a></li>
+					<li>Go to API Keys and copy your key</li>
+					<li>Enter your city name (e.g., "New York" or "London,UK")</li>
+				</ol>
+			`,
+			openeye: `Enter the URL and token for your OpenEye security server.`,
+			homeassistant: `Enter your Home Assistant URL and a Long-Lived Access Token from your profile.`
+		};
+		return helpTexts[service] || "";
+	},
+
+	/**
+	 * Get OAuth setup information for a service (legacy)
 	 */
 	getOAuthSetupInfo: function (service) {
-		const setupLinks = {
-			googlecalendar: "Get credentials at console.cloud.google.com → APIs & Services → Credentials",
-			spotify: "Get credentials at developer.spotify.com → Dashboard → Create App",
-			google: "Get credentials at console.cloud.google.com → APIs & Services → Credentials"
-		};
-		return setupLinks[service] || "Enter your API credentials to connect this service.";
+		return this.config.services[service]?.helpText || "Enter your credentials to connect.";
 	},
 
 	/**
 	 * Format field name for display
 	 */
 	formatFieldName: function (field) {
-		return field
+		const fieldNames = {
+			icalUrl: "Calendar URL (iCal)",
+			apiKey: "API Key",
+			clientId: "Client ID",
+			clientSecret: "Client Secret",
+			host: "Server URL",
+			token: "Access Token",
+			location: "City/Location"
+		};
+		return fieldNames[field] || field
 			.replace(/([A-Z])/g, " $1")
 			.replace(/^./, (str) => str.toUpperCase())
 			.replace("Api", "API")

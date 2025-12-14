@@ -191,6 +191,12 @@ module.exports = NodeHelper.create({
 					success = await this.testOpenWeatherMap(config);
 					break;
 
+				case "googlecalendar":
+				case "outlookcalendar":
+				case "applecalendar":
+					success = await this.testCalendarUrl(config);
+					break;
+
 				default:
 					error = "Test not implemented for this service";
 			}
@@ -294,6 +300,51 @@ module.exports = NodeHelper.create({
 					}
 				})
 				.on("error", reject);
+		});
+	},
+
+	/**
+	 * Test calendar iCal URL
+	 */
+	testCalendarUrl: function (config) {
+		return new Promise((resolve, reject) => {
+			const icalUrl = config.icalUrl;
+			if (!icalUrl) {
+				reject(new Error("Calendar URL required"));
+				return;
+			}
+
+			try {
+				const url = new URL(icalUrl);
+				const protocol = url.protocol === "https:" ? https : http;
+
+				const req = protocol.get(icalUrl, (res) => {
+					if (res.statusCode === 200) {
+						// Check if response looks like iCal data
+						let data = "";
+						res.on("data", (chunk) => data += chunk.toString().substring(0, 100));
+						res.on("end", () => {
+							if (data.includes("BEGIN:VCALENDAR") || data.includes("VCALENDAR")) {
+								resolve(true);
+							} else {
+								reject(new Error("URL does not return valid calendar data"));
+							}
+						});
+					} else if (res.statusCode === 301 || res.statusCode === 302) {
+						resolve(true); // Redirect is okay, the calendar module handles it
+					} else {
+						reject(new Error(`HTTP ${res.statusCode} - Check if URL is correct`));
+					}
+				});
+
+				req.on("error", (err) => reject(new Error(`Connection failed: ${err.message}`)));
+				req.setTimeout(10000, () => {
+					req.destroy();
+					reject(new Error("Connection timeout"));
+				});
+			} catch (e) {
+				reject(new Error("Invalid URL format"));
+			}
 		});
 	},
 
