@@ -275,8 +275,11 @@ Module.register("settings", {
 				<div class="service-config" id="config-${key}">
 					${this.createServiceFields(key, service, config)}
 				</div>
+				${service.oauth ? `<div class="oauth-info">
+					<p class="oauth-note"><i class="fas fa-info-circle"></i> ${this.getOAuthSetupInfo(key)}</p>
+				</div>` : ""}
 				<div class="service-actions">
-					${service.oauth
+					${service.oauth && config.clientId
 		? `<button class="btn btn-primary oauth-btn" data-service="${key}">
 								<i class="fas fa-link"></i> Connect
 							 </button>`
@@ -300,12 +303,19 @@ Module.register("settings", {
 	 * Create input fields for a service
 	 */
 	createServiceFields: function (key, service, config) {
-		if (!service.fields) return "";
+		let fields = service.fields || [];
+		
+		// Add OAuth credential fields for OAuth services
+		if (service.oauth) {
+			fields = ["clientId", "clientSecret", ...fields];
+		}
+		
+		if (fields.length === 0) return "";
 
-		return service.fields
+		return fields
 			.map((field) => {
 				const value = config[field] || "";
-				const isSecret = field.toLowerCase().includes("token") || field.toLowerCase().includes("key") || field.toLowerCase().includes("password");
+				const isSecret = field.toLowerCase().includes("token") || field.toLowerCase().includes("key") || field.toLowerCase().includes("secret") || field.toLowerCase().includes("password");
 
 				return `
 				<div class="form-group">
@@ -816,6 +826,18 @@ Module.register("settings", {
 			message: message,
 			timer: 3000
 		});
+	},
+
+	/**
+	 * Get OAuth setup information for a service
+	 */
+	getOAuthSetupInfo: function (service) {
+		const setupLinks = {
+			googlecalendar: "Get credentials at console.cloud.google.com → APIs & Services → Credentials",
+			spotify: "Get credentials at developer.spotify.com → Dashboard → Create App",
+			google: "Get credentials at console.cloud.google.com → APIs & Services → Credentials"
+		};
+		return setupLinks[service] || "Enter your API credentials to connect this service.";
 	},
 
 	/**

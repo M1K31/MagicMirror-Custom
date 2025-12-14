@@ -300,7 +300,7 @@ module.exports = NodeHelper.create({
 	/**
 	 * Start OAuth flow for a service
 	 */
-	startOAuth: function (service) {
+	startOAuth: async function (service) {
 		const oauthConfig = OAUTH_CONFIGS[service];
 		if (!oauthConfig) {
 			this.sendSocketNotification("SETTINGS_ERROR", {
@@ -309,14 +309,42 @@ module.exports = NodeHelper.create({
 			return;
 		}
 
-		// For a real implementation, you'd need:
-		// 1. Client ID/Secret stored securely
-		// 2. Callback URL configured in the service
-		// 3. State parameter for security
+		// Check if client credentials are configured
+		const serviceConfig = this.serviceConfigs[service] || {};
+		const clientId = serviceConfig.clientId;
+		const clientSecret = serviceConfig.clientSecret;
 
-		// This is a placeholder - real OAuth requires API keys
-		this.sendSocketNotification("SETTINGS_ERROR", {
-			message: `OAuth for ${service} requires API credentials. Please configure client ID and secret in the config.`
+		if (!clientId || !clientSecret) {
+			this.sendSocketNotification("SETTINGS_ERROR", {
+				message: `Please save your Client ID and Client Secret first, then click Connect.`
+			});
+			return;
+		}
+
+		// Generate OAuth URL
+		const state = Math.random().toString(36).substring(7);
+		const redirectUri = `http://localhost:8080/oauth/callback/${service}`;
+		
+		const authUrl = new URL(oauthConfig.authUrl);
+		authUrl.searchParams.set("client_id", clientId);
+		authUrl.searchParams.set("redirect_uri", redirectUri);
+		authUrl.searchParams.set("response_type", "code");
+		authUrl.searchParams.set("scope", oauthConfig.scopes.join(" "));
+		authUrl.searchParams.set("state", state);
+		authUrl.searchParams.set("access_type", "offline");
+		authUrl.searchParams.set("prompt", "consent");
+
+		// Store state for verification
+		this.serviceConfigs[service] = {
+			...this.serviceConfigs[service],
+			oauthState: state
+		};
+		await this.saveSecrets();
+
+		// Send URL to frontend to open
+		this.sendSocketNotification("SETTINGS_OAUTH_URL", {
+			service: service,
+			url: authUrl.toString()
 		});
 	},
 

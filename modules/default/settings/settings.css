@@ -227,6 +227,27 @@
 	margin-bottom: 16px;
 }
 
+/* OAuth Setup Info */
+.oauth-info {
+	margin-bottom: 16px;
+	padding: 12px;
+	background: rgba(255, 193, 7, 0.1);
+	border-radius: 8px;
+	border-left: 3px solid #ffc107;
+}
+
+.oauth-note {
+	color: rgba(255, 255, 255, 0.8);
+	font-size: 12px;
+	margin: 0;
+	line-height: 1.5;
+}
+
+.oauth-note i {
+	color: #ffc107;
+	margin-right: 8px;
+}
+
 .service-actions {
 	display: flex;
 	gap: 10px;
