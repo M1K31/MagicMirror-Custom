@@ -5,13 +5,13 @@
  * Listens for REMOTE_ACTION events via Socket.IO and executes them.
  */
 
-/* global Log, MM */
+/* global Log, MM, io */
 
 const RemoteHandler = {
 	/**
-	 * Initialize remote control handling
+	 * Initialize remote control handling.
 	 */
-	init() {
+	init () {
 		Log.info("[RemoteHandler] Initializing remote control handler");
 
 		// Listen for remote actions from Socket.IO

@@ -22,18 +22,23 @@ Module.register("ecosystem", {
 		discoveryTimeout: 5000,
 
 		// Known companion apps
+		// Ports can be customized per-deployment via config.js
 		apps: {
 			openeye: {
 				name: "OpenEye Security",
 				icon: "fa-eye",
-				defaultPort: 5000,
+				defaultPort: 8000,  // Default OpenEye port
+				alternativePorts: [5000, 8080, 3000],  // Additional ports to scan
 				apiPrefix: "/api",
-				description: "AI-powered home surveillance"
+				description: "AI-powered home surveillance",
+				// Optional: Set explicit host to skip discovery
+				// host: "http://192.168.1.50:8000"
 			},
 			homebridge: {
 				name: "Homebridge",
 				icon: "fa-home",
 				defaultPort: 8581,
+				alternativePorts: [8080],
 				apiPrefix: "/api",
 				description: "HomeKit bridge"
 			}

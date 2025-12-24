@@ -32,6 +32,12 @@ module.exports = NodeHelper.create({
 		this.connectivityInterval = null;
 		this.knownDevicesPath = path.join(__dirname, ".known_devices.json");
 		this.macVendorCache = new Map();
+
+		// Fing/OpenEye integration
+		this.fingAvailable = false;
+		this.openeyeHost = null;
+		this.openeyeToken = null;
+		this.useOpenEyeNetwork = false;
 	},
 
 	/**
@@ -66,7 +72,15 @@ module.exports = NodeHelper.create({
 	initialize: async function (config) {
 		this.config = config;
 
-		// Detect network interface and CIDR if auto
+		// Try to initialize OpenEye integration first
+		await this.initOpenEyeIntegration(config);
+
+		// Check for local Fing agent if OpenEye not available
+		if (!this.useOpenEyeNetwork) {
+			await this.checkFingAvailable();
+		}
+
+		// Detect network interface and CIDR if auto (for fallback scanning)
 		if (config.networkInterface === "auto" || config.networkCIDR === "auto") {
 			const networkInfo = this.detectNetworkInfo();
 			if (config.networkInterface === "auto") {
@@ -77,7 +91,15 @@ module.exports = NodeHelper.create({
 			}
 		}
 
-		Log.info(`[${this.name}] Network: ${this.config.networkInterface} (${this.config.networkCIDR})`);
+		const scanSource = this.useOpenEyeNetwork ? "OpenEye" : (this.fingAvailable ? "Fing" : "ARP");
+		Log.info(`[${this.name}] Network: ${this.config.networkInterface} (${this.config.networkCIDR}) - Scan source: ${scanSource}`);
+
+		// Send integration status to frontend
+		this.sendSocketNotification("NETWORK_INTEGRATION_STATUS", {
+			openeyeConnected: this.useOpenEyeNetwork,
+			fingAvailable: this.fingAvailable,
+			scanSource: scanSource
+		});
 
 		// Load known devices
 		this.loadKnownDevices();
@@ -157,24 +179,43 @@ module.exports = NodeHelper.create({
 	},
 
 	/**
-	 * Scan network for devices using ARP
+	 * Scan network for devices using best available method
 	 */
 	scanNetwork: async function () {
 		const cidr = this.config.networkCIDR;
 
 		try {
-			// Try different scanning methods based on platform
 			let devices = [];
 
-			if (process.platform === "linux") {
-				devices = await this.scanWithArpScan(cidr);
-				if (devices.length === 0) {
-					devices = await this.scanWithNmap(cidr);
+			// Priority: OpenEye > Fing > ARP/nmap
+			// 1. Try OpenEye network API first
+			if (this.useOpenEyeNetwork) {
+				devices = await this.scanWithOpenEye();
+				if (devices && devices.length > 0) {
+					Log.debug(`[${this.name}] Got ${devices.length} devices from OpenEye`);
 				}
-			} else if (process.platform === "darwin") {
-				devices = await this.scanWithArp();
-			} else {
-				devices = await this.scanWithArp();
+			}
+
+			// 2. Try local Fing agent
+			if ((!devices || devices.length === 0) && this.fingAvailable) {
+				devices = await this.scanWithFing();
+				if (devices && devices.length > 0) {
+					Log.debug(`[${this.name}] Got ${devices.length} devices from Fing`);
+				}
+			}
+
+			// 3. Fallback to local ARP/nmap scanning
+			if (!devices || devices.length === 0) {
+				if (process.platform === "linux") {
+					devices = await this.scanWithArpScan(cidr);
+					if (devices.length === 0) {
+						devices = await this.scanWithNmap(cidr);
+					}
+				} else if (process.platform === "darwin") {
+					devices = await this.scanWithArp();
+				} else {
+					devices = await this.scanWithArp();
+				}
 			}
 
 			// Enrich with vendor info
@@ -645,5 +686,194 @@ module.exports = NodeHelper.create({
 		if (this.scanInterval) clearInterval(this.scanInterval);
 		if (this.speedTestInterval) clearInterval(this.speedTestInterval);
 		if (this.connectivityInterval) clearInterval(this.connectivityInterval);
+	},
+
+	// =========================================================================
+	// OpenEye/Fing Integration Methods
+	// =========================================================================
+
+	/**
+	 * Initialize OpenEye network integration
+	 * @param {object} config - Configuration with openeyeHost and token
+	 */
+	initOpenEyeIntegration: async function (config) {
+		if (!config.openeyeHost) {
+			Log.info(`[${this.name}] OpenEye host not configured, using local scanning`);
+			return false;
+		}
+
+		this.openeyeHost = config.openeyeHost;
+		this.openeyeToken = config.openeyeToken || config.token;
+
+		try {
+			// Test connection to OpenEye network API
+			const response = await fetch(`${this.openeyeHost}/api/network/status`, {
+				headers: this.openeyeToken ? { Authorization: `Bearer ${this.openeyeToken}` } : {},
+				timeout: 5000
+			});
+
+			if (response.ok) {
+				const data = await response.json();
+				this.useOpenEyeNetwork = true;
+				this.fingAvailable = data.fing_available || false;
+				Log.info(`[${this.name}] OpenEye network integration enabled (Fing: ${this.fingAvailable ? "available" : "simulated"})`);
+				return true;
+			}
+		} catch (error) {
+			Log.warn(`[${this.name}] OpenEye network API not available: ${error.message}`);
+		}
+
+		this.useOpenEyeNetwork = false;
+		return false;
+	},
+
+	/**
+	 * Scan network using OpenEye API
+	 * @returns {Promise<Array>} Devices from OpenEye
+	 */
+	scanWithOpenEye: async function () {
+		if (!this.useOpenEyeNetwork) {
+			return null;
+		}
+
+		try {
+			const response = await fetch(`${this.openeyeHost}/api/network/devices`, {
+				headers: this.openeyeToken ? { Authorization: `Bearer ${this.openeyeToken}` } : {}
+			});
+
+			if (!response.ok) {
+				Log.warn(`[${this.name}] OpenEye network scan failed: ${response.status}`);
+				return null;
+			}
+
+			const data = await response.json();
+			return data.devices.map((d) => ({
+				ip: d.ip_address,
+				mac: d.mac_address,
+				hostname: d.hostname,
+				vendor: d.vendor,
+				online: d.is_online,
+				isGateway: d.is_gateway,
+				deviceType: d.device_type,
+				customName: d.custom_name,
+				isKnown: d.is_known
+			}));
+		} catch (error) {
+			Log.error(`[${this.name}] OpenEye scan error: ${error.message}`);
+			return null;
+		}
+	},
+
+	/**
+	 * Run speed test via OpenEye API
+	 * @returns {Promise<object>} Speed test results
+	 */
+	runSpeedTestViaOpenEye: async function () {
+		if (!this.useOpenEyeNetwork) {
+			return null;
+		}
+
+		try {
+			const response = await fetch(`${this.openeyeHost}/api/network/speedtest`, {
+				method: "POST",
+				headers: this.openeyeToken ? { Authorization: `Bearer ${this.openeyeToken}` } : {}
+			});
+
+			if (!response.ok) {
+				return null;
+			}
+
+			const data = await response.json();
+			return {
+				download: data.download_mbps,
+				upload: data.upload_mbps,
+				ping: data.ping_ms,
+				server: data.server,
+				timestamp: data.timestamp
+			};
+		} catch (error) {
+			Log.warn(`[${this.name}] OpenEye speed test failed: ${error.message}`);
+			return null;
+		}
+	},
+
+	/**
+	 * Check connectivity via OpenEye API
+	 * @returns {Promise<boolean>} Online status
+	 */
+	checkConnectivityViaOpenEye: async function () {
+		if (!this.useOpenEyeNetwork) {
+			return null;
+		}
+
+		try {
+			const response = await fetch(`${this.openeyeHost}/api/network/connectivity`, {
+				headers: this.openeyeToken ? { Authorization: `Bearer ${this.openeyeToken}` } : {}
+			});
+
+			if (response.ok) {
+				const data = await response.json();
+				return data.online;
+			}
+		} catch {
+			// Ignore errors
+		}
+		return null;
+	},
+
+	/**
+	 * Check Fing agent availability (local or via OpenEye)
+	 * @returns {Promise<boolean>} Fing available
+	 */
+	checkFingAvailable: async function () {
+		// First check OpenEye
+		if (this.useOpenEyeNetwork) {
+			return this.fingAvailable;
+		}
+
+		// Check local Fing agent (port 49090)
+		try {
+			const response = await fetch("http://localhost:49090/api/v1/status", { timeout: 2000 });
+			if (response.ok) {
+				this.fingAvailable = true;
+				Log.info(`[${this.name}] Local Fing agent detected`);
+				return true;
+			}
+		} catch {
+			// Fing not available locally
+		}
+
+		return false;
+	},
+
+	/**
+	 * Scan using local Fing agent
+	 * @returns {Promise<Array>} Devices from Fing
+	 */
+	scanWithFing: async function () {
+		if (!this.fingAvailable) {
+			return null;
+		}
+
+		try {
+			const response = await fetch("http://localhost:49090/api/v1/devices", { timeout: 10000 });
+			if (!response.ok) {
+				return null;
+			}
+
+			const data = await response.json();
+			return data.devices.map((d) => ({
+				ip: d.ip,
+				mac: d.mac.toLowerCase(),
+				hostname: d.hostname,
+				vendor: d.vendor,
+				online: d.state === "up",
+				isGateway: d.is_gateway || false,
+				deviceType: d.type || "unknown"
+			}));
+		} catch (error) {
+			Log.warn(`[${this.name}] Fing scan failed: ${error.message}`);
+			return null;
+		}
 	}
 });

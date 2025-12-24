@@ -153,34 +153,63 @@ module.exports = NodeHelper.create({
 	 * Find a specific app on the network
 	 */
 	findApp: async function (appId, appConfig, networks, timeout) {
-		// Method 1: Check localhost first
-		const localhostResult = await this.checkAppReachable(
-			`http://localhost:${appConfig.defaultPort}`,
-			appConfig.apiPrefix,
-			timeout
-		);
-		if (localhostResult) {
-			return {
-				...appConfig,
-				host: `http://localhost:${appConfig.defaultPort}`,
-				discoveredAt: new Date().toISOString()
-			};
-		}
-
-		// Method 2: Check common local addresses
-		for (const network of networks) {
-			// Check the host's own address
-			const hostResult = await this.checkAppReachable(
-				`http://${network.address}:${appConfig.defaultPort}`,
+		// Method 0: Use explicit host if configured (skip discovery)
+		if (appConfig.host) {
+			const explicitResult = await this.checkAppReachable(
+				appConfig.host,
 				appConfig.apiPrefix,
 				timeout
 			);
-			if (hostResult) {
+			if (explicitResult) {
 				return {
 					...appConfig,
-					host: `http://${network.address}:${appConfig.defaultPort}`,
-					discoveredAt: new Date().toISOString()
+					host: appConfig.host,
+					discoveredAt: new Date().toISOString(),
+					discoveryMethod: "explicit"
 				};
+			}
+			Log.warn(`[${this.name}] Explicit host ${appConfig.host} not reachable`);
+		}
+
+		// Build list of ports to scan
+		const portsToScan = [appConfig.defaultPort];
+		if (appConfig.alternativePorts) {
+			portsToScan.push(...appConfig.alternativePorts);
+		}
+
+		// Method 1: Check localhost first (all ports)
+		for (const port of portsToScan) {
+			const localhostResult = await this.checkAppReachable(
+				`http://localhost:${port}`,
+				appConfig.apiPrefix,
+				timeout
+			);
+			if (localhostResult) {
+				return {
+					...appConfig,
+					host: `http://localhost:${port}`,
+					discoveredAt: new Date().toISOString(),
+					discoveryMethod: "localhost"
+				};
+			}
+		}
+
+		// Method 2: Check common local addresses (all ports)
+		for (const network of networks) {
+			for (const port of portsToScan) {
+				const hostResult = await this.checkAppReachable(
+					`http://${network.address}:${port}`,
+					appConfig.apiPrefix,
+					timeout
+				);
+				if (hostResult) {
+					return {
+						...appConfig,
+						host: `http://${network.address}:${port}`,
+						discoveredAt: new Date().toISOString(),
+						discoveryMethod: "network-scan"
+					};
+				}
 			}
 		}
 
