@@ -51,6 +51,8 @@ npm-debug.log*
 # Runtime data
 pids/
 *.pid
+*.lock
+.restart_lock
 *.seed
 
 # Coverage reports
