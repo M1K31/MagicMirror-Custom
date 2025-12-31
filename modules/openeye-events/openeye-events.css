@@ -1,0 +1,221 @@
+/**
+ * OpenEye Events Dashboard Styles
+ *
+ * Copyright (c) 2025 Mikel Smart
+ * Licensed under the MIT License
+ *
+ * Follows Apple HIG principles for mirror displays:
+ * - High contrast for readability
+ * - Clear visual hierarchy
+ * - Minimal cognitive load
+ */
+
+.openeye-events {
+	font-size: 14px;
+	min-width: 160px;
+	max-width: 280px;
+}
+
+.openeye-events.compact {
+	font-size: 12px;
+	min-width: 140px;
+	max-width: 220px;
+}
+
+/* Error state */
+.events-error {
+	display: flex;
+	align-items: center;
+	gap: 8px;
+	padding: 12px;
+	color: #ff6464;
+	opacity: 0.8;
+}
+
+.events-error i {
+	font-size: 1.2em;
+}
+
+/* Total summary section */
+.events-summary {
+	display: flex;
+	justify-content: space-around;
+	gap: 12px;
+	margin-bottom: 16px;
+	padding: 8px 0;
+}
+
+.event-count {
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+	gap: 4px;
+	padding: 10px 14px;
+	background-color: rgba(255, 255, 255, 0.05);
+	border-radius: 10px;
+	min-width: 60px;
+	transition: transform 0.2s, background-color 0.2s;
+}
+
+.event-count.increased {
+	animation: pulse 0.5s ease-out;
+	background-color: rgba(0, 200, 150, 0.15);
+}
+
+@keyframes pulse {
+	0% { transform: scale(1); }
+	50% { transform: scale(1.05); }
+	100% { transform: scale(1); }
+}
+
+.event-count i {
+	font-size: 1.3em;
+	opacity: 0.9;
+}
+
+/* Event type colors */
+.event-count.motion i {
+	color: #ffd700;
+}
+
+.event-count.faces i {
+	color: #64b4ff;
+}
+
+.event-count.recordings i {
+	color: #ff6b9d;
+}
+
+.count-number {
+	font-size: 1.5em;
+	font-weight: 600;
+	line-height: 1.1;
+}
+
+.count-label {
+	font-size: 0.7em;
+	opacity: 0.6;
+	text-transform: uppercase;
+	letter-spacing: 0.05em;
+}
+
+/* Camera list section */
+.camera-list {
+	border-top: 1px solid rgba(255, 255, 255, 0.1);
+	padding-top: 12px;
+}
+
+.camera-header {
+	font-size: 0.75em;
+	font-weight: 600;
+	color: rgba(255, 255, 255, 0.5);
+	text-transform: uppercase;
+	letter-spacing: 0.05em;
+	margin-bottom: 8px;
+}
+
+.camera-row {
+	display: flex;
+	justify-content: space-between;
+	align-items: center;
+	padding: 6px 10px;
+	background-color: rgba(255, 255, 255, 0.03);
+	border-radius: 6px;
+	margin-bottom: 4px;
+}
+
+.camera-row.offline {
+	opacity: 0.5;
+}
+
+.camera-name {
+	font-weight: 500;
+	font-size: 0.9em;
+	white-space: nowrap;
+	overflow: hidden;
+	text-overflow: ellipsis;
+	max-width: 50%;
+}
+
+.camera-counts {
+	display: flex;
+	gap: 10px;
+}
+
+.mini-count {
+	display: flex;
+	align-items: center;
+	gap: 4px;
+	font-size: 0.85em;
+	opacity: 0.8;
+}
+
+.mini-count i {
+	font-size: 0.9em;
+}
+
+.mini-count.motion i {
+	color: #ffd700;
+}
+
+.mini-count.faces i {
+	color: #64b4ff;
+}
+
+.mini-count.recordings i {
+	color: #ff6b9d;
+}
+
+.more-cameras {
+	text-align: center;
+	padding: 6px;
+	font-size: 0.8em;
+	opacity: 0.5;
+}
+
+/* Compact mode adjustments */
+.openeye-events.compact .events-summary {
+	gap: 8px;
+	margin-bottom: 12px;
+}
+
+.openeye-events.compact .event-count {
+	padding: 8px 10px;
+	min-width: 50px;
+}
+
+.openeye-events.compact .event-count i {
+	font-size: 1.1em;
+}
+
+.openeye-events.compact .count-number {
+	font-size: 1.3em;
+}
+
+.openeye-events.compact .camera-row {
+	padding: 4px 8px;
+}
+
+.openeye-events.compact .camera-name {
+	font-size: 0.8em;
+}
+
+.openeye-events.compact .mini-count {
+	font-size: 0.75em;
+	gap: 3px;
+}
+
+/* Responsive adjustments */
+@media (max-width: 400px) {
+	.openeye-events {
+		min-width: 120px;
+	}
+
+	.events-summary {
+		flex-wrap: wrap;
+	}
+
+	.event-count {
+		flex: 1 1 40%;
+	}
+}

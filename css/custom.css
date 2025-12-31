@@ -1,29 +1,317 @@
-/* Custom CSS Sample
+/**
+ * MagicMirror Custom CSS
  *
- * Change color and fonts here.
+ * Apple HIG-Inspired Adaptive Layout System
+ * https://developer.apple.com/design/human-interface-guidelines/widgets
  *
- * Beware that properties cannot be unitless, so for example write '--gap-body: 0px;' instead of just '--gap-body: 0;'
+ * Core Principles:
+ * 1. Hierarchy - Prioritize most important content
+ * 2. Information Density - Show key info, progressively disclose details
+ * 3. Glanceability - Essential info visible at a distance
+ * 4. Adaptive Layout - Content adjusts to available space without truncation
  */
 
-/* Uncomment and adjust accordingly if you want to import another font from the google-fonts-api: */
-/* @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@100;300;400;700&display=swap'); */
-
 :root {
+  /* Colors */
   --color-text: #999;
   --color-text-dimmed: #666;
   --color-text-bright: #fff;
   --color-background: black;
 
+  /* Typography */
   --font-primary: "Roboto Condensed";
   --font-secondary: "Roboto";
-
   --font-size: 20px;
   --font-size-small: 0.75rem;
 
+  /* Layout Margins */
   --gap-body-top: 60px;
   --gap-body-right: 60px;
   --gap-body-bottom: 60px;
   --gap-body-left: 60px;
-
   --gap-modules: 30px;
+
+  /* Adaptive Layout Variables */
+  --module-max-width-side: 40vw;
+
+  /* Layout Mode: 'full', 'compact', 'minimal' - set by JS */
+  --layout-mode: 'full';
+
+  /* Priority-based sizing (1 = highest priority, keeps more space) */
+  --priority-1-flex: 1;
+  --priority-2-flex: 0.8;
+  --priority-3-flex: 0.6;
+}
+
+/* ==========================================================================
+   ADAPTIVE REGION LAYOUT
+   Following Apple HIG: Content should never be clipped unexpectedly
+   ========================================================================== */
+
+/* Regions use flexbox for natural content flow */
+.region .container {
+  display: flex;
+  flex-direction: column;
+  gap: var(--gap-modules);
+}
+
+/* Side modules constrained by width, not height */
+.region.left .module,
+.region.right .module {
+  max-width: var(--module-max-width-side);
+}
+
+/* Top/bottom regions: modules share vertical space proportionally */
+.region.top .container,
+.region.bottom .container {
+  /* No max-height - let content flow naturally */
+  /* Modules manage their own condensation based on priority */
+}
+
+/* ==========================================================================
+   MODULE PRIORITY SYSTEM
+   Higher priority modules (lower number) get more space
+   ========================================================================== */
+
+/* Priority 1: Essential info (clock, current weather) */
+.module[data-priority="1"] {
+  flex-shrink: 0; /* Don't shrink essential content */
+}
+
+/* Priority 2: Important info (calendar, forecast) */
+.module[data-priority="2"] {
+  flex-shrink: 0.5;
+}
+
+/* Priority 3: Supplementary info (news, network) */
+.module[data-priority="3"] {
+  flex-shrink: 1;
+}
+
+/* ==========================================================================
+   WEATHER MODULE - Full Forecast Display
+   Fix: Remove truncation, allow natural sizing with compact styling
+   ========================================================================== */
+
+.weather {
+  /* Allow weather to display fully */
+}
+
+.weather .current {
+  /* Current conditions: highest priority, always visible */
+  margin-bottom: 8px;
+}
+
+.weather .forecast {
+  /* Forecast table: compact but complete */
+  display: table;
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.weather .forecast tr {
+  line-height: 1.4;
+}
+
+.weather .forecast td {
+  padding: 3px 8px 3px 0;
+  vertical-align: middle;
+}
+
+/* Compact mode for weather when space is limited */
+.weather[data-layout-mode="compact"] .forecast tr:nth-child(n+6) {
+  display: none; /* Show only 5 days in compact mode */
+}
+
+.weather[data-layout-mode="minimal"] .forecast {
+  display: none; /* Hide forecast entirely in minimal mode */
+}
+
+/* ==========================================================================
+   CALENDAR MODULE - Smart Condensation
+   ========================================================================== */
+
+.calendar .event {
+  padding: 4px 0;
+  line-height: 1.3;
+}
+
+/* Compact mode: fewer events, tighter spacing */
+.calendar[data-layout-mode="compact"] .event {
+  padding: 2px 0;
+  line-height: 1.2;
+}
+
+.calendar[data-layout-mode="compact"] .event:nth-child(n+6) {
+  display: none; /* Show max 5 events */
+}
+
+.calendar[data-layout-mode="minimal"] .event:nth-child(n+4) {
+  display: none; /* Show max 3 events */
+}
+
+/* ==========================================================================
+   NEWSFEED MODULE - Headline Priority
+   ========================================================================== */
+
+.newsfeed[data-layout-mode="compact"] .newsfeed-source,
+.newsfeed[data-layout-mode="compact"] .newsfeed-date {
+  display: none; /* Hide metadata in compact mode */
+}
+
+.newsfeed[data-layout-mode="minimal"] {
+  font-size: 0.9em;
+}
+
+/* ==========================================================================
+   NETWORK & OPENEYE MODULES - Summary Priority
+   ========================================================================== */
+
+/* Prevent overlap between top_right and bottom_right regions */
+.region.right {
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  height: calc(100vh - var(--gap-body-top) - var(--gap-body-bottom));
+}
+
+/* Top right region: align to top */
+.region.top.right .container {
+  justify-content: flex-start;
+}
+
+/* Bottom right region: align to bottom, prevent overlap */
+.region.bottom.right .container {
+  justify-content: flex-end;
+  margin-top: auto;
+}
+
+/* Network module specific styling to prevent overlap */
+.network {
+  max-height: 35vh; /* Limit height to prevent overflow into top region */
+  overflow: hidden;
+}
+
+/* Ensure weather module doesn't grow too large */
+.weather {
+  max-height: 50vh;
+  overflow-y: auto;
+}
+
+/* These modules already have compact modes via their config */
+
+/* ==========================================================================
+   RESPONSIVE BREAKPOINTS
+   Screen size adaptations following Apple HIG responsive principles
+   ========================================================================== */
+
+/* Large displays (1080p+): Full layout */
+@media (min-height: 900px) and (min-width: 1200px) {
+  :root {
+    --layout-mode: 'full';
+    --gap-modules: 30px;
+    --font-size: 22px;
+  }
+}
+
+/* Medium displays (720p-1080p): Standard layout */
+@media (max-height: 900px) {
+  :root {
+    --layout-mode: 'full';
+    --gap-modules: 24px;
+    --font-size: 20px;
+  }
+}
+
+/* Small displays (below 720p): Compact layout */
+@media (max-height: 720px) {
+  :root {
+    --layout-mode: 'compact';
+    --gap-modules: 16px;
+    --font-size: 18px;
+    --gap-body-top: 40px;
+    --gap-body-bottom: 40px;
+  }
+
+  /* Apply compact mode to all modules */
+  .module {
+    --current-layout-mode: 'compact';
+  }
+}
+
+/* Very small displays (below 600px): Minimal layout */
+@media (max-height: 600px) {
+  :root {
+    --layout-mode: 'minimal';
+    --gap-modules: 12px;
+    --font-size: 16px;
+    --gap-body-top: 30px;
+    --gap-body-bottom: 30px;
+    --gap-body-left: 30px;
+    --gap-body-right: 30px;
+  }
+}
+
+/* Width-based adjustments */
+@media (max-width: 800px) {
+  :root {
+    --module-max-width-side: 45vw;
+    --gap-body-left: 30px;
+    --gap-body-right: 30px;
+  }
+}
+
+/* ==========================================================================
+   ACCESSIBILITY & GLANCEABILITY
+   Apple HIG: Content should be readable at a glance from a distance
+   ========================================================================== */
+
+/* Minimum touch target (Apple HIG: 44px) */
+.module header {
+  min-height: 44px;
+  display: flex;
+  align-items: center;
+}
+
+/* Text shadow for readability on dark background */
+.module {
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.5);
+}
+
+/* Smooth transitions for layout changes */
+.module-content {
+  transition: opacity 0.3s ease-in-out;
+}
+
+/* Hidden scrollbars (Apple HIG: invisible chrome) */
+.module-content::-webkit-scrollbar {
+  display: none;
+}
+
+.module-content {
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+
+/* ==========================================================================
+   VISUAL HIERARCHY
+   Apple HIG: Use size, color, and spacing to establish hierarchy
+   ========================================================================== */
+
+/* Primary content (time, current weather) */
+.module .primary-content {
+  font-size: 1.2em;
+  color: var(--color-text-bright);
+}
+
+/* Secondary content (date, forecast) */
+.module .secondary-content {
+  font-size: 1em;
+  color: var(--color-text);
+}
+
+/* Tertiary content (details, metadata) */
+.module .tertiary-content {
+  font-size: 0.85em;
+  color: var(--color-text-dimmed);
 }

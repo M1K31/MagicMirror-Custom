@@ -52,10 +52,22 @@ Module.register("network", {
 		showUnknownDevices: true,
 		showKnownDevices: true,
 		showOfflineDevices: false,
-		showSpeedTest: true,
+		showSpeedTest: false,  // Disabled by default - takes space
 		showConnectivityStatus: true,
 		maxDevicesDisplay: 10,
 		compactMode: false,
+
+		// Summary mode - shows device counts instead of full device list
+		// Reduces visual clutter and prevents overlap with other modules
+		summaryMode: true,
+
+		// Detailed devices - array of MAC addresses that show full IP/status info
+		// When summaryMode is true, only these devices show detailed info below counts
+		// Example: ["00:11:22:33:44:55", "aa:bb:cc:dd:ee:ff"]
+		detailedDevices: [],
+
+		// Show device type breakdown in summary mode (phones, computers, etc.)
+		showTypeBreakdown: true,
 
 		// Notifications
 		notifyOnNewDevice: true,
@@ -347,7 +359,7 @@ Module.register("network", {
 	 */
 	getDom: function () {
 		const wrapper = document.createElement("div");
-		wrapper.className = `network-module${this.config.compactMode ? " compact" : ""}`;
+		wrapper.className = `network-module${this.config.compactMode ? " compact" : ""}${this.config.summaryMode ? " summary" : ""}`;
 
 		// Helper to create icon elements safely
 		const createIcon = (iconClass) => {
@@ -388,17 +400,33 @@ Module.register("network", {
 			wrapper.appendChild(this.renderSpeedTest());
 		}
 
-		// Device sections
+		// Device sections - use summary mode or full list mode
 		if (this.devices.length > 0) {
 			const knownDevices = this.devices.filter((d) => d.isKnown && (this.config.showOfflineDevices || d.online));
 			const unknownDevices = this.devices.filter((d) => !d.isKnown && (this.config.showOfflineDevices || d.online));
 
-			if (this.config.showKnownDevices && knownDevices.length > 0) {
-				wrapper.appendChild(this.renderDeviceSection("Known Devices", knownDevices, "known"));
-			}
+			if (this.config.summaryMode) {
+				// Summary mode: show counts and type breakdown
+				wrapper.appendChild(this.renderDeviceSummary(knownDevices, unknownDevices));
 
-			if (this.config.showUnknownDevices && unknownDevices.length > 0) {
-				wrapper.appendChild(this.renderDeviceSection("Unknown Devices", unknownDevices, "unknown"));
+				// Show detailed devices if configured
+				if (this.config.detailedDevices.length > 0) {
+					const detailedList = this.devices.filter((d) =>
+						this.config.detailedDevices.some((mac) => mac.toLowerCase() === d.mac.toLowerCase())
+					);
+					if (detailedList.length > 0) {
+						wrapper.appendChild(this.renderDetailedDevices(detailedList));
+					}
+				}
+			} else {
+				// Full list mode
+				if (this.config.showKnownDevices && knownDevices.length > 0) {
+					wrapper.appendChild(this.renderDeviceSection("Known Devices", knownDevices, "known"));
+				}
+
+				if (this.config.showUnknownDevices && unknownDevices.length > 0) {
+					wrapper.appendChild(this.renderDeviceSection("Unknown Devices", unknownDevices, "unknown"));
+				}
 			}
 		} else {
 			const emptyDiv = document.createElement("div");
@@ -411,6 +439,160 @@ Module.register("network", {
 		}
 
 		return wrapper;
+	},
+
+	/**
+	 * Render device summary (counts and type breakdown)
+	 * @param {object[]} knownDevices - Known devices
+	 * @param {object[]} unknownDevices - Unknown devices
+	 * @returns {HTMLElement} Summary element
+	 */
+	renderDeviceSummary: function (knownDevices, unknownDevices) {
+		const section = document.createElement("div");
+		section.className = "device-summary";
+
+		// Total counts row
+		const countsRow = document.createElement("div");
+		countsRow.className = "summary-counts";
+
+		// Known devices count
+		if (this.config.showKnownDevices) {
+			const knownCount = document.createElement("div");
+			knownCount.className = "summary-count known";
+
+			const knownIcon = document.createElement("i");
+			knownIcon.className = "fa fa-check-circle";
+			knownCount.appendChild(knownIcon);
+
+			const knownNum = document.createElement("span");
+			knownNum.className = "count-number";
+			knownNum.textContent = knownDevices.length;
+			knownCount.appendChild(knownNum);
+
+			const knownLabel = document.createElement("span");
+			knownLabel.className = "count-label";
+			knownLabel.textContent = "Known";
+			knownCount.appendChild(knownLabel);
+
+			countsRow.appendChild(knownCount);
+		}
+
+		// Unknown devices count
+		if (this.config.showUnknownDevices) {
+			const unknownCount = document.createElement("div");
+			unknownCount.className = "summary-count unknown";
+
+			const unknownIcon = document.createElement("i");
+			unknownIcon.className = "fa fa-question-circle";
+			unknownCount.appendChild(unknownIcon);
+
+			const unknownNum = document.createElement("span");
+			unknownNum.className = "count-number";
+			unknownNum.textContent = unknownDevices.length;
+			unknownCount.appendChild(unknownNum);
+
+			const unknownLabel = document.createElement("span");
+			unknownLabel.className = "count-label";
+			unknownLabel.textContent = "Unknown";
+			unknownCount.appendChild(unknownLabel);
+
+			countsRow.appendChild(unknownCount);
+		}
+
+		// Total devices count
+		const totalCount = document.createElement("div");
+		totalCount.className = "summary-count total";
+
+		const totalIcon = document.createElement("i");
+		totalIcon.className = "fa fa-network-wired";
+		totalCount.appendChild(totalIcon);
+
+		const totalNum = document.createElement("span");
+		totalNum.className = "count-number";
+		totalNum.textContent = knownDevices.length + unknownDevices.length;
+		totalCount.appendChild(totalNum);
+
+		const totalLabel = document.createElement("span");
+		totalLabel.className = "count-label";
+		totalLabel.textContent = "Total";
+		totalCount.appendChild(totalLabel);
+
+		countsRow.appendChild(totalCount);
+		section.appendChild(countsRow);
+
+		// Type breakdown (phones, computers, etc.)
+		if (this.config.showTypeBreakdown) {
+			const allDevices = [...knownDevices, ...unknownDevices];
+			const typeCounts = this.getDeviceTypeCounts(allDevices);
+
+			if (Object.keys(typeCounts).length > 0) {
+				const typeRow = document.createElement("div");
+				typeRow.className = "summary-types";
+
+				// Sort by count descending, show top types
+				const sortedTypes = Object.entries(typeCounts)
+					.sort((a, b) => b[1] - a[1])
+					.slice(0, 5); // Max 5 types
+
+				sortedTypes.forEach(([type, count]) => {
+					const typeItem = document.createElement("div");
+					typeItem.className = "type-item";
+
+					const typeIcon = document.createElement("i");
+					typeIcon.className = `fa ${this.config.deviceIcons[type] || this.config.deviceIcons.unknown}`;
+					typeItem.appendChild(typeIcon);
+
+					const typeNum = document.createElement("span");
+					typeNum.textContent = count;
+					typeItem.appendChild(typeNum);
+
+					typeRow.appendChild(typeItem);
+				});
+
+				section.appendChild(typeRow);
+			}
+		}
+
+		return section;
+	},
+
+	/**
+	 * Get device type counts
+	 * @param {object[]} devices - Devices to count
+	 * @returns {object} Type counts
+	 */
+	getDeviceTypeCounts: function (devices) {
+		const counts = {};
+		devices.forEach((device) => {
+			const type = device.customType || "unknown";
+			counts[type] = (counts[type] || 0) + 1;
+		});
+		return counts;
+	},
+
+	/**
+	 * Render detailed devices list (for configured MACs)
+	 * @param {object[]} devices - Devices to display in detail
+	 * @returns {HTMLElement} Detailed devices element
+	 */
+	renderDetailedDevices: function (devices) {
+		const section = document.createElement("div");
+		section.className = "detailed-devices";
+
+		const header = document.createElement("div");
+		header.className = "section-header small";
+		header.textContent = "Monitored";
+		section.appendChild(header);
+
+		const list = document.createElement("div");
+		list.className = "device-list compact";
+
+		devices.forEach((device) => {
+			list.appendChild(this.renderDevice(device));
+		});
+
+		section.appendChild(list);
+		return section;
 	},
 
 	/**

@@ -393,12 +393,23 @@ module.exports = NodeHelper.create({
 	},
 
 	/**
-	 * Detect default gateway IP
+	 * Detect default gateway IP (cross-platform: macOS + Linux)
 	 * @returns {string} Gateway IP
 	 */
 	detectGateway: function () {
+		const os = require("os");
+		const platform = os.platform();
+
 		try {
-			const result = require("child_process").execSync("ip route | grep default | awk '{print $3}'", { encoding: "utf8" });
+			let command;
+			if (platform === "darwin") {
+				// macOS: use netstat
+				command = "netstat -rn | grep default | head -1 | awk '{print $2}'";
+			} else {
+				// Linux: use ip route
+				command = "ip route | grep default | awk '{print $3}'";
+			}
+			const result = require("child_process").execSync(command, { encoding: "utf8" });
 			return result.trim();
 		} catch {
 			// Fallback: assume .1 on the network
