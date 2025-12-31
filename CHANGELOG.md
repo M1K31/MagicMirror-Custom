@@ -5,6 +5,38 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [3.1.0] - 2025-12-25
+
+### Added
+
+- [openeye-events] New OpenEye Events Dashboard module
+  - Motion event counts with running person icon
+  - Face detection event counts with user icon
+  - Video recording counts with video camera icon
+  - Per-camera breakdown with active status
+  - Configurable time range (default 24 hours)
+  - Compact mode for smaller displays
+  - Pulse animation on count increases
+- [network] Summary mode for network module
+  - Device counts by type (phones, computers, routers, IoT)
+  - Configurable detailed device list
+  - Smaller footprint for side panels
+- [css] Dynamic module resizing
+  - CSS variables for max-height/width constraints
+  - Overflow handling with hidden scrollbars
+  - Responsive breakpoints for different screen sizes
+  - Apple HIG 44px touch targets
+
+### Fixed
+
+- [weather] Fixed weather module truncation at bottom
+  - Increased max-height to 35vh
+  - Added overflow scrolling for long forecasts
+  - Compact forecast item styling
+- [css] Module overlap issues on smaller displays
+
+---
+
 ## [3.0.0] - 2025-12-13
 
 **MagicMirror³** - Custom fork by Mikel Smart with AI integration, mobile apps, and enhanced security.
@@ -54,11 +86,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Motion/face detection alerts
   - Event timeline
   - WebSocket real-time updates
-- [docs] Comprehensive documentation
-  - AUTHENTICATION.md - API authentication guide
-  - API.md - REST API reference
-  - CUSTOM_MODULES.md - Module documentation
-  - TODO.md - Feature roadmap
+- [docs] Comprehensive documentation in README.md
+  - REST API endpoints and authentication
+  - Module configuration guide
+  - Mobile app setup instructions
 
 ### Changed
 

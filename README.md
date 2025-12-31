@@ -27,7 +27,8 @@
 | 📱 **Mobile Apps** | Native iOS (SwiftUI) and Android (Jetpack Compose) companion apps |
 | 🔐 **REST API** | Secure API for remote control with token authentication |
 | 🛡️ **Security Integration** | OpenEye AI surveillance system integration |
-| 🌐 **Network Monitor** | Device discovery, speed tests, connectivity monitoring |
+| 📊 **Events Dashboard** | Motion, face detection, and recording counts from OpenEye |
+| 🌐 **Network Monitor** | Device discovery with summary mode, speed tests |
 | 🎤 **Voice Control** | Browser-based speech recognition with wake word |
 
 ---
@@ -416,7 +417,7 @@ MagicMirror³ includes **built-in voice commands that work without any AI API ke
 | **Timer** | "Set timer for 5 minutes", "Set alarm for 7 AM" |
 | **Routines** | "Good morning", "Good night" |
 
-> 📖 **[Complete Voice Command Reference](docs/VOICE_COMMANDS.md)** - Full documentation of 100+ voice commands
+> See voice command examples above for available built-in commands
 
 #### AI-Powered Commands
 
@@ -501,7 +502,7 @@ This fork includes additional modules:
 | `speedtest-cli` | Speed testing | `sudo apt install speedtest-cli` |
 | [OpenEye](https://github.com/M1K31/OpenEye-OpenCV_Home_Security) | AI surveillance | Docker recommended |
 
-📖 **[Full Modules Documentation](docs/CUSTOM_MODULES.md)**
+See module configurations in `config/config.js.sample` for detailed options.
 
 ---
 
@@ -528,8 +529,7 @@ curl -H "Authorization: Bearer YOUR_TOKEN" http://localhost:8080/api/v1/modules
 | GET | `/api/v1/display` | Get display settings |
 | POST | `/api/v1/display` | Update display settings |
 
-📖 **[Full API Documentation](docs/API.md)**  
-📖 **[Authentication Guide](docs/AUTHENTICATION.md)**
+See `js/api/` for API implementation details.
 
 ---
 
@@ -587,16 +587,18 @@ cd OpenEye-OpenCV_Home_Security
 docker-compose up -d
 ```
 
-📖 **[Security Module Documentation](docs/CUSTOM_MODULES.md#security-module)**
+See `modules/default/security/` for Security module configuration.
 
 ---
 
 ## 🤝 Contributing
 
-Contributions welcome! See:
+Contributions welcome! Please:
 
-- 📖 **[Contributing Guide](CONTRIBUTING.md)** - Development setup
-- 📖 **[TODO.md](TODO.md)** - Feature roadmap
+1. Fork the repository
+2. Create a feature branch
+3. Follow existing code style
+4. Submit a pull request
 
 ## 📚 Resources
 
@@ -608,7 +610,7 @@ Contributions welcome! See:
 
 ## 📜 License
 
-MIT License - See [LICENSE.md](LICENSE.md) for details.
+MIT License - See [LICENSE](LICENSE) for details.
 
 Based on MagicMirror² by Michael Teeuw and contributors.
 

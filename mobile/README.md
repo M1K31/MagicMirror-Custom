@@ -72,7 +72,7 @@ api: {
 
 ## API Documentation
 
-See [API Documentation](../docs/API.md) for full endpoint reference.
+See the [REST API section](../README.md#-rest-api) in the main README for endpoint reference.
 
 ## Development
 
@@ -126,4 +126,4 @@ Pull requests welcome! Please follow the existing code style.
 
 ## License
 
-MIT License - See project LICENSE.md
+MIT License - See project [LICENSE](../LICENSE)
