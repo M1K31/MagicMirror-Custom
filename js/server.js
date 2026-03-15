@@ -208,6 +208,27 @@ function Server (config) {
 				Log.info("[API] Token saved for companion app setup");
 			}
 
+			// Ecosystem integration (standalone no-op when registry unavailable)
+			try {
+				const { EcosystemClient } = require("./ecosystem-client");
+				const eco = new EcosystemClient({
+					serviceName: "magicmirror",
+					servicePort: parseInt(port) || 8080,
+					healthEndpoint: "/api/v1/health",
+				});
+				eco.start().catch((e) => Log.debug("Ecosystem client start: " + e.message));
+
+				app.post("/ecosystem/events", express.json(), async (req, res) => {
+					await eco.handleWebhook(req.body);
+					res.json({ status: "ok" });
+				});
+
+				// Store for cleanup
+				app.set("ecosystem", eco);
+			} catch (e) {
+				Log.debug("Ecosystem client not available: " + e.message);
+			}
+
 			server.on("listening", () => {
 				resolve({
 					app,
@@ -222,7 +243,13 @@ function Server (config) {
 	 * @returns {Promise} A promise that resolves when server has successfully shut down
 	 */
 	this.close = function () {
-		return new Promise((resolve) => {
+		return new Promise(async (resolve) => {
+			// Ecosystem cleanup
+			try {
+				const eco = app.get("ecosystem");
+				if (eco) await eco.stop();
+			} catch { /* ignore */ }
+
 			for (const socket of serverSockets.values()) {
 				socket.destroy();
 			}
