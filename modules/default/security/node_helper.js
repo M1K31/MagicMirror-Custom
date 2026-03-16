@@ -14,6 +14,13 @@ const NodeHelper = require("node_helper");
 const Log = require("logger");
 const WebSocket = require("ws");
 
+let EcosystemClient;
+try {
+	({ EcosystemClient } = require("../../js/ecosystem-client"));
+} catch {
+	EcosystemClient = null;
+}
+
 module.exports = NodeHelper.create({
 	/**
 	 * Node helper start
@@ -53,7 +60,27 @@ module.exports = NodeHelper.create({
 		this.config = config;
 		this.token = config.token;
 
-		Log.info(`[${this.name}] Connecting to OpenEye at ${config.host}`);
+		// Try ecosystem discovery first, fall back to config host
+		let resolvedHost = config.host;
+		if (EcosystemClient && !this._ecoClient) {
+			try {
+				this._ecoClient = new EcosystemClient({
+					serviceName: "magicmirror_security",
+					servicePort: 8080,
+				});
+				await this._ecoClient.start();
+				const peer = await this._ecoClient.discover("openeye");
+				if (peer) {
+					resolvedHost = peer.baseUrl;
+					Log.info(`[${this.name}] Discovered OpenEye via ecosystem: ${resolvedHost}`);
+				}
+			} catch (e) {
+				Log.debug(`[${this.name}] Ecosystem discovery failed, using config: ${e.message}`);
+			}
+		}
+		this.config.host = resolvedHost;
+
+		Log.info(`[${this.name}] Connecting to OpenEye at ${this.config.host}`);
 
 		try {
 			// Test connection
@@ -68,7 +95,40 @@ module.exports = NodeHelper.create({
 				this.connectWebSocket();
 			}
 
-			this.sendSocketNotification("SECURITY_CONNECTED", { host: config.host });
+			this.sendSocketNotification("SECURITY_CONNECTED", { host: this.config.host });
+
+			// Subscribe to ecosystem security events (complementary to WebSocket)
+			if (this._ecoClient) {
+				this._ecoClient.on("security.motion_detected", async (envelope) => {
+					this.sendSocketNotification("SECURITY_MOTION_EVENT", {
+						camera_id: envelope.data.camera_id,
+						motion_areas: envelope.data.motion_areas,
+						timestamp: envelope.timestamp,
+						source: "ecosystem",
+					});
+				});
+
+				this._ecoClient.on("security.person_detected", async (envelope) => {
+					this.sendSocketNotification("SECURITY_FACE_EVENT", {
+						camera_id: envelope.data.camera_id,
+						person_name: envelope.data.person_name,
+						confidence: envelope.data.confidence,
+						type: "known",
+						source: "ecosystem",
+					});
+				});
+
+				this._ecoClient.on("security.alert", async (envelope) => {
+					this.sendSocketNotification("SECURITY_FACE_EVENT", {
+						camera_id: envelope.data.camera_id,
+						person_name: "Unknown",
+						confidence: 0,
+						type: "unknown",
+						severity: envelope.data.severity,
+						source: "ecosystem",
+					});
+				});
+			}
 		} catch (error) {
 			Log.error(`[${this.name}] Connection error: ${error.message}`);
 			this.sendSocketNotification("SECURITY_ERROR", {
@@ -331,10 +391,14 @@ module.exports = NodeHelper.create({
 	/**
 	 * Stop the helper
 	 */
-	stop: function () {
+	stop: async function () {
 		if (this.ws) {
 			this.ws.close();
 			this.ws = null;
+		}
+		if (this._ecoClient) {
+			try { await this._ecoClient.stop(); } catch { /* ignore */ }
+			this._ecoClient = null;
 		}
 	}
 });
