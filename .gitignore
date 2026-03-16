@@ -174,3 +174,6 @@ mobile/android/
 !mobile/README.md
 !mobile/ios/MagicMirrorRemote/README.md
 !mobile/android/README.md
+
+# Worktrees
+.worktrees/
