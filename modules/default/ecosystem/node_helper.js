@@ -17,6 +17,13 @@ const os = require("os");
 const fs = require("fs").promises;
 const path = require("path");
 
+let EcosystemClient;
+try {
+	({ EcosystemClient } = require("../../../js/ecosystem-client"));
+} catch {
+	EcosystemClient = null;
+}
+
 module.exports = NodeHelper.create({
 	/**
 	 * Start the node helper
@@ -126,6 +133,42 @@ module.exports = NodeHelper.create({
 
 		Log.info(`[${this.name}] Starting discovery on ${networks.length} network(s)...`);
 
+		// Method 0: Ecosystem client discovery (preferred)
+		if (EcosystemClient) {
+			try {
+				if (!this._ecoClient) {
+					this._ecoClient = new EcosystemClient({
+						serviceName: "magicmirror",
+						servicePort: parseInt(process.env.MM_PORT || "8080"),
+						healthEndpoint: "/api/v1/health",
+					});
+					await this._ecoClient.start();
+				}
+				for (const [appId, appConfig] of Object.entries(appConfigs)) {
+					const peer = await this._ecoClient.discover(appId);
+					if (peer) {
+						discovered[appId] = {
+							...appConfig,
+							host: peer.baseUrl,
+							apiPrefix: appConfig.apiPrefix || "/api",
+							discoveredAt: new Date().toISOString(),
+							discoveryMethod: "ecosystem",
+						};
+						Log.info(`[${this.name}] Found ${appId} via ecosystem client: ${peer.baseUrl}`);
+					}
+				}
+				if (Object.keys(discovered).length > 0) {
+					// Skip manual scanning if ecosystem found apps
+					this.discoveredApps = discovered;
+					this.sendSocketNotification("ECOSYSTEM_APPS_FOUND", { apps: discovered });
+					return;
+				}
+			} catch (e) {
+				Log.debug(`[${this.name}] Ecosystem client discovery failed: ${e.message}`);
+			}
+		}
+
+		// Fall through to legacy discovery methods
 		for (const [appId, appConfig] of Object.entries(appConfigs)) {
 			// Try common discovery methods
 			const found = await this.findApp(appId, appConfig, networks, timeout);
@@ -560,6 +603,31 @@ module.exports = NodeHelper.create({
 	 * Relay notification specifically to OpenEye
 	 */
 	relayToOpenEye: async function (app, notification) {
+		// Prefer ecosystem peer for relay
+		if (this._ecoClient) {
+			try {
+				const peer = await this._ecoClient.discover("openeye");
+				if (peer) {
+					const result = await peer.post("/api/notifications/", {
+						type: notification.type,
+						title: notification.title,
+						message: notification.message,
+						source: "magicmirror",
+						priority: notification.urgent ? "high" : "normal",
+						timestamp: new Date().toISOString(),
+					});
+					if (result !== null) {
+						Log.info(`[${this.name}] Notification relayed to OpenEye via ecosystem`);
+						return;
+					}
+					// Fall through to legacy method if peer request failed
+				}
+			} catch {
+				// Fall through to legacy method
+			}
+		}
+
+		// Legacy relay method
 		try {
 			const headers = { "Content-Type": "application/json" };
 			if (app.token) {
