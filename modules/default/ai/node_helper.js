@@ -17,6 +17,13 @@ const fs = require("fs").promises;
 const path = require("path");
 const Log = require("logger");
 
+let EcosystemClient;
+try {
+	({ EcosystemClient } = require("../../../js/ecosystem-client"));
+} catch {
+	EcosystemClient = null;
+}
+
 module.exports = NodeHelper.create({
 	/**
 	 * Start the node helper
@@ -26,6 +33,8 @@ module.exports = NodeHelper.create({
 
 		this.secretsPath = path.join(__dirname, "..", "..", "..", "config", "secrets.json");
 		this.secrets = {};
+		this._ecoClient = null;
+		this._aiSurvivalUrl = null;
 
 		// Load secrets
 		this.loadSecrets();
@@ -472,7 +481,8 @@ module.exports = NodeHelper.create({
 			openai: "openai_api_key",
 			anthropic: "anthropic_api_key",
 			ollama: null, // No API key needed for local
-			local: null
+			local: null,
+			ecosystem: null
 		};
 
 		const keyName = keyMap[provider];
@@ -482,6 +492,15 @@ module.exports = NodeHelper.create({
 			provider,
 			configured
 		});
+
+		// Attempt ecosystem discovery for AI-for-Survival
+		this.discoverAISurvival().then(() => {
+			if (this._aiSurvivalUrl) {
+				this.sendSocketNotification("AI_ECOSYSTEM_AVAILABLE", {
+					url: this._aiSurvivalUrl
+				});
+			}
+		}).catch(() => {});
 	},
 
 	/**
@@ -528,6 +547,10 @@ module.exports = NodeHelper.create({
 
 				case "local":
 					response = await this.callLocalLLM(providerConfig, systemPrompt, message, history, maxTokens, temperature);
+					break;
+
+				case "ecosystem":
+					response = await this.callEcosystemAI(providerConfig, systemPrompt, message, history, maxTokens, temperature);
 					break;
 
 				default:
@@ -841,6 +864,68 @@ module.exports = NodeHelper.create({
 			req.write(requestBody);
 			req.end();
 		});
+	},
+
+	/**
+	 * Discover AI-for-Survival via ecosystem client
+	 */
+	discoverAISurvival: async function () {
+		if (!EcosystemClient || this._aiSurvivalUrl) return;
+		try {
+			if (!this._ecoClient) {
+				this._ecoClient = new EcosystemClient({
+					serviceName: "magicmirror_ai",
+					servicePort: 8080,
+				});
+				await this._ecoClient.start();
+			}
+			const peer = await this._ecoClient.discover("ai_for_survival");
+			if (peer) {
+				this._aiSurvivalUrl = peer.baseUrl;
+				Log.info(`[${this.name}] Discovered AI-for-Survival via ecosystem: ${this._aiSurvivalUrl}`);
+			}
+		} catch (e) {
+			Log.debug(`[${this.name}] AI-for-Survival ecosystem discovery failed: ${e.message}`);
+		}
+	},
+
+	/**
+	 * Call AI-for-Survival via ecosystem-discovered URL
+	 */
+	callEcosystemAI: async function (config, systemPrompt, message, history, maxTokens, temperature) {
+		if (!this._aiSurvivalUrl) {
+			await this.discoverAISurvival();
+		}
+		if (!this._aiSurvivalUrl) {
+			throw new Error("AI-for-Survival not discovered via ecosystem");
+		}
+
+		const messages = [];
+		if (systemPrompt) {
+			messages.push({ role: "system", content: systemPrompt });
+		}
+		for (const msg of (history || [])) {
+			messages.push({ role: msg.role, content: msg.content });
+		}
+		messages.push({ role: "user", content: message });
+
+		const response = await fetch(`${this._aiSurvivalUrl}/api/v1/chat`, {
+			method: "POST",
+			headers: { "Content-Type": "application/json" },
+			body: JSON.stringify({
+				messages,
+				max_tokens: maxTokens || 2048,
+				temperature: temperature || 0.7,
+				stream: false,
+			}),
+		});
+
+		if (!response.ok) {
+			throw new Error(`AI-for-Survival returned ${response.status}`);
+		}
+
+		const data = await response.json();
+		return data.content || data.response || data.message || JSON.stringify(data);
 	},
 
 	/**
