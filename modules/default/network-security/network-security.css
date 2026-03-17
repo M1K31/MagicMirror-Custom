@@ -1,0 +1,92 @@
+.netsec-module {
+	min-width: 200px;
+}
+
+.netsec-error,
+.netsec-status.connecting {
+	display: flex;
+	align-items: center;
+	gap: 8px;
+	padding: 8px 0;
+	color: #999;
+}
+
+.netsec-error {
+	color: #ff4444;
+}
+
+.netsec-summary {
+	display: flex;
+	gap: 20px;
+	padding: 8px 0;
+	margin-bottom: 8px;
+	border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.netsec-stat {
+	display: flex;
+	align-items: center;
+	gap: 6px;
+}
+
+.netsec-stat-value {
+	font-size: 1.2em;
+	font-weight: bold;
+}
+
+.netsec-stat-label {
+	margin-left: 2px;
+}
+
+.netsec-events .section-header {
+	font-size: 0.9em;
+	text-transform: uppercase;
+	letter-spacing: 1px;
+	color: #999;
+	margin-bottom: 6px;
+}
+
+.netsec-empty {
+	padding: 8px 0;
+	font-style: italic;
+}
+
+.netsec-events-list {
+	display: flex;
+	flex-direction: column;
+	gap: 4px;
+}
+
+.netsec-event {
+	display: flex;
+	align-items: center;
+	gap: 10px;
+	padding: 4px 0;
+}
+
+.netsec-event-icon {
+	width: 20px;
+	text-align: center;
+	color: #aaa;
+}
+
+.netsec-event.critical .netsec-event-icon { color: #ff4444; }
+.netsec-event.high .netsec-event-icon { color: #ff8800; }
+.netsec-event.medium .netsec-event-icon { color: #ffcc00; }
+
+.netsec-event-type {
+	font-size: 0.95em;
+}
+
+.netsec-event-detail {
+	font-size: 0.8em;
+}
+
+/* Compact mode */
+.netsec-module.compact .netsec-summary {
+	gap: 12px;
+}
+
+.netsec-module.compact .netsec-event {
+	padding: 2px 0;
+}
