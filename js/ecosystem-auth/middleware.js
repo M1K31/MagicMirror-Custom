@@ -3,14 +3,42 @@
  * Mirrors the Python FastAPI middleware.
  */
 
-const { verifySignature, verifyEcosystemToken } = require("./tokens");
+const {
+  verifyEcosystemToken,
+  verifyRequest,
+  NonceStore,
+  SIGNATURE_HEADER,
+  TIMESTAMP_HEADER,
+  NONCE_HEADER,
+} = require("./tokens");
+
+// Insecure development default. Mirrors Python's DEFAULT_DEV_SECRET.
+const DEFAULT_DEV_SECRET = "dev-ecosystem-secret-change-in-production";
+
+// Process-wide nonce cache for replay detection on the signature path.
+const _nonceStore = new NonceStore();
 
 /**
  * Get the shared HMAC secret from environment.
+ *
+ * Fail-closed everywhere: there is no default. Throws if ECOSYSTEM_HMAC_SECRET
+ * is unset or set to the known development default, rather than silently
+ * trusting a guessable key.
  * @returns {string}
  */
 function getEcosystemSecret() {
-  return process.env.ECOSYSTEM_HMAC_SECRET || "dev-ecosystem-secret-change-in-production";
+  const secret = process.env.ECOSYSTEM_HMAC_SECRET;
+  if (!secret) {
+    throw new Error(
+      "ECOSYSTEM_HMAC_SECRET is not set. A shared secret is required (no default)."
+    );
+  }
+  if (secret === DEFAULT_DEV_SECRET) {
+    throw new Error(
+      "Refusing the known development default secret. Set a unique ECOSYSTEM_HMAC_SECRET."
+    );
+  }
+  return secret;
 }
 
 /**
@@ -28,16 +56,24 @@ function getEcosystemSecret() {
 function requireEcosystemAuth(req, res, next) {
   const secret = getEcosystemSecret();
 
-  // Check HMAC signature header (for webhook/event payloads)
-  const signature = req.headers["x-ecosystem-signature"];
+  // Check HMAC signature header (replay-resistant request scheme).
+  const signature = req.headers[SIGNATURE_HEADER.toLowerCase()];
   if (signature) {
-    if (!req.body || typeof req.body !== "object") {
-      return res.status(400).json({ detail: "Invalid JSON body" });
+    const timestamp = req.headers[TIMESTAMP_HEADER.toLowerCase()];
+    const nonce = req.headers[NONCE_HEADER.toLowerCase()];
+    const fullUrl = req.protocol + "://" + req.get("host") + req.originalUrl;
+
+    const isBodyless = req.method === "GET" || req.method === "DELETE";
+    const body = isBodyless ? {} : (req.body && typeof req.body === "object" ? req.body : {});
+
+    if (
+      !verifyRequest(req.method, fullUrl, secret, signature, timestamp, nonce, body, 300, _nonceStore)
+    ) {
+      return res
+        .status(401)
+        .json({ detail: "Invalid, stale, or replayed ecosystem signature" });
     }
-    if (!verifySignature(req.body, signature, secret)) {
-      return res.status(401).json({ detail: "Invalid ecosystem signature" });
-    }
-    req.ecosystemAuth = { auth_method: "hmac", payload: req.body };
+    req.ecosystemAuth = { auth_method: "hmac", payload: body };
     return next();
   }
 

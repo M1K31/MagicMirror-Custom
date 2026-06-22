@@ -1,4 +1,4 @@
-const { signPayload, verifySignature } = require("../../auth/js/src/tokens");
+const { signPayload, verifySignature } = require("../ecosystem-auth/tokens");
 const crypto = require("crypto");
 const http = require("http");
 const https = require("https");
