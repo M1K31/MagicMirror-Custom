@@ -122,7 +122,7 @@ Module.register("network-security", {
 			icon.className = "fa fa-spinner fa-spin";
 			statusDiv.appendChild(icon);
 			const span = document.createElement("span");
-			span.textContent = "Connecting to AsusGuard...";
+			span.textContent = "Connecting to AegisSIEM...";
 			statusDiv.appendChild(span);
 			wrapper.appendChild(statusDiv);
 			return wrapper;

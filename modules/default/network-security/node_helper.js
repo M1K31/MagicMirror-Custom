@@ -39,7 +39,7 @@ module.exports = NodeHelper.create({
 					servicePort: 8080,
 				});
 				await this._ecoClient.start();
-				const peer = await this._ecoClient.discover("asusguard");
+				const peer = await this._ecoClient.discover("aegissiem");
 				if (peer) {
 					resolvedHost = peer.baseUrl;
 					Log.info(`[${this.name}] Discovered LogAnalysis via ecosystem: ${resolvedHost}`);
