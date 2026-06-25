@@ -34,21 +34,36 @@ class EcosystemClient {
         this._publisher.mode = mode;
 
         if (mode === DiscoveryMode.REGISTRY) {
-            // Advertise the mode-appropriate host (loopback in local mode, this
-            // host's LAN IP in lan mode) so the registry health-checks an address
-            // the MM server actually listens on — see config.js `address`.
-            const host = advertiseHost();
-            const webhookUrl = `http://${host}:${this._servicePort}${this.config.webhookPath}`;
-            await this._discovery.registerSelf(
-                this._serviceName, host, this._servicePort,
-                this._healthEndpoint, webhookUrl, this._subscriptions
-            );
+            await this._registerSelf();
         }
 
         await this._refreshPeers();
         this._started = true;
 
-        this._refreshInterval = setInterval(() => this._refreshPeers().catch(() => {}), this.config.discoveryInterval * 1000);
+        // Re-register on each interval as a heartbeat so a DHCP/IP change pushes
+        // the new advertise host to the registry (instead of leaving a stale,
+        // unreachable registration), and re-adds us if we were pruned.
+        this._refreshInterval = setInterval(async () => {
+            try {
+                if (this._discovery.mode === DiscoveryMode.REGISTRY) {
+                    await this._registerSelf();
+                }
+                await this._refreshPeers();
+            } catch (e) { /* best-effort */ }
+        }, this.config.discoveryInterval * 1000);
+    }
+
+    async _registerSelf() {
+        // Advertise the mode-appropriate host (loopback in local mode, this
+        // host's LAN IP in lan mode), resolved fresh so an IP change is picked
+        // up. registerSelf is idempotent (the registry upserts by name).
+        const host = advertiseHost();
+        const webhookUrl = `http://${host}:${this._servicePort}${this.config.webhookPath}`;
+        await this._discovery.registerSelf(
+            this._serviceName, host, this._servicePort,
+            this._healthEndpoint, webhookUrl, this._subscriptions
+        );
+        this._advertisedHost = host;
     }
 
     async stop() {
