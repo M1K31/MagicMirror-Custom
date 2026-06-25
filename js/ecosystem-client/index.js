@@ -2,6 +2,7 @@ const { EcosystemConfig } = require("./config");
 const { DiscoveryManager, DiscoveryMode } = require("./discovery");
 const { EventPublisher, EventSubscriber } = require("./events");
 const { Peer } = require("./peer");
+const { advertiseHost } = require("./topology");
 const os = require("os");
 
 class EcosystemClient {
@@ -33,7 +34,10 @@ class EcosystemClient {
         this._publisher.mode = mode;
 
         if (mode === DiscoveryMode.REGISTRY) {
-            const host = this._getLocalIp();
+            // Advertise the mode-appropriate host (loopback in local mode, this
+            // host's LAN IP in lan mode) so the registry health-checks an address
+            // the MM server actually listens on — see config.js `address`.
+            const host = advertiseHost();
             const webhookUrl = `http://${host}:${this._servicePort}${this.config.webhookPath}`;
             await this._discovery.registerSelf(
                 this._serviceName, host, this._servicePort,
