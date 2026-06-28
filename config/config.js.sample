@@ -14,9 +14,13 @@
 //   lan             — all interfaces (0.0.0.0); whitelist open for the trusted LAN.
 // Avoids the "localhost binds IPv6 ::1 only" trap that made MM register healthy
 // on one stack while listening on another.
-const ECO_LAN = String(process.env.ECOSYSTEM_MODE || "local").trim().toLowerCase() === "lan";
+// NOTE: config.js is evaluated in BOTH node (server) and the browser (client),
+// and `process` is undefined in the browser — guard every process.env read with
+// `typeof process` or the whole config throws and the mirror renders blank.
+const ECO_ENV = (typeof process !== "undefined" && process.env) ? process.env : {};
+const ECO_LAN = String(ECO_ENV.ECOSYSTEM_MODE || "local").trim().toLowerCase() === "lan";
 let config = {
-	address: process.env.MM_ADDRESS || (ECO_LAN ? "0.0.0.0" : "127.0.0.1"),	// Address to listen on, can be:
+	address: ECO_ENV.MM_ADDRESS || (ECO_LAN ? "0.0.0.0" : "127.0.0.1"),	// Address to listen on, can be:
 							// - "localhost", "127.0.0.1", "::1" to listen on loopback interface
 							// - another specific IPv4/6 to listen on a specific interface
 							// - "0.0.0.0", "::" to listen on any interface
