@@ -30,6 +30,10 @@
 | 📊 **Events Dashboard** | Motion, face detection, and recording counts from OpenEye |
 | 🌐 **Network Monitor** | Device discovery with summary mode, speed tests |
 | 🎤 **Voice Control** | Browser-based speech recognition with wake word |
+| 🔗 **Ecosystem Hub** | Registers with the appEcosystem registry; shared HMAC secret; AegisSIEM / CyberHarness / OpenEye-events modules; mode-aware (`local`/`lan`) bind |
+
+> **Ecosystem usage** (config, shared secret, custom modules, running headless):
+> see **[usage.md](usage.md)**. Fork work + changes: **[todos_changelog.md](todos_changelog.md)**.
 
 ---
 
