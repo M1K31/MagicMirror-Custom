@@ -72,7 +72,7 @@ standalone when absent.
 
 | Module | Purpose |
 |--------|---------|
-| `modules/MMM-AsusGuard-SIEM` | Live threat feed / SIEM panel from AegisSIEM (rename to MMM-AegisSIEM pending — see todos_changelog) |
+| `modules/MMM-AegisSIEM` | Live threat feed / SIEM panel from AegisSIEM (`:8088/api/status`) |
 | `modules/MMM-CyberHarness` | Cyber Claude Harness status / analysis |
 | `modules/openeye-events` | Physical-security events from OpenEye |
 | `modules/maintenance` | Ecosystem maintenance / health surface |

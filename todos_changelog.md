@@ -6,11 +6,8 @@ Tracks this fork's ecosystem-specific work. Upstream MagicMirror history is in
 ## Open work
 
 ### Ecosystem modules
-- [ ] **Rename `modules/MMM-AsusGuard-SIEM` → `MMM-AegisSIEM`** to match the
-  AsusGuard→AegisSIEM rename (avoids the ASUS® trademark in a module name). Currently
-  untracked WIP.
 - [ ] Decide tracked-vs-ignored for the untracked fork additions
-  (`ECOSYSTEM_GUIDE.md`, `modules/MMM-AsusGuard-SIEM/`, `modules/MMM-CyberHarness/`).
+  (`ECOSYSTEM_GUIDE.md`, `modules/MMM-AegisSIEM/`, `modules/MMM-CyberHarness/`).
 
 ### Upstream FIXMEs (inherited)
 - [ ] `js/app.js:40` — hotfix pull request marker.
@@ -21,6 +18,14 @@ Tracks this fork's ecosystem-specific work. Upstream MagicMirror history is in
 - [ ] Calendar: Facebook-birthday fetch issue (`calendarfetcherutils.js`).
 - [ ] Security dashboard: show a specific camera in fullscreen (`security.js`).
 - [ ] Weather: unit conversion for precipitation (hardcoded `mm`) (`weatherflow.js`).
+
+## Recent changes (2026-07-01)
+
+- **Renamed `MMM-AsusGuard-SIEM` → `MMM-AegisSIEM`** — completes the AsusGuard→AegisSIEM
+  rebrand (drops the ASUS® trademark from the module name). Renamed the dir + `.js`/`.css`
+  files, the `Module.register` id, `getStyles`, the `asusguard-siem-wrapper` CSS class, and
+  the `asusGuardUrl`→`aegisSiemUrl` config key. Still targets `:8088/api/status`. JS
+  syntax-checked. (Untracked WIP module.)
 
 ## Recent changes (2026-06-28)
 
