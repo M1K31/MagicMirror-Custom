@@ -19,6 +19,14 @@ cd "$PROJECT_ROOT"
 echo "=> Installing npm dependencies..."
 npm install --no-audit --no-fund --no-update-notifier
 
+# A fresh checkout — or a full uninstall — leaves no config/config.js, and
+# MagicMirror refuses to boot without one ("No config file present!"). Seed it
+# from the ecosystem-aware sample (honors ECO_LAN for 0.0.0.0 + open whitelist).
+if [ ! -f "$PROJECT_ROOT/config/config.js" ]; then
+    cp "$PROJECT_ROOT/config/config.js.sample" "$PROJECT_ROOT/config/config.js"
+    echo "=> Created config/config.js from config.js.sample"
+fi
+
 NODE_ARGS=(--expose-gc --max-old-space-size=512 ./serveronly)
 
 case "$OS" in
