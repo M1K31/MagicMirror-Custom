@@ -76,6 +76,10 @@ After=network.target
 Type=simple
 User=$USER_NAME
 WorkingDirectory=$PROJECT_ROOT
+# systemd starts with a minimal PATH that omits the Node install dir, so any
+# module shelling out (update checks, git helpers) fails with "node: command
+# not found" — same issue as the launchd EnvironmentVariables PATH above.
+Environment=PATH=$(dirname "$NODE_BIN"):/usr/local/bin:/usr/bin:/bin
 Environment=MM_PORT=$PORT
 ExecStart=$NODE_BIN --expose-gc --max-old-space-size=512 $PROJECT_ROOT/serveronly
 Restart=always
