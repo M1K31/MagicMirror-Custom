@@ -318,6 +318,37 @@ npm run server
 
 ## ⚙️ Configuration
 
+### Network (LAN) access
+
+By default the server binds `127.0.0.1`, so it is reachable only from the machine
+it runs on. To expose it to other devices on your network, set `ECO_LAN` before
+installing — the bundled `config.js.sample` reads it and binds `0.0.0.0` with an
+open `ipWhitelist`:
+
+```bash
+ECO_LAN=true ./scripts/install.sh
+```
+
+To pin one specific address instead:
+
+```bash
+MM_ADDRESS=192.168.1.50 ./scripts/install.sh
+```
+
+> **Note:** an open `ipWhitelist` lets any host on your network load the mirror.
+> Only enable LAN mode on a network you trust, or keep `ipWhitelist` populated
+> with the specific devices that should have access.
+
+### Config file lifecycle
+
+`config/config.js` is generated on first install from `config/config.js.sample`
+if it does not already exist — a fresh checkout has no `config.js`, and
+MagicMirror refuses to start without one. Once created it is never overwritten,
+so your edits survive reinstalls.
+
+A full `./scripts/uninstall.sh` **deletes** `config/config.js`. To keep your
+customisations, use `./scripts/uninstall-keep-data.sh` instead.
+
 ### Main Configuration (`config/config.js`)
 
 ```javascript

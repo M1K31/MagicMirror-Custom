@@ -45,6 +45,12 @@ case "$OS" in
   </array>
   <key>WorkingDirectory</key><string>$PROJECT_ROOT</string>
   <key>EnvironmentVariables</key><dict>
+    <!-- launchd starts with a minimal PATH that omits the Node install dir, so
+         any module shelling out (update checks, git helpers) fails with
+         "/bin/sh: node: command not found". The main process is unaffected
+         because it is launched by absolute path, but the log fills with errors.
+         Put Node's own directory first so child processes resolve it. -->
+    <key>PATH</key><string>$(dirname "$NODE_BIN"):/opt/homebrew/bin:/usr/local/bin:/usr/bin:/bin</string>
     <key>MM_PORT</key><string>$PORT</string>
   </dict>
   <key>RunAtLoad</key><true/>
