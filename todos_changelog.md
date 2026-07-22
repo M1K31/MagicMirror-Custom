@@ -40,3 +40,12 @@ Tracks this fork's ecosystem-specific work. Upstream MagicMirror history is in
   the client re-registers on an interval so a DHCP/IP change updates the registry.
 - **File-backed, fail-closed shared secret** — `js/ecosystem-client/secret.js` reads
   `~/.config/ecosystem/secret.env`; no dev-default.
+
+## 🔭 Open follow-ups (flagged 2026-07-21)
+
+Full detail + the model-sync plan:
+`appEcosystem/docs/superpowers/plans/2026-07-21-follow-ups-and-model-sync.md`
+
+- [ ] **systemd `Environment=PATH=` unexercised** — the launchd `node: command not
+  found` fix was mirrored into the systemd unit but has never run on Linux.
+- [ ] Binds `127.0.0.1` unless `ECO_LAN`/`MM_ADDRESS` is set (documented in README).
