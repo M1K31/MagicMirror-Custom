@@ -43,8 +43,7 @@ Tracks this fork's ecosystem-specific work. Upstream MagicMirror history is in
 
 ## 🔭 Open follow-ups (flagged 2026-07-21)
 
-Full detail + the model-sync plan:
-`appEcosystem/docs/superpowers/plans/2026-07-21-follow-ups-and-model-sync.md`
+Ecosystem-wide context is recorded in `appEcosystem/todos_changelog.md`.
 
 - [ ] **systemd `Environment=PATH=` unexercised** — the launchd `node: command not
   found` fix was mirrored into the systemd unit but has never run on Linux.
