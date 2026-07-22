@@ -178,11 +178,19 @@ mobile/android/
 # Worktrees
 .worktrees/
 
-# --- Documentation policy ---------------------------------------------------
-# Only user-facing docs are tracked: README, usage guides, API/user references,
-# and changelogs. Agent-generated planning artifacts (plans, specs, findings,
-# audits, walkthroughs) stay local and are added only after an explicit
-# document review.
+# --- Markdown policy --------------------------------------------------------
+# Ignore DEVELOPMENT and PROJECT-MANAGEMENT markdown only: plans, specs,
+# findings, audits, walkthroughs, progress logs. These stay local and are
+# committed only after an explicit document review.
+#
+# Everything a user needs to run or use the project stays tracked: README,
+# usage guides, API/user references, changelogs, licences and trademarks.
+#
+# IMPORTANT: not all markdown is documentation. The cyber-harness ships
+# functional markdown — agents/, skills/, commands/, rules/, contexts/ are
+# agent definitions installed into a user's project, and the knowledge_base/
+# tree is product content. Never add a blanket *.md rule; it would untrack
+# those and silently break the products for anyone cloning.
 docs/superpowers/
 *_PLAN.md
 *_FINDINGS.md
@@ -190,3 +198,6 @@ docs/superpowers/
 AUDIT_*.md
 walkthrough.md
 WALKTHROUGH.md
+progress-log.md
+PROGRESS.md
+STATUS.md
