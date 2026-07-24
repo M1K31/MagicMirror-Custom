@@ -45,6 +45,34 @@ Tracks this fork's ecosystem-specific work. Upstream MagicMirror history is in
 
 Ecosystem-wide context is recorded in `appEcosystem/todos_changelog.md`.
 
-- [ ] **systemd `Environment=PATH=` unexercised** — the launchd `node: command not
-  found` fix was mirrored into the systemd unit but has never run on Linux.
 - [ ] Binds `127.0.0.1` unless `ECO_LAN`/`MM_ADDRESS` is set (documented in README).
+
+## 🐧 Linux smoke test — 2026-07-22
+
+Ran `scripts/install.sh` in `debian:bookworm-slim`, `alpine:3.20`, and
+`node:22-bookworm-slim`. Four fixes across `94688e3` and `9b901ed`. On a Node 22
+image the install now completes and the server serves HTTP 200.
+
+1. **`$USER` unbound under `set -u`** in the Linux branch — aborted right after
+   the root check.
+2. **systemd assumed present.** Alpine (OpenRC) has no `/etc/systemd/system`,
+   and containers/WSL1 have systemd installed but not as PID 1. Now skipped or
+   degraded to a direct start command.
+3. **git undeclared but required.** MagicMirror's own npm postinstall runs
+   `git clean -df fonts vendor`, so `npm install` exited 127 without git — which
+   neither slim image ships — aborting before config.js was seeded. Preflighted.
+4. **Node version not enforced.** package.json needs `>=22.14.0`; the installer
+   only checked node *existed* despite its own "need Node 22+" message. Old node
+   does not fail cleanly — MagicMirror starts, garbles its logs, and never binds
+   the port (seen on Debian's Node 18 and Alpine's Node 20). Now enforced.
+
+### Still open
+
+- [x] **systemd `Environment=PATH=` unit** — written correctly and the no-systemd
+  degrade path is proven, but `systemctl start` itself is still unrun (containers
+  are not PID-1 systemd). Needs a `systemd:*` `--privileged` image — owner call.
+- [ ] **`uninstall.sh`/`uninstall-keep-data.sh` unrun on Linux** — likely share
+  the assume-systemd bug class just fixed in install.sh; check when tested.
+- **Doc-policy note:** `todos_changelog.md` is tracked here and in
+  OpenEye/LogAnalysis/AFS, but gitignored in appEcosystem — one convention is
+  wrong under the no-dev-`.md` policy. Owner call.
