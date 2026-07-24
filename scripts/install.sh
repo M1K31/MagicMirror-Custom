@@ -65,9 +65,20 @@ PLIST_EOF
     echo "   Logs: $LOGDIR/{stdout,stderr}.log"
     ;;
   Linux)
-    if [ "$EUID" -ne 0 ]; then echo "Linux install needs sudo: sudo $0"; exit 1; fi
-    USER_NAME="${SUDO_USER:-$USER}"
+    if [ "${EUID:-$(id -u)}" -ne 0 ]; then echo "Linux install needs sudo: sudo $0"; exit 1; fi
+    # $USER is unset in a bare `sudo`/root shell, and `set -u` would abort here.
+    USER_NAME="${SUDO_USER:-${USER:-$(id -un)}}"
     UNIT="/etc/systemd/system/magicmirror.service"
+    # Not every Linux runs systemd (Alpine uses OpenRC; containers/WSL1 have it
+    # installed but not as PID 1). npm deps and config.js are already in place,
+    # so degrade to instructions instead of failing on a missing service manager.
+    if ! command -v systemctl >/dev/null 2>&1 && [ ! -d /etc/systemd/system ]; then
+        echo "=> No systemd here — skipping service unit. Start $DISPLAY with:"
+        echo "     cd $PROJECT_ROOT && $NODE_BIN --expose-gc --max-old-space-size=512 ./serveronly"
+        echo "=> Done."
+        exit 0
+    fi
+    mkdir -p /etc/systemd/system
     cat > "$UNIT" <<UNIT_EOF
 [Unit]
 Description=$DISPLAY (server-only)
@@ -87,9 +98,13 @@ RestartSec=10
 [Install]
 WantedBy=multi-user.target
 UNIT_EOF
-    systemctl daemon-reload
-    systemctl enable magicmirror.service
-    echo "=> $DISPLAY installed (systemd, port $PORT). Start: sudo systemctl start magicmirror"
+    if systemctl daemon-reload 2>/dev/null && systemctl enable magicmirror.service 2>/dev/null; then
+        echo "=> $DISPLAY installed (systemd, port $PORT). Start: sudo systemctl start magicmirror"
+    else
+        # systemd present but not PID 1 (containers, WSL1, chroots).
+        echo "=> Unit written to $UNIT, but systemd is not running here. Start with:"
+        echo "     cd $PROJECT_ROOT && $NODE_BIN --expose-gc --max-old-space-size=512 ./serveronly"
+    fi
     ;;
   *)
     echo "Unsupported OS: $OS"; exit 1 ;;
