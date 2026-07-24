@@ -15,6 +15,32 @@ echo "=> Installing $DISPLAY ($OS)..."
 NODE_BIN="$(command -v node || true)"
 [ -n "$NODE_BIN" ] || { echo "Node.js not found (need Node 22+). Install it and re-run."; exit 1; }
 
+# package.json requires node >= 22.14. Distro packages are routinely older
+# (Debian bookworm ships 18, Alpine 3.20 ships 20) and MagicMirror does NOT fail
+# cleanly on an old node — it starts, garbles its logs, and never binds the
+# port. Enforce the minimum here rather than let that happen. Use MM_MIN_NODE to
+# override if you know better.
+MM_MIN_NODE="${MM_MIN_NODE:-22}"
+NODE_MAJOR="$("$NODE_BIN" -e 'process.stdout.write(String(process.versions.node.split(".")[0]))' 2>/dev/null || echo 0)"
+if [ "$NODE_MAJOR" -lt "$MM_MIN_NODE" ]; then
+    echo "Node $("$NODE_BIN" -v) is too old — MagicMirror needs Node ${MM_MIN_NODE}+ (package.json: >=22.14.0)."
+    echo "Distro packages are often older than this; install a current Node from:"
+    echo "  https://nodejs.org  or  https://github.com/nodesource/distributions  (or nvm)"
+    exit 1
+fi
+
+# MagicMirror's own postinstall runs `git clean -df fonts vendor`, so `npm
+# install` exits 127 without git — and minimal images (debian-slim, alpine) do
+# not ship it. Check up front instead of failing mid-install with npm's opaque
+# 127, which also leaves config.js unseeded.
+command -v git >/dev/null 2>&1 || {
+    echo "git not found — MagicMirror's npm postinstall needs it. Install it and re-run:"
+    echo "  Debian/Ubuntu: sudo apt-get install -y git"
+    echo "  Alpine:        apk add git"
+    echo "  macOS:         xcode-select --install"
+    exit 1
+}
+
 cd "$PROJECT_ROOT"
 echo "=> Installing npm dependencies..."
 npm install --no-audit --no-fund --no-update-notifier
