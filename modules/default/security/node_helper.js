@@ -16,7 +16,7 @@ const WebSocket = require("ws");
 
 let EcosystemClient;
 try {
-	({ EcosystemClient } = require("../../js/ecosystem-client"));
+	({ EcosystemClient } = require("@smartindustriesllc/ecosystem-client"));
 } catch {
 	EcosystemClient = null;
 }

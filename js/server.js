@@ -210,7 +210,7 @@ function Server (config) {
 
 			// Ecosystem integration (standalone no-op when registry unavailable)
 			try {
-				const { EcosystemClient } = require("./ecosystem-client");
+				const { EcosystemClient } = require("@smartindustriesllc/ecosystem-client");
 				const eco = new EcosystemClient({
 					serviceName: "magicmirror",
 					servicePort: parseInt(port) || 8080,

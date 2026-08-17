@@ -19,7 +19,7 @@ const Log = require("logger");
 
 let EcosystemClient;
 try {
-	({ EcosystemClient } = require("../../../js/ecosystem-client"));
+	({ EcosystemClient } = require("@smartindustriesllc/ecosystem-client"));
 } catch {
 	EcosystemClient = null;
 }

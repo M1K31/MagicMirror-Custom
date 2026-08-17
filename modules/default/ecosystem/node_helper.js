@@ -19,7 +19,7 @@ const path = require("path");
 
 let EcosystemClient;
 try {
-	({ EcosystemClient } = require("../../../js/ecosystem-client"));
+	({ EcosystemClient } = require("@smartindustriesllc/ecosystem-client"));
 } catch {
 	EcosystemClient = null;
 }
