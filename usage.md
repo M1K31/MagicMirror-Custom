@@ -54,9 +54,11 @@ let config = {
 
 ## 3. Ecosystem integration
 
-The bundled `js/ecosystem-client/` registers MM with the appEcosystem registry when
-present (heartbeat re-registration so a DHCP/IP change is pushed), and degrades to
-standalone when absent.
+The `@smartindustriesllc/ecosystem-client` package registers MM with the appEcosystem
+registry when present (heartbeat re-registration so a DHCP/IP change is pushed), and
+degrades to standalone when absent. It installs with the rest of MM's dependencies via
+`npm install`; earlier versions carried a copy under `js/ecosystem-client/`, which is
+no longer used.
 
 - **Shared secret:** read from `~/.config/ecosystem/secret.env` (file-backed,
   fail-closed). Provision it with the appEcosystem CLI:
