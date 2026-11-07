@@ -18,10 +18,55 @@ const fs = require("fs").promises;
 const path = require("path");
 
 let EcosystemClient;
+let HubClient;
 try {
-	({ EcosystemClient } = require("@smartindustriesllc/ecosystem-client"));
+	({ EcosystemClient, HubClient } = require("@smartindustriesllc/ecosystem-client"));
 } catch {
-	EcosystemClient = null;
+	try {
+		const siblingPkg = path.resolve(__dirname, "..", "..", "..", "..", "appEcosystem", "ecosystem_client_js");
+		({ EcosystemClient, HubClient } = require(siblingPkg));
+	} catch {
+		EcosystemClient = null;
+		HubClient = null;
+	}
+}
+
+function buildMagicMirrorCapabilities() {
+	return [
+		{
+			capability: "display.show_alert",
+			version: 1,
+			description: "Render a glanceable Apple HIG ambient alert card on the MagicMirror wall display.",
+			action_class: "observe",
+			required_grant: "display:show_alert",
+			timeout_seconds: 15,
+			cancellable: true,
+			idempotent: true,
+			offline_behavior: "run_local"
+		},
+		{
+			capability: "notify.deliver.magicmirror_mobile",
+			version: 1,
+			description: "Federated alert feed for SwiftUI iOS and Jetpack Compose Android MagicMirrorRemote companion apps.",
+			action_class: "observe",
+			required_grant: "notify:deliver",
+			timeout_seconds: 15,
+			cancellable: false,
+			idempotent: true,
+			offline_behavior: "queue_until_online"
+		},
+		{
+			capability: "ecosystem.freeze",
+			version: 1,
+			description: "Emergency wall-display freeze request halting mutating automations across the ecosystem.",
+			action_class: "contain",
+			required_grant: "freeze.request",
+			timeout_seconds: 10,
+			cancellable: false,
+			idempotent: true,
+			offline_behavior: "freeze_local_and_queue_notice"
+		}
+	];
 }
 
 module.exports = NodeHelper.create({
@@ -35,9 +80,38 @@ module.exports = NodeHelper.create({
 		this.ecosystemPath = path.join(this.configPath, "ecosystem.json");
 		this.connectedApps = {};
 		this.discoveredApps = {};
+		this._hubClient = null;
+		this._localFrozen = false;
+		this._localFreezeInfo = null;
+
+		if (HubClient) {
+			try {
+				this._hubClient = new HubClient("magicmirror", {
+					role: process.env.ECOSYSTEM_HUB_ROLE || "join",
+					capabilities: buildMagicMirrorCapabilities()
+				});
+				this._hubClient.start().then((mode) => {
+					Log.info(`[${this.name}] HubClient active in ${mode} mode`);
+				}).catch((err) => {
+					Log.debug(`[${this.name}] HubClient standalone fallback: ${err.message}`);
+				});
+			} catch (err) {
+				Log.warn(`[${this.name}] Could not initialize HubClient: ${err.message}`);
+			}
+		}
 
 		// Load saved ecosystem state
 		this.loadEcosystemState();
+	},
+
+	stop: async function () {
+		if (this._hubClient) {
+			try {
+				await this._hubClient.stop();
+			} catch {
+				// Best-effort withdrawal
+			}
+		}
 	},
 
 	/**
@@ -94,8 +168,40 @@ module.exports = NodeHelper.create({
 				this.relayNotification(payload.notification, payload.targets, payload.methods);
 				break;
 
+			case "ECOSYSTEM_PUBLISH_NOTIFICATION":
+				this.publishHubNotification(payload);
+				break;
+
+			case "ECOSYSTEM_FETCH_NOTIFICATIONS":
+				this.fetchHubNotifications(payload || {});
+				break;
+
+			case "ECOSYSTEM_RESOLVE_CAPABILITY":
+				this.resolveHubCapability(payload?.capability);
+				break;
+
 			case "ECOSYSTEM_GET_STATUS":
 				this.sendStatus();
+				break;
+
+			case "ECOSYSTEM_GET_POLICY_STATE":
+				this.fetchPolicyState();
+				break;
+
+			case "ECOSYSTEM_REQUEST_FREEZE":
+				this.requestFreeze(payload);
+				break;
+
+			// Strict privilege guard: unauthenticated wall display CANNOT resume, approve, deny, or disable restrictions
+			case "ECOSYSTEM_POLICY_RESUME":
+			case "ECOSYSTEM_POLICY_RESTRICTIONS_OFF":
+			case "ECOSYSTEM_APPROVE":
+			case "ECOSYSTEM_DENY":
+				Log.warn(`[${this.name}] Security rejection: ${notification} forbidden on unauthenticated wall display`);
+				this.sendSocketNotification("ECOSYSTEM_POLICY_FORBIDDEN", {
+					action: notification,
+					reason: "Privileged policy operations (resume, approve, deny, restrictions off) are forbidden from unauthenticated wall display"
+				});
 				break;
 		}
 	},
@@ -588,7 +694,27 @@ module.exports = NodeHelper.create({
 	 * Relay notification to companion apps
 	 */
 	relayNotification: async function (notification, targets, methods) {
-		for (const appId of targets) {
+		if (this._hubClient && notification) {
+			try {
+				const sev = notification.urgent ? "high" : (notification.severity || "medium");
+				const type = String(notification.type || "notify.system").startsWith("notify.")
+					? notification.type
+					: "notify.system";
+				await this._hubClient.notify(
+					type,
+					sev,
+					notification.title || "MagicMirror Alert",
+					notification.message || "",
+					{
+						dedupeKey: notification.dedupeKey || `magicmirror:${type}:${notification.title || "alert"}`
+					}
+				);
+			} catch (err) {
+				Log.debug(`[${this.name}] Hub notification publish skipped: ${err.message}`);
+			}
+		}
+
+		for (const appId of targets || []) {
 			const app = this.connectedApps[appId];
 			if (!app) continue;
 
@@ -597,6 +723,112 @@ module.exports = NodeHelper.create({
 				await this.relayToOpenEye(app, notification);
 			}
 		}
+	},
+
+	publishHubNotification: async function (payload = {}) {
+		if (!this._hubClient) {
+			this.sendSocketNotification("ECOSYSTEM_NOTIFICATION_PUBLISHED", { status: "unavailable" });
+			return;
+		}
+		try {
+			const result = await this._hubClient.notify(
+				payload.type || "notify.system",
+				payload.severity || "medium",
+				payload.title || "MagicMirror Alert",
+				payload.body || "",
+				{
+					dedupeKey: payload.dedupeKey,
+					privacy: payload.privacy || "redacted",
+					ttl: payload.ttl || "24h",
+					deepLink: payload.deepLink || null
+				}
+			);
+			this.sendSocketNotification("ECOSYSTEM_NOTIFICATION_PUBLISHED", result);
+		} catch (error) {
+			this.sendSocketNotification("ECOSYSTEM_ERROR", {
+				message: `Hub notification publish failed: ${error.message}`
+			});
+		}
+	},
+
+	fetchHubNotifications: async function (opts = {}) {
+		if (!this._hubClient) {
+			this.sendSocketNotification("ECOSYSTEM_NOTIFICATIONS_FEED", { notifications: [] });
+			return;
+		}
+		const notifications = await this._hubClient.fetchRecentNotifications({
+			limit: opts.limit || 25,
+			minSeverity: opts.minSeverity
+		});
+		this.sendSocketNotification("ECOSYSTEM_NOTIFICATIONS_FEED", { notifications });
+	},
+
+	resolveHubCapability: async function (capabilityName) {
+		if (!capabilityName || !this._hubClient) {
+			this.sendSocketNotification("ECOSYSTEM_CAPABILITY_RESOLVED", {
+				capability: capabilityName || "",
+				available: false,
+				providers: [],
+				unavailable_reason: "HubClient is not initialized"
+			});
+			return;
+		}
+		const resolution = await this._hubClient.resolveCapability(capabilityName);
+		this.sendSocketNotification("ECOSYSTEM_CAPABILITY_RESOLVED", resolution);
+	},
+
+	fetchPolicyState: async function () {
+		if (this._hubClient && typeof this._hubClient.getPolicyState === "function") {
+			try {
+				const state = await this._hubClient.getPolicyState();
+				if (state) {
+					this.sendSocketNotification("ECOSYSTEM_POLICY_STATE", state);
+					return;
+				}
+			} catch (err) {
+				Log.debug(`[${this.name}] Hub policy fetch error: ${err.message}`);
+			}
+		}
+
+		// Standalone / offline fallback representation
+		const fallbackState = {
+			policy_version: 1,
+			mode: this._localFrozen ? "freeze" : "normal",
+			authority: "standalone_local",
+			frozen: Boolean(this._localFrozen),
+			freeze_info: this._localFreezeInfo || null,
+			active_override: null,
+			overrides: [],
+			enrolled_devices_count: 1,
+			auto_scan_grants_count: 0
+		};
+		this.sendSocketNotification("ECOSYSTEM_POLICY_STATE", fallbackState);
+	},
+
+	requestFreeze: async function (payload) {
+		const reason = payload?.reason || "Emergency wall display freeze";
+		const channel = payload?.channel || "magicmirror_display";
+		this._localFrozen = true;
+		this._localFreezeInfo = {
+			initiated_by: "magicmirror_display",
+			channel: channel,
+			reason: reason,
+			since: new Date().toISOString()
+		};
+
+		if (this._hubClient && typeof this._hubClient.requestFreeze === "function") {
+			try {
+				const state = await this._hubClient.requestFreeze(reason, channel);
+				if (state) {
+					this.sendSocketNotification("ECOSYSTEM_POLICY_STATE", state);
+					return;
+				}
+			} catch (err) {
+				Log.debug(`[${this.name}] Hub freeze broadcast error: ${err.message}`);
+			}
+		}
+
+		this.fetchPolicyState();
 	},
 
 	/**
@@ -660,7 +892,15 @@ module.exports = NodeHelper.create({
 		this.sendSocketNotification("ECOSYSTEM_SYNC_STATUS", {
 			discovered: Object.keys(this.discoveredApps).length,
 			connected: Object.keys(this.connectedApps).length,
-			apps: this.connectedApps
+			apps: this.connectedApps,
+			hub: this._hubClient
+				? {
+					joined: this._hubClient.isJoined,
+					registryUrl: this._hubClient.registryUrl
+				}
+				: null
 		});
 	}
 });
+
+module.exports.buildMagicMirrorCapabilities = buildMagicMirrorCapabilities;

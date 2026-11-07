@@ -1,0 +1,245 @@
+/*
+ * appEcosystem - Unified Design Token System (ecosystem-theme.css)
+ * Implements strict Apple HIG Compliance and WCAG AA accessibility.
+ * Extensible for Light, Dark, and Cyberpunk themes with smooth CSS transitions.
+ */
+
+/*
+ * Self-hosted fonts (no external requests; works offline, e.g. MagicMirror HUD).
+ * Run `python scripts/fetch_fonts.py` to (re)download the WOFF2 files into
+ * theme/fonts/. Inter and Outfit are variable fonts, so one file covers the
+ * full weight range. The font-family stacks below fall back to system fonts
+ * when these files are absent.
+ */
+@font-face {
+  font-family: 'Inter';
+  font-style: normal;
+  font-weight: 300 700;
+  font-display: swap;
+  src: url('./fonts/inter-var.woff2') format('woff2');
+}
+@font-face {
+  font-family: 'Outfit';
+  font-style: normal;
+  font-weight: 400 700;
+  font-display: swap;
+  src: url('./fonts/outfit-var.woff2') format('woff2');
+}
+
+:root {
+  /* Relative Spacing (8pt Grid System) - Supports Accessibility Text Zoom */
+  --spacing-xs: 0.25rem;  /* 4px */
+  --spacing-sm: 0.5rem;   /* 8px */
+  --spacing-md: 1rem;     /* 16px */
+  --spacing-lg: 1.5rem;   /* 24px */
+  --spacing-xl: 2rem;     /* 32px */
+  --spacing-2xl: 3rem;    /* 48px */
+
+  /* Touch Targets (Strict Apple HIG / WCAG 2.1 AA Compliance) */
+  --touch-target-min: 44px;
+
+  /* Typography Design Tokens */
+  --font-display: 'Outfit', -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  --font-body: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+
+  /* Border Radii */
+  --radius-sm: 6px;
+  --radius-md: 12px;
+  --radius-lg: 20px;
+  --radius-pill: 9999px;
+
+  /* Premium Apple HIG Out-Quint Transitions */
+  --anim-fast: 0.12s;
+  --anim-normal: 0.3s;
+  --anim-slow: 0.5s;
+  --anim-ease: cubic-bezier(0.16, 1, 0.3, 1); /* Out-Quint Easing */
+
+  /* Default Theme Mode (Dark Professional) */
+  --theme-name: "dark";
+
+  /* HSL Tailored Color Palette - Dark Mode */
+  --color-hue-primary: 220;
+  
+  --bg-main: hsl(var(--color-hue-primary), 20%, 8%);      /* Slate Black */
+  --bg-panel: hsl(var(--color-hue-primary), 16%, 13%);    /* Modern Charcoal Card */
+  --bg-input: hsl(var(--color-hue-primary), 14%, 18%);    /* Dark Grey Input */
+  --bg-hover: hsl(var(--color-hue-primary), 15%, 22%);    /* Active Grey Hover */
+
+  --text-primary: hsl(var(--color-hue-primary), 20%, 96%);
+  --text-secondary: hsl(var(--color-hue-primary), 10%, 75%);
+  --text-tertiary: hsl(var(--color-hue-primary), 8%, 55%);
+
+  --border-panel: hsla(var(--color-hue-primary), 20%, 96%, 0.08);
+  --border-input: hsla(var(--color-hue-primary), 20%, 96%, 0.12);
+
+  /* Semantic Theme Accents (HIG Soft Tones) */
+  --color-accent: hsl(210, 100%, 52%);     /* iOS Dynamic System Blue */
+  --color-success: hsl(120, 60%, 48%);     /* Soft System Green */
+  --color-error: hsl(0, 85%, 60%);         /* Soft System Red */
+  --color-warning: hsl(35, 100%, 55%);     /* Soft System Orange */
+
+  /* Elevation Systems */
+  --shadow-sm: 0 1px 2px hsla(0, 0%, 0%, 0.15);
+  --shadow-md: 0 4px 16px hsla(0, 0%, 0%, 0.25);
+  --shadow-lg: 0 16px 36px hsla(0, 0%, 0%, 0.4);
+
+  /* Glassmorphism System */
+  --glass-bg: hsla(var(--color-hue-primary), 16%, 13%, 0.7);
+  --glass-blur: blur(20px);
+  --glass-border: hsla(var(--color-hue-primary), 20%, 96%, 0.1);
+}
+
+/* === THEME: LIGHT OVERRIDES === */
+[data-theme="light"] {
+  --theme-name: "light";
+  --bg-main: hsl(var(--color-hue-primary), 20%, 96%);     /* Light Slate */
+  --bg-panel: hsl(var(--color-hue-primary), 0%, 100%);    /* Pure White Card */
+  --bg-input: hsl(var(--color-hue-primary), 10%, 92%);    /* Soft Grey Input */
+  --bg-hover: hsl(var(--color-hue-primary), 10%, 88%);    /* Soft Active Hover */
+
+  --text-primary: hsl(var(--color-hue-primary), 20%, 12%);
+  --text-secondary: hsl(var(--color-hue-primary), 15%, 35%);
+  --text-tertiary: hsl(var(--color-hue-primary), 10%, 55%);
+
+  --border-panel: hsla(var(--color-hue-primary), 20%, 12%, 0.08);
+  --border-input: hsla(var(--color-hue-primary), 20%, 12%, 0.12);
+
+  --color-accent: hsl(210, 100%, 50%);     /* iOS Classic Blue */
+  --color-success: hsl(120, 60%, 42%);     /* Classic Green */
+  --color-error: hsl(0, 80%, 52%);         /* Classic Red */
+  --color-warning: hsl(35, 100%, 48%);     /* Classic Orange */
+
+  --shadow-md: 0 4px 12px hsla(var(--color-hue-primary), 20%, 12%, 0.04);
+  --shadow-lg: 0 16px 32px hsla(var(--color-hue-primary), 20%, 12%, 0.08);
+
+  --glass-bg: hsla(var(--color-hue-primary), 0%, 100%, 0.85);
+  --glass-blur: blur(15px);
+  --glass-border: hsla(var(--color-hue-primary), 20%, 12%, 0.08);
+}
+
+/* === THEME: CYBERPUNK OVERRIDES (EXOTIC LUMINANCE) === */
+[data-theme="cyberpunk"] {
+  --theme-name: "cyberpunk";
+  --color-hue-primary: 275;
+  
+  --bg-main: hsl(290, 80%, 4%);             /* Void Violet */
+  --bg-panel: hsl(280, 60%, 8%);            /* Cybernetic Indigo */
+  --bg-input: hsl(280, 50%, 14%);           /* Synthwave Grape */
+  --bg-hover: hsl(280, 50%, 20%);           /* Hyper Active Magenta */
+
+  --text-primary: hsl(180, 100%, 50%);      /* Glowing Neon Cyan */
+  --text-secondary: hsl(300, 100%, 65%);    /* Glowing Neon Magenta */
+  --text-tertiary: hsl(60, 100%, 60%);      /* Neon Yellow Alert */
+
+  --border-panel: hsla(300, 100%, 65%, 0.35);
+  --border-input: hsla(180, 100%, 50%, 0.3);
+
+  --color-accent: hsl(60, 100%, 50%);
+  --color-success: hsl(96, 100%, 50%);      /* Matrix Green */
+  --color-error: hsl(342, 100%, 50%);      /* Acid Red */
+  --color-warning: hsl(42, 100%, 50%);
+
+  --shadow-md: 0 0 12px hsla(300, 100%, 65%, 0.25);
+  --shadow-lg: 0 0 28px hsla(180, 100%, 50%, 0.35);
+
+  --glass-bg: hsla(280, 60%, 8%, 0.65);
+  --glass-blur: blur(12px);
+  --glass-border: hsla(300, 100%, 65%, 0.3);
+}
+
+/* Base Global Reset and Transition Engine */
+*, *::before, *::after {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  padding: 0;
+  font-family: var(--font-body);
+  background-color: var(--bg-main);
+  color: var(--text-primary);
+  line-height: 1.5;
+  transition: background-color var(--anim-normal) var(--anim-ease),
+              color var(--anim-normal) var(--anim-ease),
+              border-color var(--anim-normal) var(--anim-ease),
+              box-shadow var(--anim-normal) var(--anim-ease);
+}
+
+h1, h2, h3, h4, h5, h6 {
+  font-family: var(--font-display);
+  font-weight: 600;
+  color: var(--text-primary);
+  margin-top: 0;
+}
+
+a {
+  color: var(--color-accent);
+  text-decoration: none;
+  transition: color var(--anim-fast) linear;
+}
+
+a:hover {
+  filter: brightness(1.2);
+}
+
+/* === ACCESSIBILITY: KEYBOARD FOCUS (WCAG 2.4.7) === */
+:focus-visible {
+  outline: 2px solid var(--color-accent);
+  outline-offset: 2px;
+  border-radius: var(--radius-sm);
+}
+
+/* Interactive elements honour the HIG/WCAG minimum touch target. */
+button,
+[role="button"],
+input,
+select,
+textarea,
+a.button {
+  min-height: var(--touch-target-min);
+}
+
+/* === ACCESSIBILITY: OS COLOR-SCHEME PREFERENCE ===
+ * When the user has not explicitly chosen a theme via [data-theme], follow the
+ * operating system's light/dark preference. Explicit selection always wins. */
+@media (prefers-color-scheme: light) {
+  :root:not([data-theme]) {
+    --theme-name: "light";
+    --bg-main: hsl(var(--color-hue-primary), 20%, 96%);
+    --bg-panel: hsl(var(--color-hue-primary), 0%, 100%);
+    --bg-input: hsl(var(--color-hue-primary), 10%, 92%);
+    --bg-hover: hsl(var(--color-hue-primary), 10%, 88%);
+
+    --text-primary: hsl(var(--color-hue-primary), 20%, 12%);
+    --text-secondary: hsl(var(--color-hue-primary), 15%, 35%);
+    --text-tertiary: hsl(var(--color-hue-primary), 10%, 55%);
+
+    --border-panel: hsla(var(--color-hue-primary), 20%, 12%, 0.08);
+    --border-input: hsla(var(--color-hue-primary), 20%, 12%, 0.12);
+
+    --color-accent: hsl(210, 100%, 50%);
+    --color-success: hsl(120, 60%, 42%);
+    --color-error: hsl(0, 80%, 52%);
+    --color-warning: hsl(35, 100%, 48%);
+
+    --shadow-md: 0 4px 12px hsla(var(--color-hue-primary), 20%, 12%, 0.04);
+    --shadow-lg: 0 16px 32px hsla(var(--color-hue-primary), 20%, 12%, 0.08);
+
+    --glass-bg: hsla(var(--color-hue-primary), 0%, 100%, 0.85);
+    --glass-blur: blur(15px);
+    --glass-border: hsla(var(--color-hue-primary), 20%, 12%, 0.08);
+  }
+}
+
+/* === ACCESSIBILITY: REDUCED MOTION (WCAG 2.3.3 / HIG) ===
+ * Respect users who request minimal motion at the OS level. */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    transition-duration: 0.001ms !important;
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    scroll-behavior: auto !important;
+  }
+}

@@ -76,7 +76,12 @@ Module.register("ecosystem", {
 		// Sync settings
 		syncUsers: true,
 		syncIntegrations: true,
-		syncAutomations: false
+		syncAutomations: false,
+
+		// Phase 3 Policy Governance
+		policy: {
+			pollInterval: 10000
+		}
 	},
 
 	/**
@@ -86,12 +91,20 @@ Module.register("ecosystem", {
 	connectedApps: {},
 	notificationHistory: [],
 	syncStatus: {},
+	policyState: null,
 
 	/**
 	 * Required styles
 	 */
 	getStyles: function () {
-		return [this.file("ecosystem.css")];
+		return [this.file("ecosystem.css"), this.file("ecosystem-theme.css")];
+	},
+
+	/**
+	 * Required scripts
+	 */
+	getScripts: function () {
+		return [this.file("ecosystem-ui-controls.js")];
 	},
 
 	/**
@@ -105,6 +118,12 @@ Module.register("ecosystem", {
 			apps: this.config.apps,
 			timeout: this.config.discoveryTimeout
 		});
+
+		// Request initial policy state and poll
+		this.sendSocketNotification("ECOSYSTEM_GET_POLICY_STATE");
+		setInterval(() => {
+			this.sendSocketNotification("ECOSYSTEM_GET_POLICY_STATE");
+		}, this.config.policy?.pollInterval || 10000);
 
 		// Set up periodic discovery
 		if (this.config.enableDiscovery) {
@@ -145,6 +164,15 @@ Module.register("ecosystem", {
 
 			case "ECOSYSTEM_INTEGRATIONS_SYNCED":
 				this.showNotification(`Synced integrations with ${payload.app}`, "success");
+				break;
+
+			case "ECOSYSTEM_POLICY_STATE":
+				this.policyState = payload;
+				this.updatePolicyBarDom();
+				break;
+
+			case "ECOSYSTEM_POLICY_FORBIDDEN":
+				this.showNotification(`Security Rejection: ${payload.reason || "Action not permitted on wall display"}`, "error");
 				break;
 
 			case "ECOSYSTEM_ERROR":
@@ -351,6 +379,26 @@ Module.register("ecosystem", {
 		const wrapper = document.createElement("div");
 		wrapper.className = "ecosystem-module";
 
+		// Ambient Apple HIG Policy & Freeze bar
+		const policyContainer = document.createElement("div");
+		policyContainer.className = "ecosystem-policy-container";
+		policyContainer.style.marginBottom = "0.75rem";
+		policyContainer.innerHTML = '<ecosystem-policy-bar view-mode="ambient" confirm-freeze-tap="true"></ecosystem-policy-bar>';
+		const policyBar = policyContainer.querySelector("ecosystem-policy-bar");
+		if (policyBar && this.policyState) {
+			policyBar.policyState = this.policyState;
+		}
+		if (policyBar) {
+			policyBar.addEventListener("ecosystem-freeze-request", (ev) => {
+				const detail = ev.detail || {};
+				this.sendSocketNotification("ECOSYSTEM_REQUEST_FREEZE", {
+					reason: detail.reason || "Wall display emergency freeze button tapped",
+					channel: "magicmirror_display"
+				});
+			});
+		}
+		wrapper.appendChild(policyContainer);
+
 		// This module primarily works in the background
 		// Status is shown in settings panel
 		if (Object.keys(this.connectedApps).length > 0) {
@@ -364,6 +412,16 @@ Module.register("ecosystem", {
 		}
 
 		return wrapper;
+	},
+
+	/**
+	 * Update policy bar DOM when policy state updates
+	 */
+	updatePolicyBarDom: function () {
+		const policyBar = document.querySelector(".ecosystem-module ecosystem-policy-bar");
+		if (policyBar && this.policyState) {
+			policyBar.policyState = this.policyState;
+		}
 	},
 
 	/**

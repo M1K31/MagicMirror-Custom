@@ -22,8 +22,8 @@ Module.register("security", {
 	 * Default configuration
 	 */
 	defaults: {
-		// OpenEye server configuration
-		openeyeHost: "http://localhost:8000",
+		// OpenEye server configuration (port 8200 in ecosystem mode)
+		openeyeHost: "http://localhost:8200",
 		// JWT token for authentication (set in config or via node_helper from env)
 		token: "",
 
