@@ -1019,6 +1019,9 @@ function createComponentClasses(BaseElement) {
                     this.render();
                 }, 3000);
                 this.render();
+                // render() replaces the focused trigger; restore focus so a
+                // keyboard user's second Enter/Space confirms Freeze.
+                this.shadowRoot.querySelector('[data-action="freeze-trigger"]')?.focus();
                 return;
             }
 

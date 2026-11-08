@@ -1,4 +1,6 @@
-const { describe, it } = require("node:test");
+// Use Jest's global describe/it/expect so these cases register with the Jest
+// runner (`npm run test:unit`). Importing node:test instead registered them with
+// node's own runner, outside Jest, which failed the suite as empty.
 const assert = require("node:assert");
 const path = require("path");
 const Module = require("module");

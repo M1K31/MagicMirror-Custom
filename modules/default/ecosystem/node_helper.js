@@ -694,7 +694,12 @@ module.exports = NodeHelper.create({
 	 * Relay notification to companion apps
 	 */
 	relayNotification: async function (notification, targets, methods) {
-		if (this._hubClient && notification) {
+		// Publish to the shared hub feed only when hub delivery is explicitly
+		// requested. Previously any relay (even one meant only for OpenEye, or
+		// with no targets) also broadcast its title/message to the hub.
+		const hubRequested = methods?.hub?.enabled === true
+			|| (Array.isArray(targets) && (targets.includes("hub") || targets.includes("ecosystem")));
+		if (this._hubClient && notification && hubRequested) {
 			try {
 				const sev = notification.urgent ? "high" : (notification.severity || "medium");
 				const type = String(notification.type || "notify.system").startsWith("notify.")

@@ -2,7 +2,7 @@
 
 Module.register("network-security", {
 	defaults: {
-		loganalysisHost: "http://localhost:8089",
+		loganalysisHost: "http://localhost:8088",
 		maxEvents: 5,
 		updateInterval: 30000,
 		compactMode: false,
