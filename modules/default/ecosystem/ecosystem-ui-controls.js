@@ -1259,12 +1259,64 @@ function createComponentClasses(BaseElement) {
             // after a submit so a single-use TOTP code or an "until revoked"
             // consent never carries across a modal session.
             this._skipDraftRestore = true;
+            // Pull focus into the sheet on the next render after an open
+            // transition only (not on every re-render, which would steal focus
+            // while the operator is typing or changing the duration).
+            this._focusOnOpen = false;
+            // Best-effort element to return focus to when the modal closes.
+            this._restoreFocusTo = null;
             this.attachShadow({ mode: "open" });
+            // keydown composes out of the shadow DOM, so this window-level
+            // listener sees Escape and Tab while focus is inside the sheet.
             this._onKeyDown = (ev) => {
-                if (ev.key === "Escape" && this.hasAttribute("open")) {
+                if (!this.hasAttribute("open")) {
+                    return;
+                }
+                if (ev.key === "Escape") {
                     this.close();
+                    return;
+                }
+                if (ev.key === "Tab") {
+                    this._trapTab(ev);
                 }
             };
+        }
+
+        // Focusable controls inside the sheet, in DOM/tab order. Conditionally
+        // rendered fields (until-revoked consent, error box) are simply absent
+        // from the tree when not shown, so no visibility filtering is needed.
+        _focusable() {
+            const root = this.shadowRoot;
+            if (!root) {
+                return [];
+            }
+            return Array.from(
+                root.querySelectorAll(
+                    'a[href], button:not([disabled]), input:not([disabled]):not([type="hidden"]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])'
+                )
+            );
+        }
+
+        // Keep Tab / Shift+Tab cycling within the modal so keyboard focus cannot
+        // land on the backdrop or page behind this aria-modal step-up dialog.
+        _trapTab(ev) {
+            const focusable = this._focusable();
+            if (focusable.length === 0) {
+                return;
+            }
+            const first = focusable[0];
+            const last = focusable[focusable.length - 1];
+            const active = this.shadowRoot.activeElement;
+            const inside = active && this.shadowRoot.contains(active);
+            if (ev.shiftKey) {
+                if (!inside || active === first) {
+                    ev.preventDefault();
+                    last.focus();
+                }
+            } else if (!inside || active === last) {
+                ev.preventDefault();
+                first.focus();
+            }
         }
 
         set availableApps(list) {
@@ -1300,6 +1352,16 @@ function createComponentClasses(BaseElement) {
 
         open() {
             this._errors = [];
+            // Remember who opened us so focus can return there on close. In a
+            // nested shadow tree document.activeElement resolves to the outer
+            // host; focusing it is a best-effort no-op when it is not focusable.
+            try {
+                this._restoreFocusTo =
+                    typeof document !== "undefined" ? document.activeElement : null;
+            } catch (_e) {
+                this._restoreFocusTo = null;
+            }
+            this._focusOnOpen = true;
             this.setAttribute("open", "true");
         }
 
@@ -1308,7 +1370,18 @@ function createComponentClasses(BaseElement) {
             this._passkeyAssertion = "";
             this._selectedDuration = "30m";
             this._skipDraftRestore = true;
+            this._focusOnOpen = false;
             this.removeAttribute("open");
+            // Return focus to the trigger so a keyboard user is not stranded.
+            const target = this._restoreFocusTo;
+            this._restoreFocusTo = null;
+            if (target && target.isConnected && typeof target.focus === "function") {
+                try {
+                    target.focus();
+                } catch (_e) {
+                    /* element no longer focusable; ignore */
+                }
+            }
             this.dispatchEvent(
                 new CustomEvent("ecosystem-override-cancel", { bubbles: true, composed: true })
             );
@@ -1614,6 +1687,15 @@ function createComponentClasses(BaseElement) {
 
             // Restore any in-progress input captured before this re-render.
             this._restoreDraft(_draft);
+
+            // On the open transition only, move focus to the first interactive
+            // control so a keyboard user starts inside the dialog and the trap is
+            // airtight at both Tab boundaries. The dialog name is conveyed via
+            // aria-modal + aria-labelledby rather than by focusing the title.
+            if (this._focusOnOpen && isOpen) {
+                this._focusOnOpen = false;
+                this._focusable()[0]?.focus();
+            }
         }
     }
 
