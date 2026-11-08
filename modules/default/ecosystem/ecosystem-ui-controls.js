@@ -1254,6 +1254,11 @@ function createComponentClasses(BaseElement) {
             this._stepUpMethod = "totp";
             this._passkeyAssertion = "";
             this._selectedDuration = "30m";
+            // When true, the next render() starts from a fresh form instead of
+            // restoring captured input. Set on every open/close transition and
+            // after a submit so a single-use TOTP code or an "until revoked"
+            // consent never carries across a modal session.
+            this._skipDraftRestore = true;
             this.attachShadow({ mode: "open" });
             this._onKeyDown = (ev) => {
                 if (ev.key === "Escape" && this.hasAttribute("open")) {
@@ -1299,6 +1304,10 @@ function createComponentClasses(BaseElement) {
         }
 
         close() {
+            // Drop sensitive session state so it cannot be restored on reopen.
+            this._passkeyAssertion = "";
+            this._selectedDuration = "30m";
+            this._skipDraftRestore = true;
             this.removeAttribute("open");
             this.dispatchEvent(
                 new CustomEvent("ecosystem-override-cancel", { bubbles: true, composed: true })
@@ -1319,6 +1328,9 @@ function createComponentClasses(BaseElement) {
         }
 
         attributeChangedCallback() {
+            // The only observed attribute is "open"; an open/close transition must
+            // present a fresh form, not restore the previous session's input.
+            this._skipDraftRestore = true;
             this.render();
         }
 
@@ -1353,6 +1365,11 @@ function createComponentClasses(BaseElement) {
 
             if (!result.valid) {
                 this._errors = result.errors;
+                // Clear the step-up credential after every submit attempt: a TOTP is
+                // single-use/time-boxed and a passkey assertion is one-shot, so the
+                // operator should re-enter one rather than reuse a stale value.
+                if (totpEl) totpEl.value = "";
+                this._passkeyAssertion = "";
                 this.render();
                 return;
             }
@@ -1409,7 +1426,10 @@ function createComponentClasses(BaseElement) {
         }
 
         render() {
-            const _draft = this._captureDraft();
+            // Skip the capture/restore on an open/close transition or just after a
+            // submit, so a fresh form is shown and no TOTP/consent is carried over.
+            const _draft = this._skipDraftRestore ? null : this._captureDraft();
+            this._skipDraftRestore = false;
             const isOpen = this.hasAttribute("open") && this.getAttribute("open") !== "false";
             const bypassedItems = BYPASSED_GATES_DEFAULT.map(
                 (item) => `<li>${escapeHtml(item)}</li>`
