@@ -167,12 +167,22 @@ Module.register("ecosystem", {
 				break;
 
 			case "ECOSYSTEM_POLICY_STATE": {
-				// Ignore an out-of-order (stale) snapshot: overlapping polls can
-				// return in any order, and a delayed normal snapshot must not
-				// overwrite a newer frozen one. policy_version is monotonic.
-				const incoming = Number(payload?.policy_version ?? 0);
-				const current = Number(this.policyState?.policy_version ?? -1);
-				if (!this.policyState || incoming >= current) {
+				// Drop an out-of-order (stale) snapshot from the SAME authority, but
+				// fail safe: always accept a frozen state, always accept a state from
+				// a different authority (hub vs standalone_local — their version
+				// numbers are not comparable), and accept when a version is missing.
+				// This prevents a lower-versioned standalone freeze from being
+				// discarded just because the hub had reported a higher version.
+				const incoming = Number(payload?.policy_version);
+				const current = Number(this.policyState?.policy_version);
+				const sameAuthority = this.policyState && payload?.authority === this.policyState?.authority;
+				const accept =
+					!this.policyState ||
+					Boolean(payload?.frozen) ||
+					!sameAuthority ||
+					Number.isNaN(incoming) || Number.isNaN(current) ||
+					incoming >= current;
+				if (accept) {
 					this.policyState = payload;
 					this.updatePolicyBarDom();
 				}
@@ -429,9 +439,17 @@ Module.register("ecosystem", {
 	 * Update policy bar DOM when policy state updates
 	 */
 	updatePolicyBarDom: function () {
-		// Prefer this instance's own bar (set in getDom); fall back to a lookup
-		// only if it has not rendered yet.
-		const policyBar = this._policyBar || document.querySelector(".ecosystem-module ecosystem-policy-bar");
+		// Use the cached bar only while it is still attached to the page; after a
+		// module re-render the old reference is detached (stale), so look the bar
+		// up inside THIS module's own wrapper (document id === this.identifier).
+		let policyBar = (this._policyBar && this._policyBar.isConnected) ? this._policyBar : null;
+		if (!policyBar) {
+			const wrapper = this.identifier ? document.getElementById(this.identifier) : null;
+			policyBar = wrapper
+				? wrapper.querySelector("ecosystem-policy-bar")
+				: document.querySelector(".ecosystem-module ecosystem-policy-bar");
+			this._policyBar = policyBar;
+		}
 		if (policyBar && this.policyState) {
 			policyBar.policyState = this.policyState;
 		}
