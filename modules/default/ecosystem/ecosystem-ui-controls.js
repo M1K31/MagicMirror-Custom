@@ -1368,7 +1368,48 @@ function createComponentClasses(BaseElement) {
             );
         }
 
+        _captureDraft() {
+            // Snapshot in-progress form input so a re-render (duration change,
+            // passkey verification, validation failure) does not wipe it.
+            const root = this.shadowRoot;
+            if (!root) return null;
+            if (!root.querySelector('input[name="reason"], input[name="totp_code"], input[name="apps"]')) {
+                return null; // nothing rendered yet (first render)
+            }
+            const checked = (name) =>
+                Array.from(root.querySelectorAll(`input[name="${name}"]:checked`)).map((el) => el.value);
+            const confEl = root.querySelector('input[name="confirm_until_revoked"]');
+            const reasonEl = root.querySelector('input[name="reason"]');
+            const totpEl = root.querySelector('input[name="totp_code"]');
+            return {
+                apps: checked("apps"),
+                devices: checked("devices"),
+                action_classes: checked("action_classes"),
+                reason: reasonEl ? reasonEl.value : undefined,
+                totp_code: totpEl ? totpEl.value : undefined,
+                confirm: confEl ? confEl.checked : undefined,
+            };
+        }
+
+        _restoreDraft(draft) {
+            if (!draft) return;
+            const root = this.shadowRoot;
+            ["apps", "devices", "action_classes"].forEach((name) => {
+                const want = new Set(draft[name] || []);
+                root.querySelectorAll(`input[name="${name}"]`).forEach((el) => {
+                    el.checked = want.has(el.value);
+                });
+            });
+            const reasonEl = root.querySelector('input[name="reason"]');
+            if (reasonEl && draft.reason !== undefined) reasonEl.value = draft.reason;
+            const totpEl = root.querySelector('input[name="totp_code"]');
+            if (totpEl && draft.totp_code !== undefined) totpEl.value = draft.totp_code;
+            const confEl = root.querySelector('input[name="confirm_until_revoked"]');
+            if (confEl && draft.confirm !== undefined) confEl.checked = draft.confirm;
+        }
+
         render() {
+            const _draft = this._captureDraft();
             const isOpen = this.hasAttribute("open") && this.getAttribute("open") !== "false";
             const bypassedItems = BYPASSED_GATES_DEFAULT.map(
                 (item) => `<li>${escapeHtml(item)}</li>`
@@ -1550,6 +1591,9 @@ function createComponentClasses(BaseElement) {
             if (submitBtn) {
                 submitBtn.addEventListener("click", () => this._collectAndSubmit());
             }
+
+            // Restore any in-progress input captured before this re-render.
+            this._restoreDraft(_draft);
         }
     }
 
