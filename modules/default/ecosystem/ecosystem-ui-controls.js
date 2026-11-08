@@ -1259,7 +1259,9 @@ function createComponentClasses(BaseElement) {
         }
 
         set availableApps(list) {
-            if (Array.isArray(list) && list.length) {
+            // Accept an empty array so clearing the inventory (discovery returned
+            // no targets) actually clears the modal instead of keeping stale items.
+            if (Array.isArray(list)) {
                 this._availableApps = list.map(String);
                 this.render();
             }
@@ -1270,7 +1272,7 @@ function createComponentClasses(BaseElement) {
         }
 
         set availableDevices(list) {
-            if (Array.isArray(list) && list.length) {
+            if (Array.isArray(list)) {
                 this._availableDevices = list.map(String);
                 this.render();
             }
@@ -1663,15 +1665,21 @@ function registerEcosystemControls(env = {}) {
 
     const classes = createComponentClasses(BaseEl);
     const definitions = [
-        ["ecosystem-freeze-button", classes.EcosystemFreezeButton],
-        ["ecosystem-policy-bar", classes.EcosystemPolicyBar],
-        ["ecosystem-override-modal", classes.EcosystemOverrideModal],
-        ["ecosystem-mic-pill", classes.EcosystemMicPill],
+        ["ecosystem-freeze-button", "EcosystemFreezeButton"],
+        ["ecosystem-policy-bar", "EcosystemPolicyBar"],
+        ["ecosystem-override-modal", "EcosystemOverrideModal"],
+        ["ecosystem-mic-pill", "EcosystemMicPill"],
     ];
 
-    for (const [tag, ctor] of definitions) {
-        if (!registry.get(tag)) {
-            registry.define(tag, ctor);
+    for (const [tag, key] of definitions) {
+        const existing = registry.get(tag);
+        if (existing) {
+            // Already registered (e.g. the browser auto-registered on load). Return
+            // the REGISTERED constructor — the freshly-created one is unregistered
+            // and constructing it would throw a TypeError.
+            classes[key] = existing;
+        } else {
+            registry.define(tag, classes[key]);
         }
     }
     return classes;
