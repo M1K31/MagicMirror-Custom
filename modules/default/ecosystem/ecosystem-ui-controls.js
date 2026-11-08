@@ -555,6 +555,7 @@ const SHARED_STYLES = `
   --_text-secondary: var(--text-secondary, hsl(220, 10%, 75%));
   --_text-tertiary: var(--text-tertiary, hsl(220, 8%, 58%));
   --_accent: var(--color-accent, hsl(210, 100%, 52%));
+  --_text-on-accent: var(--text-on-accent, hsl(0, 0%, 100%));
   --_success: var(--color-success, hsl(120, 60%, 48%));
   --_warning: var(--color-warning, hsl(35, 100%, 55%));
   --_error: var(--color-error, hsl(0, 85%, 60%));
@@ -717,7 +718,7 @@ button.hig-btn:disabled {
 button.hig-btn[data-variant="primary"] {
   background: var(--_accent);
   border-color: transparent;
-  color: #ffffff;
+  color: var(--_text-on-accent);
 }
 
 button.hig-btn[data-variant="restore"] {

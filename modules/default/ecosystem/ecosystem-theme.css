@@ -105,9 +105,10 @@
   --border-input: hsla(var(--color-hue-primary), 20%, 12%, 0.12);
 
   --color-accent: hsl(210, 100%, 50%);     /* iOS Classic Blue */
-  --color-success: hsl(120, 60%, 42%);     /* Classic Green */
-  --color-error: hsl(0, 80%, 52%);         /* Classic Red */
-  --color-warning: hsl(35, 100%, 48%);     /* Classic Orange */
+  --color-success: hsl(120, 65%, 28%);     /* Classic Green — darkened for >=4.5:1 badge text on light */
+  --color-error: hsl(0, 80%, 45%);         /* Classic Red */
+  --color-warning: hsl(35, 100%, 30%);     /* Classic Orange — darkened for >=4.5:1 badge text on light */
+  --text-on-accent: hsl(0, 0%, 100%);      /* text over the (blue) accent */
 
   --shadow-md: 0 4px 12px hsla(var(--color-hue-primary), 20%, 12%, 0.04);
   --shadow-lg: 0 16px 32px hsla(var(--color-hue-primary), 20%, 12%, 0.08);
@@ -138,6 +139,7 @@
   --color-success: hsl(96, 100%, 50%);      /* Matrix Green */
   --color-error: hsl(342, 100%, 50%);      /* Acid Red */
   --color-warning: hsl(42, 100%, 50%);
+  --text-on-accent: hsl(290, 80%, 6%);      /* dark text so labels read on the neon-yellow accent */
 
   --shadow-md: 0 0 12px hsla(300, 100%, 65%, 0.25);
   --shadow-lg: 0 0 28px hsla(180, 100%, 50%, 0.35);
