@@ -1017,6 +1017,9 @@ function createComponentClasses(BaseElement) {
                 this._armTimer = setTimeout(() => {
                     this._armed = false;
                     this.render();
+                    // The expiry re-render also removes the focused trigger; keep a
+                    // keyboard user on it so they can re-arm without hunting for focus.
+                    this.shadowRoot.querySelector('[data-action="freeze-trigger"]')?.focus();
                 }, 3000);
                 this.render();
                 // render() replaces the focused trigger; restore focus so a

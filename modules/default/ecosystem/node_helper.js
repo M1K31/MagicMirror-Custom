@@ -83,6 +83,9 @@ module.exports = NodeHelper.create({
 		this._hubClient = null;
 		this._localFrozen = false;
 		this._localFreezeInfo = null;
+		this._freezeSeq = 0;              // monotonic; bumped on each freeze request
+		this._freezeRestoreDone = false; // set once the persisted freeze is loaded
+		this._freezeWriteChain = Promise.resolve();
 		this.freezeStatePath = path.join(this.configPath, "ecosystem-freeze.json");
 
 		if (HubClient) {
@@ -109,15 +112,24 @@ module.exports = NodeHelper.create({
 	},
 
 	_persistFreezeState: async function () {
-		try {
-			if (this._localFrozen) {
-				await fs.writeFile(this.freezeStatePath, JSON.stringify({ frozen: true, info: this._localFreezeInfo }, null, 2));
-			} else {
-				await fs.unlink(this.freezeStatePath).catch(() => {});
+		// Serialize writes through a chain so a freeze and a later clear cannot
+		// interleave, and write atomically (temp + rename) so a crash mid-write
+		// cannot leave a truncated/invalid file that a later restart misreads.
+		const run = async () => {
+			try {
+				if (this._localFrozen) {
+					const tmp = `${this.freezeStatePath}.tmp`;
+					await fs.writeFile(tmp, JSON.stringify({ frozen: true, info: this._localFreezeInfo, seq: this._freezeSeq }, null, 2));
+					await fs.rename(tmp, this.freezeStatePath);
+				} else {
+					await fs.unlink(this.freezeStatePath).catch(() => {});
+				}
+			} catch (err) {
+				Log.debug(`[${this.name}] Could not persist freeze state: ${err.message}`);
 			}
-		} catch (err) {
-			Log.debug(`[${this.name}] Could not persist freeze state: ${err.message}`);
-		}
+		};
+		this._freezeWriteChain = (this._freezeWriteChain || Promise.resolve()).then(run, run);
+		return this._freezeWriteChain;
 	},
 
 	_restoreFreezeState: async function () {
@@ -126,10 +138,17 @@ module.exports = NodeHelper.create({
 			if (saved && saved.frozen) {
 				this._localFrozen = true;
 				this._localFreezeInfo = saved.info || null;
+				if (typeof saved.seq === "number") {
+					this._freezeSeq = saved.seq;
+				}
 				Log.warn(`[${this.name}] Restored standalone Freeze from persisted state`);
 			}
 		} catch {
 			// No persisted freeze state — normal.
+		} finally {
+			// Mark restore complete so an early policy poll does not clear a freeze
+			// before it has been loaded from disk.
+			this._freezeRestoreDone = true;
 		}
 	},
 
@@ -825,12 +844,16 @@ module.exports = NodeHelper.create({
 
 	fetchPolicyState: async function () {
 		if (this._hubClient && typeof this._hubClient.getPolicyState === "function") {
+			// Capture the freeze sequence before the (awaited) poll so a stale
+			// response cannot clear a freeze that was requested while it was in flight.
+			const seqAtPoll = this._freezeSeq || 0;
 			try {
 				const state = await this._hubClient.getPolicyState();
 				if (state) {
-					// Authoritative hub state supersedes a standalone freeze: clear
-					// the persisted local freeze once the hub reports unfrozen.
-					if (!state.frozen && this._localFrozen) {
+					// Authoritative hub state supersedes a standalone freeze: clear the
+					// persisted local freeze once the hub reports unfrozen — but only if
+					// restore has completed and no newer freeze was requested meanwhile.
+					if (!state.frozen && this._localFrozen && this._freezeRestoreDone && (this._freezeSeq || 0) === seqAtPoll) {
 						this._localFrozen = false;
 						this._localFreezeInfo = null;
 						this._persistFreezeState();
@@ -861,6 +884,7 @@ module.exports = NodeHelper.create({
 	requestFreeze: async function (payload) {
 		const reason = payload?.reason || "Emergency wall display freeze";
 		const channel = payload?.channel || "magicmirror_display";
+		this._freezeSeq = (this._freezeSeq || 0) + 1;
 		this._localFrozen = true;
 		this._localFreezeInfo = {
 			initiated_by: "magicmirror_display",

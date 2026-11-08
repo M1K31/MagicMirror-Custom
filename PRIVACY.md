@@ -20,7 +20,7 @@
 
 To prevent physical tampering or accidental changes from an ambient touch screen or voice listener:
 
-1. **View-Only Mode**: Wall displays operate in a restricted `view_only` mode. Privileged operations—such as approving security checkpoints, modifying firewall rules, lowering policy restrictions, pushing integration settings into another app, or resuming from a freeze state—are blocked by the `ecosystem_policy` module, which emits an `ECOSYSTEM_POLICY_FORBIDDEN` socket notification carrying the attempted `action` and a `reason`:
+1. **View-Only Mode**: Wall displays operate in a restricted `view_only` mode. Privileged operations—such as approving security checkpoints, modifying firewall rules, lowering policy restrictions, pushing integration settings into another app, or resuming from a freeze state—are blocked by the ecosystem module's node helper (`modules/default/ecosystem/node_helper.js`), which emits an `ECOSYSTEM_POLICY_FORBIDDEN` socket notification carrying the attempted `action` and a `reason`:
    ```json
    { "action": "ECOSYSTEM_POLICY_RESUME", "reason": "Privileged policy operations (resume, approve, deny, restrictions off) are forbidden from unauthenticated wall display" }
    ```
