@@ -83,6 +83,7 @@ module.exports = NodeHelper.create({
 		this._hubClient = null;
 		this._localFrozen = false;
 		this._localFreezeInfo = null;
+		this.freezeStatePath = path.join(this.configPath, "ecosystem-freeze.json");
 
 		if (HubClient) {
 			try {
@@ -102,6 +103,34 @@ module.exports = NodeHelper.create({
 
 		// Load saved ecosystem state
 		this.loadEcosystemState();
+		// Restore a standalone freeze that was active before a restart (hub down),
+		// so a safety Freeze is not silently dropped by a process restart.
+		this._restoreFreezeState();
+	},
+
+	_persistFreezeState: async function () {
+		try {
+			if (this._localFrozen) {
+				await fs.writeFile(this.freezeStatePath, JSON.stringify({ frozen: true, info: this._localFreezeInfo }, null, 2));
+			} else {
+				await fs.unlink(this.freezeStatePath).catch(() => {});
+			}
+		} catch (err) {
+			Log.debug(`[${this.name}] Could not persist freeze state: ${err.message}`);
+		}
+	},
+
+	_restoreFreezeState: async function () {
+		try {
+			const saved = JSON.parse(await fs.readFile(this.freezeStatePath, "utf8"));
+			if (saved && saved.frozen) {
+				this._localFrozen = true;
+				this._localFreezeInfo = saved.info || null;
+				Log.warn(`[${this.name}] Restored standalone Freeze from persisted state`);
+			}
+		} catch {
+			// No persisted freeze state — normal.
+		}
 	},
 
 	stop: async function () {
@@ -621,6 +650,18 @@ module.exports = NodeHelper.create({
 			return;
 		}
 
+		// View-only boundary: the wall display may pull integration settings but
+		// must not push them into another app. Reject push/bidirectional so a
+		// mutation cannot originate from the unauthenticated display.
+		if (direction === "push" || direction === "bidirectional") {
+			Log.warn(`[${this.name}] Security rejection: integration '${direction}' forbidden on view-only wall display`);
+			this.sendSocketNotification("ECOSYSTEM_POLICY_FORBIDDEN", {
+				action: "ECOSYSTEM_SYNC_INTEGRATIONS",
+				reason: "Writing integration settings to another app is forbidden from the view-only wall display; only 'pull' is permitted"
+			});
+			return;
+		}
+
 		try {
 			// Get our integrations
 			const secretsPath = path.join(this.configPath, "secrets.json");
@@ -787,6 +828,13 @@ module.exports = NodeHelper.create({
 			try {
 				const state = await this._hubClient.getPolicyState();
 				if (state) {
+					// Authoritative hub state supersedes a standalone freeze: clear
+					// the persisted local freeze once the hub reports unfrozen.
+					if (!state.frozen && this._localFrozen) {
+						this._localFrozen = false;
+						this._localFreezeInfo = null;
+						this._persistFreezeState();
+					}
 					this.sendSocketNotification("ECOSYSTEM_POLICY_STATE", state);
 					return;
 				}
@@ -820,6 +868,9 @@ module.exports = NodeHelper.create({
 			reason: reason,
 			since: new Date().toISOString()
 		};
+		// Persist immediately so a restart while the hub is unavailable does not
+		// drop the standalone freeze.
+		this._persistFreezeState();
 
 		if (this._hubClient && typeof this._hubClient.requestFreeze === "function") {
 			try {
