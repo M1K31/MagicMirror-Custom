@@ -166,10 +166,18 @@ Module.register("ecosystem", {
 				this.showNotification(`Synced integrations with ${payload.app}`, "success");
 				break;
 
-			case "ECOSYSTEM_POLICY_STATE":
-				this.policyState = payload;
-				this.updatePolicyBarDom();
+			case "ECOSYSTEM_POLICY_STATE": {
+				// Ignore an out-of-order (stale) snapshot: overlapping polls can
+				// return in any order, and a delayed normal snapshot must not
+				// overwrite a newer frozen one. policy_version is monotonic.
+				const incoming = Number(payload?.policy_version ?? 0);
+				const current = Number(this.policyState?.policy_version ?? -1);
+				if (!this.policyState || incoming >= current) {
+					this.policyState = payload;
+					this.updatePolicyBarDom();
+				}
 				break;
+			}
 
 			case "ECOSYSTEM_POLICY_FORBIDDEN":
 				this.showNotification(`Security Rejection: ${payload.reason || "Action not permitted on wall display"}`, "error");
@@ -385,6 +393,9 @@ Module.register("ecosystem", {
 		policyContainer.style.marginBottom = "0.75rem";
 		policyContainer.innerHTML = '<ecosystem-policy-bar view-mode="ambient" confirm-freeze-tap="true"></ecosystem-policy-bar>';
 		const policyBar = policyContainer.querySelector("ecosystem-policy-bar");
+		// Hold a per-instance reference so updatePolicyBarDom updates THIS module's
+		// bar; a global querySelector would update only the first instance's bar.
+		this._policyBar = policyBar;
 		if (policyBar && this.policyState) {
 			policyBar.policyState = this.policyState;
 		}
@@ -418,7 +429,9 @@ Module.register("ecosystem", {
 	 * Update policy bar DOM when policy state updates
 	 */
 	updatePolicyBarDom: function () {
-		const policyBar = document.querySelector(".ecosystem-module ecosystem-policy-bar");
+		// Prefer this instance's own bar (set in getDom); fall back to a lookup
+		// only if it has not rendered yet.
+		const policyBar = this._policyBar || document.querySelector(".ecosystem-module ecosystem-policy-bar");
 		if (policyBar && this.policyState) {
 			policyBar.policyState = this.policyState;
 		}
