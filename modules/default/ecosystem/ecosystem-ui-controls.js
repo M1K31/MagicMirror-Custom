@@ -134,12 +134,46 @@ function summarizeScope(scope) {
  *    while preserving status visibility and Freeze request capability.
  * 4. Unreachable devices are explicitly surfaced and never merged into applied/acknowledged counts.
  *
- * @param {object|null} rawState
+ * @param {object|null} rawState  null/non-object yields the "unknown" view-model
  * @param {{viewMode?: "admin"|"ambient", nowMs?: number}} [opts]
  */
 function computeEffectivePolicyBanner(rawState, opts = {}) {
-    const state = rawState && typeof rawState === "object" ? rawState : {};
     const viewMode = opts.viewMode === "ambient" ? "ambient" : "admin";
+
+    // No usable snapshot yet (first paint, or an unparseable payload). Do NOT
+    // claim "RESTRICTIONS: ON": the ecosystem may be frozen or running a scoped
+    // override that this surface simply has not heard about. Say so, keep
+    // Freeze available, and offer nothing that depends on knowing the state.
+    if (!rawState || typeof rawState !== "object" || Array.isArray(rawState)) {
+        return {
+            effectiveState: "unknown",
+            severity: "warning",
+            icon: "lock-shield",
+            badgeText: "STATUS: UNKNOWN",
+            headline: "Waiting for policy state",
+            detailText:
+                "No policy state received yet — treat restrictions as enforced. Freeze remains available.",
+            modeLabel: null,
+            authorityKey: "standalone_local",
+            authorityLabel: AUTHORITY_LABELS.standalone_local,
+            countdownText: null,
+            remainingMs: null,
+            scopeText: null,
+            deviceSync: summarizeDeviceSync([], [], []),
+            overrideSuspended: false,
+            overrideExpired: false,
+            freezeUnconfirmed: false,
+            viewMode,
+            actions: {
+                canFreeze: true,
+                canResume: false,
+                canManageRestrictions: false,
+                canRestoreRestrictions: false,
+            },
+        };
+    }
+
+    const state = rawState;
     const nowMs = opts.nowMs == null ? Date.now() : Number(opts.nowMs);
     const isAdmin = viewMode === "admin";
 
@@ -192,13 +226,20 @@ function computeEffectivePolicyBanner(rawState, opts = {}) {
         const suspendedNote = overrideActive
             ? " · Scoped override suspended while frozen"
             : "";
+        // A surface that froze itself but could not confirm delivery to the
+        // mesh reports freeze_confirmed: false. Only an explicit false counts;
+        // hub-originated state never carries the field. Do not claim the
+        // ecosystem is halted, and keep Freeze available as a retry.
+        const freezeUnconfirmed = state.freeze_confirmed === false;
 
         return {
             effectiveState: "frozen",
             severity: "critical",
             icon: "shield-octagon",
-            badgeText: "FROZEN",
-            headline: "Emergency Freeze Active — Mutating automations & commands halted",
+            badgeText: freezeUnconfirmed ? "FROZEN (LOCAL ONLY)" : "FROZEN",
+            headline: freezeUnconfirmed
+                ? "Freeze held on this display — mesh delivery not confirmed"
+                : "Emergency Freeze Active — Mutating automations & commands halted",
             detailText: `Initiated ${initiator}${reason}${suspendedNote}`,
             modeLabel: MODE_LABELS.freeze,
             authorityKey,
@@ -209,9 +250,10 @@ function computeEffectivePolicyBanner(rawState, opts = {}) {
             deviceSync: sync,
             overrideSuspended: overrideActive,
             overrideExpired,
+            freezeUnconfirmed,
             viewMode,
             actions: {
-                canFreeze: false,
+                canFreeze: freezeUnconfirmed,
                 canResume: isAdmin,
                 canManageRestrictions: false,
                 canRestoreRestrictions: isAdmin && overrideActive,
@@ -244,6 +286,7 @@ function computeEffectivePolicyBanner(rawState, opts = {}) {
             deviceSync: sync,
             overrideSuspended: false,
             overrideExpired: false,
+            freezeUnconfirmed: false,
             viewMode,
             actions: {
                 canFreeze: true,
@@ -277,6 +320,7 @@ function computeEffectivePolicyBanner(rawState, opts = {}) {
         deviceSync: summarizeDeviceSync([], [], []),
         overrideSuspended: false,
         overrideExpired,
+        freezeUnconfirmed: false,
         viewMode,
         actions: {
             canFreeze: true,
@@ -414,6 +458,17 @@ function computeFreezeButtonState(opts = {}) {
         };
     }
 
+    if (opts.retry) {
+        return {
+            mode: "retry",
+            icon: "octagon-pause",
+            label: "Retry Freeze",
+            ariaLabel: "Retry Emergency Freeze: this display is frozen but the ecosystem did not confirm. Activate to send the freeze again.",
+            disabled: false,
+            severity: "danger",
+        };
+    }
+
     return {
         mode: "ready",
         icon: "octagon-pause",
@@ -511,6 +566,7 @@ module.exports = {
     computeFreezeButtonState,
     computeMicPillState,
 };
+
 
 },
 "./styles": function (module, exports, require) {
@@ -739,6 +795,20 @@ button.hig-btn[data-variant="critical"] {
   color: #ffffff;
 }
 
+/* Filled variants keep their fill on hover. The generic hover rule above would
+   swap in --_bg-hover while the label keeps its on-fill colour, which drops
+   contrast to ~1.4:1 (dark label on dark purple in cyberpunk; white label on
+   light grey in the light theme). */
+button.hig-btn[data-variant="primary"]:hover:not(:disabled) {
+  background: var(--_accent);
+  filter: brightness(1.08);
+}
+
+button.hig-btn[data-variant="critical"]:hover:not(:disabled) {
+  background: var(--_error);
+  filter: brightness(1.08);
+}
+
 /* Modal Backdrop & HIG Sheet */
 .modal-backdrop {
   position: fixed;
@@ -928,6 +998,7 @@ module.exports = {
     renderIcon,
 };
 
+
 },
 "./components": function (module, exports, require) {
 "use strict";
@@ -961,7 +1032,7 @@ function escapeHtml(value) {
 function createComponentClasses(BaseElement) {
     class EcosystemFreezeButton extends BaseElement {
         static get observedAttributes() {
-            return ["frozen", "view-mode", "confirm-tap"];
+            return ["frozen", "view-mode", "confirm-tap", "retry"];
         }
 
         constructor() {
@@ -969,14 +1040,27 @@ function createComponentClasses(BaseElement) {
             this._armed = false;
             this._armTimer = null;
             this.attachShadow({ mode: "open" });
+            this._onTriggerKeyDown = this._onTriggerKeyDown.bind(this);
         }
 
         connectedCallback() {
+            // The shadow root outlives each render(), so one listener covers
+            // every re-rendered trigger.
+            this.shadowRoot.addEventListener("keydown", this._onTriggerKeyDown);
             this.render();
         }
 
         disconnectedCallback() {
+            this.shadowRoot.removeEventListener("keydown", this._onTriggerKeyDown);
             this._clearArmTimer();
+        }
+
+        // A held Enter/Space auto-repeats: the first keydown arms and a repeat
+        // would confirm. Swallow repeats so Freeze needs two distinct presses.
+        _onTriggerKeyDown(ev) {
+            if (ev.repeat === true && (ev.key === "Enter" || ev.key === " ")) {
+                ev.preventDefault();
+            }
         }
 
         attributeChangedCallback() {
@@ -1017,10 +1101,18 @@ function createComponentClasses(BaseElement) {
                 this._clearArmTimer();
                 this._armTimer = setTimeout(() => {
                     this._armed = false;
+                    // The expiry re-render removes the trigger. Keep a keyboard
+                    // user on it only if it still had focus; never pull focus
+                    // back from wherever the operator has moved to since.
+                    const root = this.shadowRoot;
+                    const active = root.activeElement;
+                    const hadFocus =
+                        Boolean(active) &&
+                        active === root.querySelector('[data-action="freeze-trigger"]');
                     this.render();
-                    // The expiry re-render also removes the focused trigger; keep a
-                    // keyboard user on it so they can re-arm without hunting for focus.
-                    this.shadowRoot.querySelector('[data-action="freeze-trigger"]')?.focus();
+                    if (hadFocus) {
+                        root.querySelector('[data-action="freeze-trigger"]')?.focus();
+                    }
                 }, 3000);
                 this.render();
                 // render() replaces the focused trigger; restore focus so a
@@ -1053,6 +1145,7 @@ function createComponentClasses(BaseElement) {
                 viewMode,
                 confirmTap,
                 armed: this._armed,
+                retry: this.hasAttribute("retry") && this.getAttribute("retry") !== "false",
             });
 
             this.shadowRoot.innerHTML = `
@@ -1085,6 +1178,7 @@ function createComponentClasses(BaseElement) {
             super();
             this._policyState = null;
             this._tickTimer = null;
+            this._expiryTimer = null;
             this._notifiedExpiryForGrant = null;
             this.attachShadow({ mode: "open" });
         }
@@ -1130,19 +1224,39 @@ function createComponentClasses(BaseElement) {
                 clearInterval(this._tickTimer);
                 this._tickTimer = null;
             }
+            if (this._expiryTimer) {
+                clearTimeout(this._expiryTimer);
+                this._expiryTimer = null;
+            }
         }
 
         _syncCountdownTimer() {
             this._stopCountdownTimer();
             const st = this.policyState;
             if (
-                st &&
-                !st.frozen &&
-                st.restrictions === "off_scoped" &&
-                st.active_override &&
-                st.active_override.expires_at
+                !st ||
+                st.restrictions !== "off_scoped" ||
+                !st.active_override ||
+                !st.active_override.expires_at
             ) {
+                return;
+            }
+            if (!st.frozen) {
                 this._tickTimer = setInterval(() => this.render(), 1000);
+                return;
+            }
+            // Frozen: no countdown is shown, so no per-second re-render. But the
+            // override can still expire underneath the freeze; wake once at that
+            // moment so the "suspended" note and Restore action do not outlive it.
+            const expMs = Date.parse(st.active_override.expires_at);
+            const remaining = expMs - Date.now();
+            if (Number.isFinite(expMs) && remaining > 0) {
+                this._expiryTimer = setTimeout(() => {
+                    this._expiryTimer = null;
+                    // Re-arms when the delay was capped below the real expiry.
+                    this._syncCountdownTimer();
+                    this.render();
+                }, Math.min(remaining + 50, 2147483647));
             }
         }
 
@@ -1151,18 +1265,16 @@ function createComponentClasses(BaseElement) {
             const raw = this.policyState;
             const vm = computeEffectivePolicyBanner(raw, { viewMode });
 
+            // Decide now, announce at the very end: a listener may synchronously
+            // assign a new policyState, and that nested render must not be
+            // overwritten by the rest of this one.
+            let expiredGrantId = null;
             if (vm.overrideExpired && raw && raw.active_override) {
                 const grantId = raw.active_override.grant_id || "expired";
                 if (this._notifiedExpiryForGrant !== grantId) {
                     this._notifiedExpiryForGrant = grantId;
                     this._stopCountdownTimer();
-                    this.dispatchEvent(
-                        new CustomEvent("ecosystem-override-expired", {
-                            bubbles: true,
-                            composed: true,
-                            detail: { grantId },
-                        })
-                    );
+                    expiredGrantId = grantId;
                 }
             }
 
@@ -1192,8 +1304,12 @@ function createComponentClasses(BaseElement) {
                     ? 'confirm-tap="true"'
                     : "";
 
+            // An unconfirmed local freeze keeps a live Freeze control, labelled
+            // as a retry, instead of the disabled "Ecosystem Frozen" state.
+            const retryAttr = vm.freezeUnconfirmed ? 'retry="true"' : "";
+
             const freezeBtn = vm.actions.canFreeze
-                ? `<ecosystem-freeze-button view-mode="${escapeHtml(viewMode)}" ${confirmTapAttr}></ecosystem-freeze-button>`
+                ? `<ecosystem-freeze-button view-mode="${escapeHtml(viewMode)}" ${confirmTapAttr} ${retryAttr}></ecosystem-freeze-button>`
                 : viewMode === "ambient" && vm.effectiveState === "frozen"
                     ? `<ecosystem-freeze-button frozen="true" view-mode="ambient"></ecosystem-freeze-button>`
                     : "";
@@ -1238,6 +1354,16 @@ function createComponentClasses(BaseElement) {
             onBtn('[data-action="restore"]', "ecosystem-restore-restrictions");
             onBtn('[data-action="manage"]', "ecosystem-manage-restrictions");
             onBtn('[data-action="resume"]', "ecosystem-resume-request");
+
+            if (expiredGrantId !== null) {
+                this.dispatchEvent(
+                    new CustomEvent("ecosystem-override-expired", {
+                        bubbles: true,
+                        composed: true,
+                        detail: { grantId: expiredGrantId },
+                    })
+                );
+            }
         }
     }
 
@@ -1269,7 +1395,9 @@ function createComponentClasses(BaseElement) {
             // keydown composes out of the shadow DOM, so this window-level
             // listener sees Escape and Tab while focus is inside the sheet.
             this._onKeyDown = (ev) => {
-                if (!this.hasAttribute("open")) {
+                // Must agree with render(): open="false" is a closed modal, and a
+                // closed modal must never swallow Tab for the whole page.
+                if (!this._isOpen()) {
                     return;
                 }
                 if (ev.key === "Escape") {
@@ -1280,6 +1408,33 @@ function createComponentClasses(BaseElement) {
                     this._trapTab(ev);
                 }
             };
+        }
+
+        // Single definition of "open", shared by render() and the key handler.
+        _isOpen() {
+            return this.hasAttribute("open") && this.getAttribute("open") !== "false";
+        }
+
+        // Forget the step-up credential and method, and start the next render
+        // from a fresh form.
+        _resetStepUp() {
+            this._passkeyAssertion = "";
+            this._stepUpMethod = "totp";
+            this._skipDraftRestore = true;
+        }
+
+        // Return focus to whatever opened the modal so a keyboard user is not
+        // stranded. Best-effort: the opener may be gone or not focusable.
+        _returnFocus() {
+            const target = this._restoreFocusTo;
+            this._restoreFocusTo = null;
+            if (target && target.isConnected && typeof target.focus === "function") {
+                try {
+                    target.focus();
+                } catch (_e) {
+                    /* element no longer focusable; ignore */
+                }
+            }
         }
 
         // Focusable controls inside the sheet, in DOM/tab order. Conditionally
@@ -1372,16 +1527,7 @@ function createComponentClasses(BaseElement) {
             this._skipDraftRestore = true;
             this._focusOnOpen = false;
             this.removeAttribute("open");
-            // Return focus to the trigger so a keyboard user is not stranded.
-            const target = this._restoreFocusTo;
-            this._restoreFocusTo = null;
-            if (target && target.isConnected && typeof target.focus === "function") {
-                try {
-                    target.focus();
-                } catch (_e) {
-                    /* element no longer focusable; ignore */
-                }
-            }
+            this._returnFocus();
             this.dispatchEvent(
                 new CustomEvent("ecosystem-override-cancel", { bubbles: true, composed: true })
             );
@@ -1448,6 +1594,9 @@ function createComponentClasses(BaseElement) {
             }
 
             this._errors = [];
+            // The credential has been handed to the payload; drop it so a reopened
+            // modal cannot show "Passkey Ready" or re-emit a one-shot assertion.
+            this._resetStepUp();
             this.removeAttribute("open");
             this.dispatchEvent(
                 new CustomEvent("ecosystem-override-submit", {
@@ -1456,6 +1605,7 @@ function createComponentClasses(BaseElement) {
                     detail: result.payload,
                 })
             );
+            this._returnFocus();
         }
 
         _captureDraft() {
@@ -1503,7 +1653,7 @@ function createComponentClasses(BaseElement) {
             // submit, so a fresh form is shown and no TOTP/consent is carried over.
             const _draft = this._skipDraftRestore ? null : this._captureDraft();
             this._skipDraftRestore = false;
-            const isOpen = this.hasAttribute("open") && this.getAttribute("open") !== "false";
+            const isOpen = this._isOpen();
             const bypassedItems = BYPASSED_GATES_DEFAULT.map(
                 (item) => `<li>${escapeHtml(item)}</li>`
             ).join("");
@@ -1841,6 +1991,7 @@ module.exports = {
     registerEcosystemControls,
 };
 
+
 },
 "./index": function (module, exports, require) {
 "use strict";
@@ -1855,6 +2006,7 @@ if (typeof window !== "undefined" && typeof customElements !== "undefined") {
 }
 
 module.exports = Object.assign({}, model, styles, components);
+
 
 }
   };

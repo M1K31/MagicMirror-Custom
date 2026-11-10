@@ -26,7 +26,10 @@
   src: url('./fonts/outfit-var.woff2') format('woff2');
 }
 
-:root {
+/* The base (dark) palette is also declared on [data-theme="dark"] so an explicit
+ * dark island resolves to dark even when an ancestor is light or cyberpunk
+ * (custom properties are otherwise inherited from the nearest themed ancestor). */
+:root, [data-theme="dark"] {
   /* Relative Spacing (8pt Grid System) - Supports Accessibility Text Zoom */
   --spacing-xs: 0.25rem;  /* 4px */
   --spacing-sm: 0.5rem;   /* 8px */
@@ -77,6 +80,7 @@
   --color-success: hsl(120, 60%, 48%);     /* Soft System Green */
   --color-error: hsl(0, 85%, 60%);         /* Soft System Red */
   --color-warning: hsl(35, 100%, 55%);     /* Soft System Orange */
+  --text-on-accent: hsl(0, 0%, 100%);      /* text over the (blue) accent */
 
   /* Elevation Systems */
   --shadow-sm: 0 1px 2px hsla(0, 0%, 0%, 0.15);
@@ -219,10 +223,13 @@ a.button {
     --border-panel: hsla(var(--color-hue-primary), 20%, 12%, 0.08);
     --border-input: hsla(var(--color-hue-primary), 20%, 12%, 0.12);
 
+    /* Keep these four identical to the [data-theme="light"] block above:
+       the darker status colours are what give badge text >=4.5:1 on light. */
     --color-accent: hsl(210, 100%, 50%);
-    --color-success: hsl(120, 60%, 42%);
-    --color-error: hsl(0, 80%, 52%);
-    --color-warning: hsl(35, 100%, 48%);
+    --color-success: hsl(120, 65%, 28%);
+    --color-error: hsl(0, 80%, 45%);
+    --color-warning: hsl(35, 100%, 30%);
+    --text-on-accent: hsl(0, 0%, 100%);
 
     --shadow-md: 0 4px 12px hsla(var(--color-hue-primary), 20%, 12%, 0.04);
     --shadow-lg: 0 16px 32px hsla(var(--color-hue-primary), 20%, 12%, 0.08);
