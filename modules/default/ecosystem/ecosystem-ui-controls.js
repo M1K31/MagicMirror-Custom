@@ -223,14 +223,20 @@ function computeEffectivePolicyBanner(rawState, opts = {}) {
         );
         const initiator = fi.initiated_by ? `by ${fi.initiated_by}` : "by operator";
         const reason = fi.reason ? ` — ${fi.reason}` : "";
-        const suspendedNote = overrideActive
-            ? " · Scoped override suspended while frozen"
-            : "";
         // A surface that froze itself but could not confirm delivery to the
         // mesh reports freeze_confirmed: false. Only an explicit false counts;
         // hub-originated state never carries the field. Do not claim the
         // ecosystem is halted, and keep Freeze available as a retry.
         const freezeUnconfirmed = state.freeze_confirmed === false;
+        // "Suspended" is only true if the mesh actually froze. With an
+        // unconfirmed local freeze the override may still be in force
+        // everywhere else, so say that instead.
+        const overrideSuspended = overrideActive && !freezeUnconfirmed;
+        const suspendedNote = !overrideActive
+            ? ""
+            : freezeUnconfirmed
+                ? " · Scoped override may still be active on other devices"
+                : " · Scoped override suspended while frozen";
 
         return {
             effectiveState: "frozen",
@@ -248,7 +254,7 @@ function computeEffectivePolicyBanner(rawState, opts = {}) {
             remainingMs: null,
             scopeText: ov ? summarizeScope(ov.scope) : null,
             deviceSync: sync,
-            overrideSuspended: overrideActive,
+            overrideSuspended,
             overrideExpired,
             freezeUnconfirmed,
             viewMode,
@@ -798,15 +804,16 @@ button.hig-btn[data-variant="critical"] {
 /* Filled variants keep their fill on hover. The generic hover rule above would
    swap in --_bg-hover while the label keeps its on-fill colour, which drops
    contrast to ~1.4:1 (dark label on dark purple in cyberpunk; white label on
-   light grey in the light theme). */
+   light grey in the light theme). Hover darkens the fill: lightening it
+   would lower the contrast of a white label. */
 button.hig-btn[data-variant="primary"]:hover:not(:disabled) {
   background: var(--_accent);
-  filter: brightness(1.08);
+  filter: brightness(0.92);
 }
 
 button.hig-btn[data-variant="critical"]:hover:not(:disabled) {
   background: var(--_error);
-  filter: brightness(1.08);
+  filter: brightness(0.92);
 }
 
 /* Modal Backdrop & HIG Sheet */
@@ -1180,6 +1187,9 @@ function createComponentClasses(BaseElement) {
             this._tickTimer = null;
             this._expiryTimer = null;
             this._notifiedExpiryForGrant = null;
+            // Markup of the last full render with the countdown blanked; an
+            // unchanged key means there is nothing to rebuild.
+            this._renderKey = null;
             this.attachShadow({ mode: "open" });
         }
 
@@ -1314,7 +1324,19 @@ function createComponentClasses(BaseElement) {
                     ? `<ecosystem-freeze-button frozen="true" view-mode="ambient"></ecosystem-freeze-button>`
                     : "";
 
-            this.shadowRoot.innerHTML = `
+            // The live countdown is the only thing that changes every second.
+            // It gets its own node so a tick can update that text alone.
+            const countdown =
+                vm.effectiveState === "restrictions_off_scoped" &&
+                vm.countdownText &&
+                vm.headline.startsWith(vm.countdownText)
+                    ? vm.countdownText
+                    : null;
+            const markup = (countdownText) => {
+                const headline = countdown
+                    ? `<span data-role="countdown" aria-live="off">${escapeHtml(countdownText)}</span>${escapeHtml(vm.headline.slice(countdown.length))}`
+                    : escapeHtml(vm.headline);
+                return `
                 <style>${SHARED_STYLES}</style>
                 <div class="policy-bar" role="region" aria-label="Ecosystem Policy & Safety Status" data-state="${escapeHtml(vm.effectiveState)}">
                     <div class="status-cluster" role="status" aria-live="polite">
@@ -1323,7 +1345,7 @@ function createComponentClasses(BaseElement) {
                             <span>${escapeHtml(vm.badgeText)}</span>
                         </span>
                         <div class="copy-stack">
-                            <span class="headline">${escapeHtml(vm.headline)}</span>
+                            <span class="headline">${headline}</span>
                             <span class="detail">${escapeHtml(vm.detailText)}</span>
                         </div>
                         ${syncHtml}
@@ -1336,24 +1358,26 @@ function createComponentClasses(BaseElement) {
                     </div>
                 </div>
             `;
-
-            const onBtn = (selector, eventName) => {
-                const el = this.shadowRoot.querySelector(selector);
-                if (el) {
-                    el.addEventListener("click", () => {
-                        this.dispatchEvent(
-                            new CustomEvent(eventName, {
-                                bubbles: true,
-                                composed: true,
-                                detail: { effectiveState: vm.effectiveState, requestedAt: Date.now() },
-                            })
-                        );
-                    });
-                }
             };
-            onBtn('[data-action="restore"]', "ecosystem-restore-restrictions");
-            onBtn('[data-action="manage"]', "ecosystem-manage-restrictions");
-            onBtn('[data-action="resume"]', "ecosystem-resume-request");
+
+            // Rebuild only when something other than the countdown changed.
+            // Replacing innerHTML recreates <ecosystem-freeze-button>, which
+            // discards its armed state and keyboard focus: with a rebuild every
+            // second (or on every identical hub poll) a confirm-tap Freeze could
+            // never be confirmed, and focus fell off every bar button.
+            const renderKey = markup("");
+            if (renderKey === this._renderKey) {
+                if (countdown) {
+                    const node = this.shadowRoot.querySelector('[data-role="countdown"]');
+                    if (node) {
+                        node.textContent = countdown;
+                    }
+                }
+            } else {
+                this._renderKey = renderKey;
+                this.shadowRoot.innerHTML = markup(countdown || "");
+                this._bindActionButtons(vm.effectiveState);
+            }
 
             if (expiredGrantId !== null) {
                 this.dispatchEvent(
@@ -1364,6 +1388,26 @@ function createComponentClasses(BaseElement) {
                     })
                 );
             }
+        }
+
+        _bindActionButtons(effectiveState) {
+            const onBtn = (selector, eventName) => {
+                const el = this.shadowRoot.querySelector(selector);
+                if (el) {
+                    el.addEventListener("click", () => {
+                        this.dispatchEvent(
+                            new CustomEvent(eventName, {
+                                bubbles: true,
+                                composed: true,
+                                detail: { effectiveState, requestedAt: Date.now() },
+                            })
+                        );
+                    });
+                }
+            };
+            onBtn('[data-action="restore"]', "ecosystem-restore-restrictions");
+            onBtn('[data-action="manage"]', "ecosystem-manage-restrictions");
+            onBtn('[data-action="resume"]', "ecosystem-resume-request");
         }
     }
 
