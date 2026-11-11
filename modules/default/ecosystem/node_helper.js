@@ -107,8 +107,10 @@ module.exports = NodeHelper.create({
 		// Load saved ecosystem state
 		this.loadEcosystemState();
 		// Restore a standalone freeze that was active before a restart (hub down),
-		// so a safety Freeze is not silently dropped by a process restart.
-		this._restoreFreezeState();
+		// so a safety Freeze is not silently dropped by a process restart. Policy
+		// polls and freeze requests wait on this promise, so neither can run
+		// against a half-loaded state.
+		this._freezeRestorePromise = this._restoreFreezeState();
 	},
 
 	_persistFreezeState: async function () {
@@ -135,12 +137,15 @@ module.exports = NodeHelper.create({
 	_restoreFreezeState: async function () {
 		try {
 			const saved = JSON.parse(await fs.readFile(this.freezeStatePath, "utf8"));
-			if (saved && saved.frozen) {
+			// Apply the saved record only to a helper that has no freeze of its
+			// own yet. A freeze requested in this process is newer than anything
+			// on disk and must keep its own reason, timestamp and sequence.
+			if (saved && saved.frozen && (this._freezeSeq || 0) === 0 && !this._localFrozen) {
 				this._localFrozen = true;
 				this._localFreezeInfo = saved.info || null;
-				if (typeof saved.seq === "number") {
-					this._freezeSeq = saved.seq;
-				}
+				// Never 0: a restored freeze must count as "a freeze exists" for
+				// the stale-poll guard, even if the file carried no sequence.
+				this._freezeSeq = Math.max(typeof saved.seq === "number" ? saved.seq : 0, 1);
 				Log.warn(`[${this.name}] Restored standalone Freeze from persisted state`);
 			}
 		} catch {
@@ -846,6 +851,7 @@ module.exports = NodeHelper.create({
 	},
 
 	fetchPolicyState: async function () {
+		await (this._freezeRestorePromise || Promise.resolve());
 		if (this._hubClient && typeof this._hubClient.getPolicyState === "function") {
 			// Capture the freeze sequence before the (awaited) poll so a stale
 			// response cannot clear a freeze that was requested while it was in flight.
@@ -885,6 +891,7 @@ module.exports = NodeHelper.create({
 	},
 
 	requestFreeze: async function (payload) {
+		await (this._freezeRestorePromise || Promise.resolve());
 		const reason = payload?.reason || "Emergency wall display freeze";
 		const channel = payload?.channel || "magicmirror_display";
 		this._freezeSeq = (this._freezeSeq || 0) + 1;

@@ -47,6 +47,56 @@ describe("ecosystem freeze durability", () => {
 		await helper.stop();
 		expect(fs.existsSync(statePath)).toBe(true);
 	});
-});
 
-module.exports = { makeHelper };
+	it("a freeze requested during startup is not overwritten by the older record on disk", async () => {
+		const { helper, statePath } = makeHelper();
+		fs.writeFileSync(statePath, JSON.stringify({ frozen: true, info: { reason: "old", since: "2026-01-01T00:00:00.000Z" }, seq: 7 }));
+		helper._freezeRestoreDone = false;
+		helper._freezeSeq = 1;
+		helper._localFrozen = true;
+		helper._localFreezeInfo = { reason: "new" };
+		await helper._restoreFreezeState();
+		expect(helper._localFreezeInfo.reason).toBe("new");
+		expect(helper._freezeSeq).toBe(1);
+		expect(helper._freezeRestoreDone).toBe(true);
+	});
+
+	it("a poll waits for restore instead of reporting unfrozen", async () => {
+		const { helper, sent, statePath } = makeHelper();
+		fs.writeFileSync(statePath, JSON.stringify({ frozen: true, info: { reason: "saved" }, seq: 2 }));
+		helper._freezeRestoreDone = false;
+		helper._freezeRestorePromise = helper._restoreFreezeState();
+		await helper.fetchPolicyState();
+		expect(sent[0].payload.frozen).toBe(true);
+		expect(sent[0].payload.freeze_info.reason).toBe("saved");
+	});
+
+	it("a freeze requested while restore is still reading keeps its own reason and outranks the saved record", async () => {
+		const { helper, statePath } = makeHelper();
+		fs.writeFileSync(statePath, JSON.stringify({ frozen: true, info: { reason: "saved" }, seq: 5 }));
+		helper._freezeRestoreDone = false;
+		helper._freezeRestorePromise = helper._restoreFreezeState();
+		await helper.requestFreeze({ reason: "fresh" });
+		expect(helper._localFreezeInfo.reason).toBe("fresh");
+		const onDisk = JSON.parse(fs.readFileSync(statePath, "utf8"));
+		expect(onDisk.info.reason).toBe("fresh");
+		expect(onDisk.seq).toBeGreaterThan(5);
+	});
+
+	it("a restored freeze has a non-zero sequence even if the file carried none", async () => {
+		const { helper, statePath } = makeHelper();
+		fs.writeFileSync(statePath, JSON.stringify({ frozen: true, info: { reason: "saved" } }));
+		await helper._restoreFreezeState();
+		expect(helper._localFrozen).toBe(true);
+		expect(helper._freezeSeq).toBe(1);
+	});
+
+	it("a corrupt state file is ignored and later overwritten", async () => {
+		const { helper, statePath } = makeHelper();
+		fs.writeFileSync(statePath, "{not json");
+		await helper._restoreFreezeState();
+		expect(helper._localFrozen).toBeFalsy();
+		await helper.requestFreeze({ reason: "r" });
+		expect(JSON.parse(fs.readFileSync(statePath, "utf8")).frozen).toBe(true);
+	});
+});
