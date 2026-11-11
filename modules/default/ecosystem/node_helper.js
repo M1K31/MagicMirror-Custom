@@ -980,8 +980,7 @@ module.exports = NodeHelper.create({
 			// Persist BEFORE telling the display it is frozen: a restart (or power
 			// loss) right after the operator sees "frozen" must come back frozen.
 			await this._persistFreezeState();
-		}
-		else if (this._freezeHubAcked) {
+		} else if (this._freezeHubAcked) {
 			// Already frozen and acknowledged, and the operator asks again. This
 			// request has not reached the hub yet: drop the old acknowledgement
 			// (durably) so a hub that was resumed in the meantime cannot clear the
