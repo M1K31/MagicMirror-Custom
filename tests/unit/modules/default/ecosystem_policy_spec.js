@@ -3,29 +3,13 @@
 // node's own runner, outside Jest, which failed the suite as empty.
 const assert = require("node:assert");
 const path = require("path");
-const Module = require("module");
 
-// Stub framework globals for standalone test execution
-const originalRequire = Module.prototype.require;
-Module.prototype.require = function (id) {
-	if (id === "node_helper") {
-		return {
-			create: function (def) {
-				return Object.assign({}, def);
-			}
-		};
-	}
-	if (id === "logger") {
-		return {
-			log: () => {},
-			info: () => {},
-			warn: () => {},
-			error: () => {},
-			debug: () => {},
-		};
-	}
-	return originalRequire.apply(this, arguments);
-};
+// Stand in for the MagicMirror framework modules through Jest's module
+// registry. (Patching Module.prototype.require does nothing here: Jest resolves
+// modules itself, so the helper failed to load with "Cannot find module
+// 'node_helper'" and this suite never ran.)
+jest.mock("node_helper", () => ({ create: (def) => Object.assign({}, def) }), { virtual: true });
+jest.mock("logger", () => ({ log: jest.fn(), info: jest.fn(), warn: jest.fn(), error: jest.fn(), debug: jest.fn() }));
 
 const helperPath = path.resolve(__dirname, "../../../../modules/default/ecosystem/node_helper.js");
 const helper = require(helperPath);
@@ -72,6 +56,10 @@ describe("MagicMirror Ecosystem Policy Integration", () => {
 		const testHelper = Object.create(helper);
 		testHelper.name = "ecosystem";
 		testHelper._localFrozen = false;
+		// The freeze is persisted before it is reported; keep that file out of the repo.
+		const stateDir = require("fs").mkdtempSync(path.join(require("os").tmpdir(), "mm-policy-"));
+		testHelper.freezeStatePath = path.join(stateDir, "ecosystem-freeze.json");
+		testHelper._freezeRestoreDone = true;
 		testHelper.sendSocketNotification = (notif, payload) => sent.push({ notif, payload });
 
 		await testHelper.socketNotificationReceived("ECOSYSTEM_REQUEST_FREEZE", {

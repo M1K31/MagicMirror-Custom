@@ -160,6 +160,9 @@ module.exports = NodeHelper.create({
 				// Best-effort withdrawal
 			}
 		}
+		// Let a freeze that was just requested reach disk before the process
+		// exits; otherwise a restart comes back unfrozen.
+		await (this._freezeWriteChain || Promise.resolve());
 	},
 
 	/**
@@ -232,13 +235,13 @@ module.exports = NodeHelper.create({
 				this.sendStatus();
 				break;
 
+			// Both return their promise so a caller can wait for the state to be
+			// persisted and reported; each handles its own errors.
 			case "ECOSYSTEM_GET_POLICY_STATE":
-				this.fetchPolicyState();
-				break;
+				return this.fetchPolicyState();
 
 			case "ECOSYSTEM_REQUEST_FREEZE":
-				this.requestFreeze(payload);
-				break;
+				return this.requestFreeze(payload);
 
 			// Strict privilege guard: unauthenticated wall display CANNOT resume, approve, deny, or disable restrictions
 			case "ECOSYSTEM_POLICY_RESUME":
@@ -892,9 +895,9 @@ module.exports = NodeHelper.create({
 			reason: reason,
 			since: new Date().toISOString()
 		};
-		// Persist immediately so a restart while the hub is unavailable does not
-		// drop the standalone freeze.
-		this._persistFreezeState();
+		// Persist BEFORE telling the display it is frozen: a restart (or power
+		// loss) right after the operator sees "frozen" must come back frozen.
+		await this._persistFreezeState();
 
 		if (this._hubClient && typeof this._hubClient.requestFreeze === "function") {
 			try {
@@ -908,7 +911,7 @@ module.exports = NodeHelper.create({
 			}
 		}
 
-		this.fetchPolicyState();
+		await this.fetchPolicyState();
 	},
 
 	/**
