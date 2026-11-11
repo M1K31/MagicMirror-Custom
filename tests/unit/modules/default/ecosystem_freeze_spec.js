@@ -315,4 +315,52 @@ describe("ecosystem freeze durability", () => {
 		expect(fs.existsSync(statePath)).toBe(true);
 		expect(sent.at(-1).payload.frozen).toBe(true);
 	});
+
+	it("a poll that started before the freeze was acknowledged cannot clear it", async () => {
+		// Two display clients poll on their own timers, so polls overlap. Poll A's
+		// "not frozen" triggers a delivery that the hub acknowledges; poll B's
+		// answer was taken before that and says nothing about the hub now.
+		const releases = [];
+		let hubUp = false;
+		const hub = hubStub({
+			getPolicyState: jest.fn(() => new Promise((r) => releases.push(() => r({ frozen: false, mode: "normal" })))),
+			requestFreeze: jest.fn(async () => {
+				if (!hubUp) throw new Error("hub down");
+				return { frozen: true, mode: "freeze", authority: "hub_synced" };
+			})
+		});
+		const { helper, sent, statePath } = makeHelper({ hub });
+		await helper.requestFreeze({ reason: "smoke" }); // un-acked
+		hubUp = true;
+		const pollA = helper.fetchPolicyState();
+		const pollB = helper.fetchPolicyState();
+		await new Promise((r) => setImmediate(r));
+		expect(releases).toHaveLength(2);
+		releases[0]();
+		await pollA;
+		expect(helper._freezeHubAcked).toBe(true);
+		releases[1]();
+		await pollB;
+		await helper._freezeWriteChain;
+		expect(helper._localFrozen).toBe(true);
+		expect(fs.existsSync(statePath)).toBe(true);
+		expect(sent.every((m) => m.payload.frozen === true)).toBe(true);
+	});
+
+	it("a freeze that could not be written to disk says so instead of looking durable", async () => {
+		const Log = require("logger");
+		const { helper, sent } = makeHelper();
+		helper.freezeStatePath = path.join(os.tmpdir(), "mm-freeze-missing-dir", "nope", "ecosystem-freeze.json");
+		await helper.requestFreeze({ reason: "r" });
+		const last = sent.at(-1).payload;
+		expect(last.frozen).toBe(true); // still frozen for this run
+		expect(last.freeze_durable).toBe(false);
+		expect(Log.error).toHaveBeenCalledWith(expect.stringContaining("Could not persist freeze state"));
+	});
+
+	it("a freeze that was written carries no freeze_durable warning", async () => {
+		const { helper, sent } = makeHelper();
+		await helper.requestFreeze({ reason: "r" });
+		expect("freeze_durable" in sent.at(-1).payload).toBe(false);
+	});
 });

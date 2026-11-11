@@ -126,8 +126,13 @@ module.exports = NodeHelper.create({
 				} else {
 					await fs.unlink(this.freezeStatePath).catch(() => {});
 				}
+				this._freezeDurable = true;
 			} catch (err) {
-				Log.debug(`[${this.name}] Could not persist freeze state: ${err.message}`);
+				// Not a debug detail: this freeze will not survive a restart
+				// (e.g. a read-only config mount). Say so loudly and let the
+				// display know via freeze_durable: false.
+				this._freezeDurable = false;
+				Log.error(`[${this.name}] Could not persist freeze state: ${err.message}`);
 			}
 		};
 		this._freezeWriteChain = (this._freezeWriteChain || Promise.resolve()).then(run, run);
@@ -147,7 +152,7 @@ module.exports = NodeHelper.create({
 				// the stale-poll guard, even if the file carried no sequence.
 				this._freezeSeq = Math.max(typeof saved.seq === "number" ? saved.seq : 0, 1);
 				// A record written before this field existed was never confirmed.
-				this._freezeHubAcked = saved.hub_acked === true;
+				this._setHubAcked(saved.hub_acked === true);
 				Log.warn(`[${this.name}] Restored standalone Freeze from persisted state`);
 			}
 		} catch {
@@ -857,6 +862,20 @@ module.exports = NodeHelper.create({
 	 * answer must not be used).
 	 * @returns {object} standalone policy state
 	 */
+	/**
+	 * Change the hub-acknowledged flag. Every change bumps a generation counter
+	 * so a policy poll can tell that its snapshot of the hub predates the
+	 * current acknowledgement and must not be acted on.
+	 * @param {boolean} value whether the hub has acknowledged the current freeze
+	 */
+	_setHubAcked: function (value) {
+		const next = Boolean(value);
+		if (next !== Boolean(this._freezeHubAcked)) {
+			this._freezeAckGen = (this._freezeAckGen || 0) + 1;
+		}
+		this._freezeHubAcked = next;
+	},
+
 	_localFallbackState: function () {
 		const state = {
 			policy_version: 1,
@@ -874,6 +893,11 @@ module.exports = NodeHelper.create({
 			// as "FROZEN (LOCAL ONLY)" with a Retry Freeze control instead of
 			// claiming that automations everywhere are halted.
 			state.freeze_confirmed = Boolean(this._freezeHubAcked);
+			if (this._freezeDurable === false) {
+				// The last write of this freeze failed: it holds for this run
+				// only and will be lost on restart.
+				state.freeze_durable = false;
+			}
 		}
 		return state;
 	},
@@ -896,7 +920,7 @@ module.exports = NodeHelper.create({
 		try {
 			const state = await this._hubClient.requestFreeze(this._localFreezeInfo.reason, this._localFreezeInfo.channel);
 			if (state && state.frozen === true && this._localFrozen && (this._freezeSeq || 0) === seq) {
-				this._freezeHubAcked = true;
+				this._setHubAcked(true);
 				await this._persistFreezeState();
 				return state;
 			}
@@ -912,6 +936,7 @@ module.exports = NodeHelper.create({
 			// Capture the freeze sequence before the (awaited) poll so a stale
 			// response cannot clear a freeze that was requested while it was in flight.
 			const seqAtPoll = this._freezeSeq || 0;
+			const ackGenAtPoll = this._freezeAckGen || 0;
 			let state = null;
 			try {
 				state = await this._hubClient.getPolicyState();
@@ -923,20 +948,23 @@ module.exports = NodeHelper.create({
 					this.sendSocketNotification("ECOSYSTEM_POLICY_STATE", state);
 					return;
 				}
-				const stale = (this._freezeSeq || 0) !== seqAtPoll;
+				// Stale = the freeze, or its acknowledgement, changed while this
+				// poll was in flight (a newer freeze, or another poll / a retry tap
+				// that got it acknowledged). The hub's answer was taken before
+				// that, so it must neither acknowledge nor clear anything.
+				const stale = (this._freezeSeq || 0) !== seqAtPoll || (this._freezeAckGen || 0) !== ackGenAtPoll;
 				if (state.frozen && !stale) {
 					// The hub is frozen too: that is the acknowledgement — for
 					// the freeze this poll started with, not a newer one.
 					if (!this._freezeHubAcked) {
-						this._freezeHubAcked = true;
+						this._setHubAcked(true);
 						await this._persistFreezeState();
 					}
 					this.sendSocketNotification("ECOSYSTEM_POLICY_STATE", state);
 					return;
 				}
 				if (stale) {
-					// A newer freeze was requested while this poll was in flight:
-					// whatever the hub said is about the old one. Show our own.
+					// Whatever the hub said describes an earlier moment. Show our own.
 					this.sendSocketNotification("ECOSYSTEM_POLICY_STATE", this._localFallbackState());
 					return;
 				}
@@ -953,7 +981,7 @@ module.exports = NodeHelper.create({
 				// local freeze is cleared.
 				this._localFrozen = false;
 				this._localFreezeInfo = null;
-				this._freezeHubAcked = false;
+				this._setHubAcked(false);
 				await this._persistFreezeState();
 				this.sendSocketNotification("ECOSYSTEM_POLICY_STATE", state);
 				return;
@@ -970,7 +998,7 @@ module.exports = NodeHelper.create({
 			const channel = payload?.channel || "magicmirror_display";
 			this._freezeSeq = (this._freezeSeq || 0) + 1;
 			this._localFrozen = true;
-			this._freezeHubAcked = false;
+			this._setHubAcked(false);
 			this._localFreezeInfo = {
 				initiated_by: "magicmirror_display",
 				channel: channel,
@@ -985,7 +1013,7 @@ module.exports = NodeHelper.create({
 			// request has not reached the hub yet: drop the old acknowledgement
 			// (durably) so a hub that was resumed in the meantime cannot clear the
 			// freeze until it has acknowledged THIS request.
-			this._freezeHubAcked = false;
+			this._setHubAcked(false);
 			await this._persistFreezeState();
 		}
 		// Already frozen (a "Retry Freeze" tap, or a tap after a restart restored
