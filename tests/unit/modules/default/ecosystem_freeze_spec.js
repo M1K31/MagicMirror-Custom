@@ -99,4 +99,102 @@ describe("ecosystem freeze durability", () => {
 		await helper.requestFreeze({ reason: "r" });
 		expect(JSON.parse(fs.readFileSync(statePath, "utf8")).frozen).toBe(true);
 	});
+
+	const hubStub = (over = {}) => ({
+		getPolicyState: jest.fn(async () => ({ frozen: false, mode: "normal", authority: "hub_synced" })),
+		requestFreeze: jest.fn(async () => {
+			throw new Error("hub down");
+		}),
+		...over
+	});
+
+	it("an un-acked freeze survives an unfrozen poll and is re-delivered with its original details", async () => {
+		const hub = hubStub();
+		const { helper, sent, statePath } = makeHelper({ hub });
+		await helper.requestFreeze({ reason: "smoke", channel: "magicmirror_display" });
+		expect(hub.requestFreeze).toHaveBeenCalledTimes(1);
+		expect(sent.at(-1).payload.frozen).toBe(true);
+		const since = helper._localFreezeInfo.since;
+		sent.length = 0;
+		await helper.fetchPolicyState();
+		expect(helper._localFrozen).toBe(true);
+		expect(fs.existsSync(statePath)).toBe(true);
+		expect(hub.requestFreeze).toHaveBeenCalledTimes(2);
+		expect(hub.requestFreeze).toHaveBeenLastCalledWith("smoke", "magicmirror_display");
+		expect(helper._localFreezeInfo.since).toBe(since);
+		expect(sent[0].payload.frozen).toBe(true);
+	});
+
+	it("an acked freeze is cleared when the hub later reports unfrozen", async () => {
+		const hub = hubStub({ requestFreeze: jest.fn(async () => ({ frozen: true, mode: "freeze", authority: "hub_synced" })) });
+		const { helper, sent, statePath } = makeHelper({ hub });
+		await helper.requestFreeze({ reason: "r" });
+		expect(JSON.parse(fs.readFileSync(statePath, "utf8")).hub_acked).toBe(true);
+		sent.length = 0;
+		await helper.fetchPolicyState();
+		await helper._freezeWriteChain;
+		expect(helper._localFrozen).toBe(false);
+		expect(fs.existsSync(statePath)).toBe(false);
+		expect(sent[0].payload.frozen).toBe(false);
+	});
+
+	it("a restored un-acked freeze is re-delivered after restart", async () => {
+		const hub = hubStub({ requestFreeze: jest.fn(async () => ({ frozen: true, mode: "freeze" })) });
+		const { helper, statePath } = makeHelper({ hub });
+		fs.writeFileSync(statePath, JSON.stringify({ frozen: true, info: { reason: "pre-restart", channel: "magicmirror_display", since: "2026-11-09T00:00:00.000Z" }, seq: 3 }));
+		helper._freezeRestoreDone = false;
+		helper._freezeRestorePromise = helper._restoreFreezeState();
+		await helper.fetchPolicyState();
+		expect(hub.requestFreeze).toHaveBeenCalledWith("pre-restart", "magicmirror_display");
+		expect(helper._freezeHubAcked).toBe(true);
+		expect(helper._localFrozen).toBe(true);
+		expect(helper._localFreezeInfo.since).toBe("2026-11-09T00:00:00.000Z");
+	});
+
+	it("a stale unfrozen poll is not forwarded when a newer freeze exists", async () => {
+		let release;
+		const hub = hubStub({
+			getPolicyState: jest.fn(() => new Promise((r) => {
+				release = () => r({ frozen: false, mode: "normal" });
+			})),
+			requestFreeze: jest.fn(async () => ({ frozen: true, mode: "freeze" }))
+		});
+		const { helper, sent } = makeHelper({ hub });
+		helper._localFrozen = true;
+		helper._freezeHubAcked = true;
+		helper._freezeSeq = 1;
+		helper._localFreezeInfo = { reason: "first", channel: "c" };
+		const poll = helper.fetchPolicyState();
+		await new Promise((r) => setImmediate(r)); // let the poll reach the hub call
+		helper._freezeSeq = 2; // newer freeze requested mid-poll
+		release();
+		await poll;
+		expect(helper._localFrozen).toBe(true);
+		expect(sent.length).toBeGreaterThan(0);
+		expect(sent.every((m) => m.payload.frozen === true)).toBe(true);
+	});
+
+	it("a hub that reports frozen acknowledges the local freeze", async () => {
+		const hub = hubStub({ getPolicyState: jest.fn(async () => ({ frozen: true, mode: "freeze", authority: "hub_synced" })) });
+		const { helper, sent, statePath } = makeHelper({ hub });
+		await helper.requestFreeze({ reason: "r" }); // delivery fails: un-acked
+		expect(helper._freezeHubAcked).toBe(false);
+		sent.length = 0;
+		await helper.fetchPolicyState();
+		await helper._freezeWriteChain;
+		expect(helper._freezeHubAcked).toBe(true);
+		expect(JSON.parse(fs.readFileSync(statePath, "utf8")).hub_acked).toBe(true);
+		expect(sent[0].payload.authority).toBe("hub_synced");
+		expect(hub.requestFreeze).toHaveBeenCalledTimes(1); // no redundant re-delivery
+	});
+
+	it("a hub answer that is not frozen does not count as acknowledgement", async () => {
+		const hub = hubStub({ requestFreeze: jest.fn(async () => ({ frozen: false, mode: "normal" })) });
+		const { helper, sent } = makeHelper({ hub });
+		await helper.requestFreeze({ reason: "r" });
+		expect(helper._freezeHubAcked).toBe(false);
+		expect(helper._localFrozen).toBe(true);
+		expect(sent.at(-1).payload.frozen).toBe(true);
+		expect(sent.at(-1).payload.authority).toBe("standalone_local");
+	});
 });

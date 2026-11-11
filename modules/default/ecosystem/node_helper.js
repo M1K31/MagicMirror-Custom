@@ -121,7 +121,7 @@ module.exports = NodeHelper.create({
 			try {
 				if (this._localFrozen) {
 					const tmp = `${this.freezeStatePath}.tmp`;
-					await fs.writeFile(tmp, JSON.stringify({ frozen: true, info: this._localFreezeInfo, seq: this._freezeSeq }, null, 2));
+					await fs.writeFile(tmp, JSON.stringify({ frozen: true, info: this._localFreezeInfo, seq: this._freezeSeq, hub_acked: Boolean(this._freezeHubAcked) }, null, 2));
 					await fs.rename(tmp, this.freezeStatePath);
 				} else {
 					await fs.unlink(this.freezeStatePath).catch(() => {});
@@ -146,6 +146,8 @@ module.exports = NodeHelper.create({
 				// Never 0: a restored freeze must count as "a freeze exists" for
 				// the stale-poll guard, even if the file carried no sequence.
 				this._freezeSeq = Math.max(typeof saved.seq === "number" ? saved.seq : 0, 1);
+				// A record written before this field existed was never confirmed.
+				this._freezeHubAcked = saved.hub_acked === true;
 				Log.warn(`[${this.name}] Restored standalone Freeze from persisted state`);
 			}
 		} catch {
@@ -850,33 +852,13 @@ module.exports = NodeHelper.create({
 		this.sendSocketNotification("ECOSYSTEM_CAPABILITY_RESOLVED", resolution);
 	},
 
-	fetchPolicyState: async function () {
-		await (this._freezeRestorePromise || Promise.resolve());
-		if (this._hubClient && typeof this._hubClient.getPolicyState === "function") {
-			// Capture the freeze sequence before the (awaited) poll so a stale
-			// response cannot clear a freeze that was requested while it was in flight.
-			const seqAtPoll = this._freezeSeq || 0;
-			try {
-				const state = await this._hubClient.getPolicyState();
-				if (state) {
-					// Authoritative hub state supersedes a standalone freeze: clear the
-					// persisted local freeze once the hub reports unfrozen — but only if
-					// restore has completed and no newer freeze was requested meanwhile.
-					if (!state.frozen && this._localFrozen && this._freezeRestoreDone && (this._freezeSeq || 0) === seqAtPoll) {
-						this._localFrozen = false;
-						this._localFreezeInfo = null;
-						this._persistFreezeState();
-					}
-					this.sendSocketNotification("ECOSYSTEM_POLICY_STATE", state);
-					return;
-				}
-			} catch (err) {
-				Log.debug(`[${this.name}] Hub policy fetch error: ${err.message}`);
-			}
-		}
-
-		// Standalone / offline fallback representation
-		const fallbackState = {
+	/**
+	 * Policy state as this display knows it when the hub cannot be asked (or its
+	 * answer must not be used).
+	 * @returns {object} standalone policy state
+	 */
+	_localFallbackState: function () {
+		return {
 			policy_version: 1,
 			mode: this._localFrozen ? "freeze" : "normal",
 			authority: "standalone_local",
@@ -887,7 +869,83 @@ module.exports = NodeHelper.create({
 			enrolled_devices_count: 1,
 			auto_scan_grants_count: 0
 		};
-		this.sendSocketNotification("ECOSYSTEM_POLICY_STATE", fallbackState);
+	},
+
+	/**
+	 * Send the current local freeze to the hub. Only a hub answer that is itself
+	 * frozen counts as acknowledgement. Never changes the freeze's own details
+	 * (reason, channel, since), so a re-delivery after an outage or a restart
+	 * carries what the operator originally asked for.
+	 * @returns {Promise<object|null>} the hub's frozen state, or null if not acknowledged
+	 */
+	_deliverFreezeToHub: async function () {
+		if (!this._hubClient || typeof this._hubClient.requestFreeze !== "function" || !this._localFreezeInfo) {
+			return null;
+		}
+		try {
+			const state = await this._hubClient.requestFreeze(this._localFreezeInfo.reason, this._localFreezeInfo.channel);
+			if (state && state.frozen === true) {
+				this._freezeHubAcked = true;
+				await this._persistFreezeState();
+				return state;
+			}
+		} catch (err) {
+			Log.debug(`[${this.name}] Hub freeze broadcast error: ${err.message}`);
+		}
+		return null;
+	},
+
+	fetchPolicyState: async function () {
+		await (this._freezeRestorePromise || Promise.resolve());
+		if (this._hubClient && typeof this._hubClient.getPolicyState === "function") {
+			// Capture the freeze sequence before the (awaited) poll so a stale
+			// response cannot clear a freeze that was requested while it was in flight.
+			const seqAtPoll = this._freezeSeq || 0;
+			let state = null;
+			try {
+				state = await this._hubClient.getPolicyState();
+			} catch (err) {
+				Log.debug(`[${this.name}] Hub policy fetch error: ${err.message}`);
+			}
+			if (state) {
+				if (!this._localFrozen) {
+					this.sendSocketNotification("ECOSYSTEM_POLICY_STATE", state);
+					return;
+				}
+				if (state.frozen) {
+					// The hub is frozen too: that is the acknowledgement.
+					if (!this._freezeHubAcked) {
+						this._freezeHubAcked = true;
+						await this._persistFreezeState();
+					}
+					this.sendSocketNotification("ECOSYSTEM_POLICY_STATE", state);
+					return;
+				}
+				// The hub says "not frozen" while this display holds a freeze.
+				if (!this._freezeHubAcked) {
+					// The hub never confirmed receiving it — it cannot overrule a
+					// freeze it has not heard of. Deliver it (again) instead.
+					const delivered = await this._deliverFreezeToHub();
+					this.sendSocketNotification("ECOSYSTEM_POLICY_STATE", delivered || this._localFallbackState());
+					return;
+				}
+				if ((this._freezeSeq || 0) === seqAtPoll) {
+					// Acknowledged earlier and since lifted at the hub, which is the
+					// authority once it has acknowledged. This is the ONLY place a
+					// local freeze is cleared.
+					this._localFrozen = false;
+					this._localFreezeInfo = null;
+					this._freezeHubAcked = false;
+					await this._persistFreezeState();
+					this.sendSocketNotification("ECOSYSTEM_POLICY_STATE", state);
+					return;
+				}
+				// A newer freeze was requested while this poll was in flight: the
+				// answer is stale, so do not show it.
+			}
+		}
+
+		this.sendSocketNotification("ECOSYSTEM_POLICY_STATE", this._localFallbackState());
 	},
 
 	requestFreeze: async function (payload) {
@@ -896,6 +954,7 @@ module.exports = NodeHelper.create({
 		const channel = payload?.channel || "magicmirror_display";
 		this._freezeSeq = (this._freezeSeq || 0) + 1;
 		this._localFrozen = true;
+		this._freezeHubAcked = false;
 		this._localFreezeInfo = {
 			initiated_by: "magicmirror_display",
 			channel: channel,
@@ -906,19 +965,8 @@ module.exports = NodeHelper.create({
 		// loss) right after the operator sees "frozen" must come back frozen.
 		await this._persistFreezeState();
 
-		if (this._hubClient && typeof this._hubClient.requestFreeze === "function") {
-			try {
-				const state = await this._hubClient.requestFreeze(reason, channel);
-				if (state) {
-					this.sendSocketNotification("ECOSYSTEM_POLICY_STATE", state);
-					return;
-				}
-			} catch (err) {
-				Log.debug(`[${this.name}] Hub freeze broadcast error: ${err.message}`);
-			}
-		}
-
-		await this.fetchPolicyState();
+		const delivered = await this._deliverFreezeToHub();
+		this.sendSocketNotification("ECOSYSTEM_POLICY_STATE", delivered || this._localFallbackState());
 	},
 
 	/**

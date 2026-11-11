@@ -26,6 +26,7 @@ To prevent physical tampering or accidental changes from an ambient touch screen
    ```
 2. **Emergency Kill-Switch (Freeze) Only**: The sole mutation permitted from the ambient display is the **emergency freeze** kill-switch (`ECOSYSTEM_REQUEST_FREEZE`). This allows any occupant to instantly freeze the network mesh in an emergency without requiring prior step-up authentication.
 3. **Resume Requires Step-Up Auth**: Once engaged, resuming from freeze cannot be performed from the mirror; it requires administrative step-up authentication on an authorized personal device.
+4. **Freeze Durability and Hub Authority**: A freeze requested on the display is written to `config/ecosystem-freeze.json` (reason, channel, time, and whether the hub acknowledged it) before the display reports it, so it survives a restart. Until the hub has acknowledged the freeze, the display keeps it and keeps re-sending it; a hub that has not heard of the freeze cannot clear it. **Once the hub has acknowledged a freeze, the hub is authoritative**: if it later reports that the ecosystem is not frozen — including after losing its own state — the display follows it and removes the local record.
 
 ---
 
