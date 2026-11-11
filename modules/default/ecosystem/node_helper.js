@@ -981,6 +981,14 @@ module.exports = NodeHelper.create({
 			// loss) right after the operator sees "frozen" must come back frozen.
 			await this._persistFreezeState();
 		}
+		else if (this._freezeHubAcked) {
+			// Already frozen and acknowledged, and the operator asks again. This
+			// request has not reached the hub yet: drop the old acknowledgement
+			// (durably) so a hub that was resumed in the meantime cannot clear the
+			// freeze until it has acknowledged THIS request.
+			this._freezeHubAcked = false;
+			await this._persistFreezeState();
+		}
 		// Already frozen (a "Retry Freeze" tap, or a tap after a restart restored
 		// the freeze): the freeze keeps its original reason, time and sequence —
 		// only the delivery to the hub is repeated.

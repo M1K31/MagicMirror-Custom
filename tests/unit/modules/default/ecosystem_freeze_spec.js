@@ -288,4 +288,31 @@ describe("ecosystem freeze durability", () => {
 		expect(await delivery).toBeNull();
 		expect(helper._freezeHubAcked).toBeFalsy();
 	});
+
+	it("a new tap on an acknowledged freeze is not cleared on the strength of the old acknowledgement", async () => {
+		// Freeze acknowledged; the hub is then resumed elsewhere and goes down
+		// before this display polls. The operator taps Freeze again: that request
+		// has not reached the hub, so the hub's later "not frozen" must not clear it.
+		let hubUp = true;
+		const hub = hubStub({
+			requestFreeze: jest.fn(async () => {
+				if (!hubUp) throw new Error("hub down");
+				return { frozen: true, mode: "freeze", authority: "hub_synced" };
+			})
+		});
+		const { helper, sent, statePath } = makeHelper({ hub });
+		await helper.requestFreeze({ reason: "first" });
+		expect(helper._freezeHubAcked).toBe(true);
+
+		hubUp = false;
+		await helper.requestFreeze({ reason: "tapped again" });
+		expect(helper._freezeHubAcked).toBe(false);
+		expect(JSON.parse(fs.readFileSync(statePath, "utf8")).hub_acked).toBe(false);
+		expect(sent.at(-1).payload.freeze_confirmed).toBe(false);
+
+		await helper.fetchPolicyState(); // hub reads work and say "not frozen"
+		expect(helper._localFrozen).toBe(true);
+		expect(fs.existsSync(statePath)).toBe(true);
+		expect(sent.at(-1).payload.frozen).toBe(true);
+	});
 });
