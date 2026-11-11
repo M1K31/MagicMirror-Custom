@@ -82,6 +82,13 @@
   --color-warning: hsl(35, 100%, 55%);     /* Soft System Orange */
   --text-on-accent: hsl(0, 0%, 100%);      /* text over the (blue) accent */
 
+  /* Filled-button fills. Kept separate from --color-accent / --color-error,
+     which are tuned as text and outline colours: a label on a fill needs
+     4.5:1 (Apple HIG / WCAG AA for non-bold text under 18pt). */
+  --fill-accent: hsl(211, 100%, 44%);      /* white label 4.95:1 */
+  --fill-critical: hsl(0, 78%, 48%);       /* white label 5.06:1 */
+  --text-on-critical: hsl(0, 0%, 100%);
+
   /* Elevation Systems */
   --shadow-sm: 0 1px 2px hsla(0, 0%, 0%, 0.15);
   --shadow-md: 0 4px 16px hsla(0, 0%, 0%, 0.25);
@@ -113,6 +120,9 @@
   --color-error: hsl(0, 80%, 45%);         /* Classic Red */
   --color-warning: hsl(35, 100%, 30%);     /* Classic Orange — darkened for >=4.5:1 badge text on light */
   --text-on-accent: hsl(0, 0%, 100%);      /* text over the (blue) accent */
+  --fill-accent: hsl(211, 100%, 44%);      /* white label 4.95:1 */
+  --fill-critical: hsl(0, 78%, 48%);       /* white label 5.06:1 */
+  --text-on-critical: hsl(0, 0%, 100%);
 
   --shadow-md: 0 4px 12px hsla(var(--color-hue-primary), 20%, 12%, 0.04);
   --shadow-lg: 0 16px 32px hsla(var(--color-hue-primary), 20%, 12%, 0.08);
@@ -144,6 +154,9 @@
   --color-error: hsl(342, 100%, 50%);      /* Acid Red */
   --color-warning: hsl(42, 100%, 50%);
   --text-on-accent: hsl(290, 80%, 6%);      /* dark text so labels read on the neon-yellow accent */
+  --fill-accent: hsl(60, 100%, 50%);        /* neon yellow, dark label 18.3:1 */
+  --fill-critical: hsl(342, 100%, 50%);     /* acid red, dark label 5.02:1 (white would be 3.9:1) */
+  --text-on-critical: hsl(290, 80%, 6%);
 
   --shadow-md: 0 0 12px hsla(300, 100%, 65%, 0.25);
   --shadow-lg: 0 0 28px hsla(180, 100%, 50%, 0.35);
@@ -230,6 +243,9 @@ a.button {
     --color-error: hsl(0, 80%, 45%);
     --color-warning: hsl(35, 100%, 30%);
     --text-on-accent: hsl(0, 0%, 100%);
+    --fill-accent: hsl(211, 100%, 44%);
+    --fill-critical: hsl(0, 78%, 48%);
+    --text-on-critical: hsl(0, 0%, 100%);
 
     --shadow-md: 0 4px 12px hsla(var(--color-hue-primary), 20%, 12%, 0.04);
     --shadow-lg: 0 16px 32px hsla(var(--color-hue-primary), 20%, 12%, 0.08);
