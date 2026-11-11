@@ -71,16 +71,15 @@ describe("ecosystem freeze durability", () => {
 		expect(sent[0].payload.freeze_info.reason).toBe("saved");
 	});
 
-	it("a freeze requested while restore is still reading keeps its own reason and outranks the saved record", async () => {
+	it("a freeze tap while a restored freeze is active re-uses it instead of starting a new one", async () => {
 		const { helper, statePath } = makeHelper();
-		fs.writeFileSync(statePath, JSON.stringify({ frozen: true, info: { reason: "saved" }, seq: 5 }));
+		fs.writeFileSync(statePath, JSON.stringify({ frozen: true, info: { reason: "saved", since: "2026-11-09T00:00:00.000Z" }, seq: 5 }));
 		helper._freezeRestoreDone = false;
 		helper._freezeRestorePromise = helper._restoreFreezeState();
-		await helper.requestFreeze({ reason: "fresh" });
-		expect(helper._localFreezeInfo.reason).toBe("fresh");
-		const onDisk = JSON.parse(fs.readFileSync(statePath, "utf8"));
-		expect(onDisk.info.reason).toBe("fresh");
-		expect(onDisk.seq).toBeGreaterThan(5);
+		await helper.requestFreeze({ reason: "tapped again after restart" });
+		expect(helper._localFreezeInfo.reason).toBe("saved");
+		expect(helper._freezeSeq).toBe(5);
+		expect(JSON.parse(fs.readFileSync(statePath, "utf8")).info.since).toBe("2026-11-09T00:00:00.000Z");
 	});
 
 	it("a restored freeze has a non-zero sequence even if the file carried none", async () => {
@@ -196,5 +195,97 @@ describe("ecosystem freeze durability", () => {
 		expect(helper._localFrozen).toBe(true);
 		expect(sent.at(-1).payload.frozen).toBe(true);
 		expect(sent.at(-1).payload.authority).toBe("standalone_local");
+	});
+
+	it("fallback state marks a freeze the hub has not acknowledged", async () => {
+		const { helper, sent } = makeHelper(); // no hub client
+		await helper.requestFreeze({ reason: "r" });
+		const last = sent[sent.length - 1].payload;
+		expect(last.frozen).toBe(true);
+		expect(last.freeze_confirmed).toBe(false);
+	});
+
+	it("unfrozen fallback state has no freeze_confirmed key", async () => {
+		const { helper, sent } = makeHelper();
+		await helper.fetchPolicyState();
+		expect("freeze_confirmed" in sent[0].payload).toBe(false);
+	});
+
+	it("a retry while frozen re-delivers without resetting the original freeze", async () => {
+		const hub = hubStub();
+		const { helper, sent } = makeHelper({ hub });
+		await helper.requestFreeze({ reason: "first" });
+		const { since } = helper._localFreezeInfo;
+		const seq = helper._freezeSeq;
+		sent.length = 0;
+		await helper.requestFreeze({ reason: "retry tap" });
+		expect(helper._localFreezeInfo.reason).toBe("first");
+		expect(helper._localFreezeInfo.since).toBe(since);
+		expect(helper._freezeSeq).toBe(seq);
+		expect(hub.requestFreeze).toHaveBeenCalledTimes(2);
+		expect(hub.requestFreeze).toHaveBeenLastCalledWith("first", "magicmirror_display");
+		expect(sent).toHaveLength(1);
+		expect(sent[0].payload.freeze_confirmed).toBe(false);
+	});
+
+	it("a retry that reaches the hub reports the hub's confirmed state", async () => {
+		let up = false;
+		const hub = hubStub({
+			requestFreeze: jest.fn(async () => {
+				if (!up) throw new Error("hub down");
+				return { frozen: true, mode: "freeze", authority: "hub_synced" };
+			})
+		});
+		const { helper, sent } = makeHelper({ hub });
+		await helper.requestFreeze({ reason: "first" });
+		expect(sent.at(-1).payload.freeze_confirmed).toBe(false);
+		up = true;
+		await helper.requestFreeze({ reason: "retry tap" });
+		expect(sent.at(-1).payload.authority).toBe("hub_synced");
+		expect("freeze_confirmed" in sent.at(-1).payload).toBe(false);
+		expect(helper._freezeHubAcked).toBe(true);
+	});
+
+	// An acknowledgement belongs to the freeze it was obtained for. Applied to a
+	// newer freeze it would let the next unfrozen poll clear a freeze the hub
+	// never received.
+	it("a frozen poll that started before a newer freeze does not acknowledge it", async () => {
+		let release;
+		const hub = hubStub({
+			getPolicyState: jest.fn(() => new Promise((r) => {
+				release = () => r({ frozen: true, mode: "freeze", authority: "hub_synced" });
+			}))
+		});
+		const { helper, sent } = makeHelper({ hub });
+		helper._localFrozen = true;
+		helper._freezeHubAcked = false;
+		helper._freezeSeq = 1;
+		helper._localFreezeInfo = { reason: "first", channel: "c" };
+		const poll = helper.fetchPolicyState();
+		await new Promise((r) => setImmediate(r));
+		helper._freezeSeq = 2; // a newer freeze replaced the one the poll saw
+		release();
+		await poll;
+		expect(helper._freezeHubAcked).toBe(false);
+		expect(sent.at(-1).payload.freeze_confirmed).toBe(false);
+	});
+
+	it("a delivery answered after a newer freeze was requested does not acknowledge it", async () => {
+		let release;
+		const hub = hubStub({
+			requestFreeze: jest.fn(() => new Promise((r) => {
+				release = () => r({ frozen: true, mode: "freeze" });
+			}))
+		});
+		const { helper } = makeHelper({ hub });
+		helper._localFrozen = true;
+		helper._freezeSeq = 1;
+		helper._localFreezeInfo = { reason: "first", channel: "c" };
+		const delivery = helper._deliverFreezeToHub();
+		await new Promise((r) => setImmediate(r));
+		helper._freezeSeq = 2;
+		release();
+		expect(await delivery).toBeNull();
+		expect(helper._freezeHubAcked).toBeFalsy();
 	});
 });

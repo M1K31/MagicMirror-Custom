@@ -858,7 +858,7 @@ module.exports = NodeHelper.create({
 	 * @returns {object} standalone policy state
 	 */
 	_localFallbackState: function () {
-		return {
+		const state = {
 			policy_version: 1,
 			mode: this._localFrozen ? "freeze" : "normal",
 			authority: "standalone_local",
@@ -869,6 +869,13 @@ module.exports = NodeHelper.create({
 			enrolled_devices_count: 1,
 			auto_scan_grants_count: 0
 		};
+		if (this._localFrozen) {
+			// Tell the bar whether the mesh confirmed this freeze. `false` renders
+			// as "FROZEN (LOCAL ONLY)" with a Retry Freeze control instead of
+			// claiming that automations everywhere are halted.
+			state.freeze_confirmed = Boolean(this._freezeHubAcked);
+		}
+		return state;
 	},
 
 	/**
@@ -882,9 +889,13 @@ module.exports = NodeHelper.create({
 		if (!this._hubClient || typeof this._hubClient.requestFreeze !== "function" || !this._localFreezeInfo) {
 			return null;
 		}
+		// An acknowledgement belongs to the freeze it was requested for. If a
+		// newer freeze replaced that one while the hub was answering, the answer
+		// says nothing about the newer freeze and must not mark it acknowledged.
+		const seq = this._freezeSeq || 0;
 		try {
 			const state = await this._hubClient.requestFreeze(this._localFreezeInfo.reason, this._localFreezeInfo.channel);
-			if (state && state.frozen === true) {
+			if (state && state.frozen === true && this._localFrozen && (this._freezeSeq || 0) === seq) {
 				this._freezeHubAcked = true;
 				await this._persistFreezeState();
 				return state;
@@ -912,13 +923,21 @@ module.exports = NodeHelper.create({
 					this.sendSocketNotification("ECOSYSTEM_POLICY_STATE", state);
 					return;
 				}
-				if (state.frozen) {
-					// The hub is frozen too: that is the acknowledgement.
+				const stale = (this._freezeSeq || 0) !== seqAtPoll;
+				if (state.frozen && !stale) {
+					// The hub is frozen too: that is the acknowledgement — for
+					// the freeze this poll started with, not a newer one.
 					if (!this._freezeHubAcked) {
 						this._freezeHubAcked = true;
 						await this._persistFreezeState();
 					}
 					this.sendSocketNotification("ECOSYSTEM_POLICY_STATE", state);
+					return;
+				}
+				if (stale) {
+					// A newer freeze was requested while this poll was in flight:
+					// whatever the hub said is about the old one. Show our own.
+					this.sendSocketNotification("ECOSYSTEM_POLICY_STATE", this._localFallbackState());
 					return;
 				}
 				// The hub says "not frozen" while this display holds a freeze.
@@ -929,19 +948,15 @@ module.exports = NodeHelper.create({
 					this.sendSocketNotification("ECOSYSTEM_POLICY_STATE", delivered || this._localFallbackState());
 					return;
 				}
-				if ((this._freezeSeq || 0) === seqAtPoll) {
-					// Acknowledged earlier and since lifted at the hub, which is the
-					// authority once it has acknowledged. This is the ONLY place a
-					// local freeze is cleared.
-					this._localFrozen = false;
-					this._localFreezeInfo = null;
-					this._freezeHubAcked = false;
-					await this._persistFreezeState();
-					this.sendSocketNotification("ECOSYSTEM_POLICY_STATE", state);
-					return;
-				}
-				// A newer freeze was requested while this poll was in flight: the
-				// answer is stale, so do not show it.
+				// Acknowledged earlier and since lifted at the hub, which is the
+				// authority once it has acknowledged. This is the ONLY place a
+				// local freeze is cleared.
+				this._localFrozen = false;
+				this._localFreezeInfo = null;
+				this._freezeHubAcked = false;
+				await this._persistFreezeState();
+				this.sendSocketNotification("ECOSYSTEM_POLICY_STATE", state);
+				return;
 			}
 		}
 
@@ -950,20 +965,25 @@ module.exports = NodeHelper.create({
 
 	requestFreeze: async function (payload) {
 		await (this._freezeRestorePromise || Promise.resolve());
-		const reason = payload?.reason || "Emergency wall display freeze";
-		const channel = payload?.channel || "magicmirror_display";
-		this._freezeSeq = (this._freezeSeq || 0) + 1;
-		this._localFrozen = true;
-		this._freezeHubAcked = false;
-		this._localFreezeInfo = {
-			initiated_by: "magicmirror_display",
-			channel: channel,
-			reason: reason,
-			since: new Date().toISOString()
-		};
-		// Persist BEFORE telling the display it is frozen: a restart (or power
-		// loss) right after the operator sees "frozen" must come back frozen.
-		await this._persistFreezeState();
+		if (!this._localFrozen) {
+			const reason = payload?.reason || "Emergency wall display freeze";
+			const channel = payload?.channel || "magicmirror_display";
+			this._freezeSeq = (this._freezeSeq || 0) + 1;
+			this._localFrozen = true;
+			this._freezeHubAcked = false;
+			this._localFreezeInfo = {
+				initiated_by: "magicmirror_display",
+				channel: channel,
+				reason: reason,
+				since: new Date().toISOString()
+			};
+			// Persist BEFORE telling the display it is frozen: a restart (or power
+			// loss) right after the operator sees "frozen" must come back frozen.
+			await this._persistFreezeState();
+		}
+		// Already frozen (a "Retry Freeze" tap, or a tap after a restart restored
+		// the freeze): the freeze keeps its original reason, time and sequence —
+		// only the delivery to the hub is repeated.
 
 		const delivered = await this._deliverFreezeToHub();
 		this.sendSocketNotification("ECOSYSTEM_POLICY_STATE", delivered || this._localFallbackState());
