@@ -17,19 +17,42 @@ const os = require("os");
 const fs = require("fs").promises;
 const path = require("path");
 
-let EcosystemClient;
-let HubClient;
-try {
-	({ EcosystemClient, HubClient } = require("@smartindustriesllc/ecosystem-client"));
-} catch {
+const SIBLING_CLIENT = path.resolve(__dirname, "..", "..", "..", "..", "appEcosystem", "ecosystem_client_js");
+
+/**
+ * Pick the ecosystem client to use. The installed npm package wins when it is
+ * complete. A package that loads but has no HubClient (the 0.1.0 release) is
+ * NOT good enough on its own: without a hub client the helper cannot read
+ * policy, broadcast a freeze or fetch notifications — so a sibling appEcosystem
+ * checkout is tried before settling for it.
+ * @param {(id: string) => object} [requireFn] module loader (injectable for tests)
+ * @returns {{EcosystemClient: Function|null, HubClient: Function|null, source: string}}
+ */
+function loadEcosystemClient (requireFn = require) {
+	let installed = null;
 	try {
-		const siblingPkg = path.resolve(__dirname, "..", "..", "..", "..", "appEcosystem", "ecosystem_client_js");
-		({ EcosystemClient, HubClient } = require(siblingPkg));
+		installed = requireFn("@smartindustriesllc/ecosystem-client");
+		if (installed && typeof installed.HubClient === "function") {
+			return { EcosystemClient: installed.EcosystemClient || null, HubClient: installed.HubClient, source: "installed" };
+		}
 	} catch {
-		EcosystemClient = null;
-		HubClient = null;
+		installed = null;
 	}
+	try {
+		const sibling = requireFn(SIBLING_CLIENT);
+		if (sibling && typeof sibling.HubClient === "function") {
+			return { EcosystemClient: sibling.EcosystemClient || null, HubClient: sibling.HubClient, source: "sibling" };
+		}
+	} catch {
+		// no sibling checkout
+	}
+	if (installed && installed.EcosystemClient) {
+		return { EcosystemClient: installed.EcosystemClient, HubClient: null, source: "installed-without-hub" };
+	}
+	return { EcosystemClient: null, HubClient: null, source: "none" };
 }
+
+const { EcosystemClient, HubClient, source: CLIENT_SOURCE } = loadEcosystemClient();
 
 function buildMagicMirrorCapabilities() {
 	return [
@@ -88,6 +111,11 @@ module.exports = NodeHelper.create({
 		this._freezeWriteChain = Promise.resolve();
 		this.freezeStatePath = path.join(this.configPath, "ecosystem-freeze.json");
 
+		if (!HubClient) {
+			// Say so: without it the display shows local state only and every
+			// freeze is local-only.
+			Log.warn(`[${this.name}] No HubClient available (client: ${CLIENT_SOURCE}); install @smartindustriesllc/ecosystem-client >= 0.1.1 to join the hub`);
+		}
 		if (HubClient) {
 			try {
 				this._hubClient = new HubClient("magicmirror", {
@@ -1097,3 +1125,4 @@ module.exports = NodeHelper.create({
 });
 
 module.exports.buildMagicMirrorCapabilities = buildMagicMirrorCapabilities;
+module.exports._loadEcosystemClient = loadEcosystemClient;
