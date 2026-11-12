@@ -17,11 +17,79 @@ const os = require("os");
 const fs = require("fs").promises;
 const path = require("path");
 
-let EcosystemClient;
-try {
-	({ EcosystemClient } = require("@smartindustriesllc/ecosystem-client"));
-} catch {
-	EcosystemClient = null;
+const SIBLING_CLIENT = path.resolve(__dirname, "..", "..", "..", "..", "appEcosystem", "ecosystem_client_js");
+
+/**
+ * Pick the ecosystem client to use. The installed npm package wins when it is
+ * complete. A package that loads but has no HubClient (the 0.1.0 release) is
+ * NOT good enough on its own: without a hub client the helper cannot read
+ * policy, broadcast a freeze or fetch notifications — so a sibling appEcosystem
+ * checkout is tried before settling for it.
+ * @param {(id: string) => object} [requireFn] module loader (injectable for tests)
+ * @returns {{EcosystemClient: Function|null, HubClient: Function|null, source: string}}
+ */
+function loadEcosystemClient (requireFn = require) {
+	let installed = null;
+	try {
+		installed = requireFn("@smartindustriesllc/ecosystem-client");
+		if (installed && typeof installed.HubClient === "function") {
+			return { EcosystemClient: installed.EcosystemClient || null, HubClient: installed.HubClient, source: "installed" };
+		}
+	} catch {
+		installed = null;
+	}
+	try {
+		const sibling = requireFn(SIBLING_CLIENT);
+		if (sibling && typeof sibling.HubClient === "function") {
+			return { EcosystemClient: sibling.EcosystemClient || null, HubClient: sibling.HubClient, source: "sibling" };
+		}
+	} catch {
+		// no sibling checkout
+	}
+	if (installed && installed.EcosystemClient) {
+		return { EcosystemClient: installed.EcosystemClient, HubClient: null, source: "installed-without-hub" };
+	}
+	return { EcosystemClient: null, HubClient: null, source: "none" };
+}
+
+const { EcosystemClient, HubClient, source: CLIENT_SOURCE } = loadEcosystemClient();
+
+function buildMagicMirrorCapabilities() {
+	return [
+		{
+			capability: "display.show_alert",
+			version: 1,
+			description: "Render a glanceable Apple HIG ambient alert card on the MagicMirror wall display.",
+			action_class: "observe",
+			required_grant: "display:show_alert",
+			timeout_seconds: 15,
+			cancellable: true,
+			idempotent: true,
+			offline_behavior: "run_local"
+		},
+		{
+			capability: "notify.deliver.magicmirror_mobile",
+			version: 1,
+			description: "Federated alert feed for SwiftUI iOS and Jetpack Compose Android MagicMirrorRemote companion apps.",
+			action_class: "observe",
+			required_grant: "notify:deliver",
+			timeout_seconds: 15,
+			cancellable: false,
+			idempotent: true,
+			offline_behavior: "queue_until_online"
+		},
+		{
+			capability: "ecosystem.freeze",
+			version: 1,
+			description: "Emergency wall-display freeze request halting mutating automations across the ecosystem.",
+			action_class: "contain",
+			required_grant: "freeze.request",
+			timeout_seconds: 10,
+			cancellable: false,
+			idempotent: true,
+			offline_behavior: "freeze_local_and_queue_notice"
+		}
+	];
 }
 
 module.exports = NodeHelper.create({
@@ -35,9 +103,106 @@ module.exports = NodeHelper.create({
 		this.ecosystemPath = path.join(this.configPath, "ecosystem.json");
 		this.connectedApps = {};
 		this.discoveredApps = {};
+		this._hubClient = null;
+		this._localFrozen = false;
+		this._localFreezeInfo = null;
+		this._freezeSeq = 0;              // monotonic; bumped on each freeze request
+		this._freezeRestoreDone = false; // set once the persisted freeze is loaded
+		this._freezeWriteChain = Promise.resolve();
+		this.freezeStatePath = path.join(this.configPath, "ecosystem-freeze.json");
+
+		if (!HubClient) {
+			// Say so: without it the display shows local state only and every
+			// freeze is local-only.
+			Log.warn(`[${this.name}] No HubClient available (client: ${CLIENT_SOURCE}); install @smartindustriesllc/ecosystem-client >= 0.1.1 to join the hub`);
+		}
+		if (HubClient) {
+			try {
+				this._hubClient = new HubClient("magicmirror", {
+					role: process.env.ECOSYSTEM_HUB_ROLE || "join",
+					capabilities: buildMagicMirrorCapabilities()
+				});
+				this._hubClient.start().then((mode) => {
+					Log.info(`[${this.name}] HubClient active in ${mode} mode`);
+				}).catch((err) => {
+					Log.debug(`[${this.name}] HubClient standalone fallback: ${err.message}`);
+				});
+			} catch (err) {
+				Log.warn(`[${this.name}] Could not initialize HubClient: ${err.message}`);
+			}
+		}
 
 		// Load saved ecosystem state
 		this.loadEcosystemState();
+		// Restore a standalone freeze that was active before a restart (hub down),
+		// so a safety Freeze is not silently dropped by a process restart. Policy
+		// polls and freeze requests wait on this promise, so neither can run
+		// against a half-loaded state.
+		this._freezeRestorePromise = this._restoreFreezeState();
+	},
+
+	_persistFreezeState: async function () {
+		// Serialize writes through a chain so a freeze and a later clear cannot
+		// interleave, and write atomically (temp + rename) so a crash mid-write
+		// cannot leave a truncated/invalid file that a later restart misreads.
+		const run = async () => {
+			try {
+				if (this._localFrozen) {
+					const tmp = `${this.freezeStatePath}.tmp`;
+					await fs.writeFile(tmp, JSON.stringify({ frozen: true, info: this._localFreezeInfo, seq: this._freezeSeq, hub_acked: Boolean(this._freezeHubAcked) }, null, 2));
+					await fs.rename(tmp, this.freezeStatePath);
+				} else {
+					await fs.unlink(this.freezeStatePath).catch(() => {});
+				}
+				this._freezeDurable = true;
+			} catch (err) {
+				// Not a debug detail: this freeze will not survive a restart
+				// (e.g. a read-only config mount). Say so loudly and let the
+				// display know via freeze_durable: false.
+				this._freezeDurable = false;
+				Log.error(`[${this.name}] Could not persist freeze state: ${err.message}`);
+			}
+		};
+		this._freezeWriteChain = (this._freezeWriteChain || Promise.resolve()).then(run, run);
+		return this._freezeWriteChain;
+	},
+
+	_restoreFreezeState: async function () {
+		try {
+			const saved = JSON.parse(await fs.readFile(this.freezeStatePath, "utf8"));
+			// Apply the saved record only to a helper that has no freeze of its
+			// own yet. A freeze requested in this process is newer than anything
+			// on disk and must keep its own reason, timestamp and sequence.
+			if (saved && saved.frozen && (this._freezeSeq || 0) === 0 && !this._localFrozen) {
+				this._localFrozen = true;
+				this._localFreezeInfo = saved.info || null;
+				// Never 0: a restored freeze must count as "a freeze exists" for
+				// the stale-poll guard, even if the file carried no sequence.
+				this._freezeSeq = Math.max(typeof saved.seq === "number" ? saved.seq : 0, 1);
+				// A record written before this field existed was never confirmed.
+				this._setHubAcked(saved.hub_acked === true);
+				Log.warn(`[${this.name}] Restored standalone Freeze from persisted state`);
+			}
+		} catch {
+			// No persisted freeze state — normal.
+		} finally {
+			// Mark restore complete so an early policy poll does not clear a freeze
+			// before it has been loaded from disk.
+			this._freezeRestoreDone = true;
+		}
+	},
+
+	stop: async function () {
+		if (this._hubClient) {
+			try {
+				await this._hubClient.stop();
+			} catch {
+				// Best-effort withdrawal
+			}
+		}
+		// Let a freeze that was just requested reach disk before the process
+		// exits; otherwise a restart comes back unfrozen.
+		await (this._freezeWriteChain || Promise.resolve());
 	},
 
 	/**
@@ -94,8 +259,40 @@ module.exports = NodeHelper.create({
 				this.relayNotification(payload.notification, payload.targets, payload.methods);
 				break;
 
+			case "ECOSYSTEM_PUBLISH_NOTIFICATION":
+				this.publishHubNotification(payload);
+				break;
+
+			case "ECOSYSTEM_FETCH_NOTIFICATIONS":
+				this.fetchHubNotifications(payload || {});
+				break;
+
+			case "ECOSYSTEM_RESOLVE_CAPABILITY":
+				this.resolveHubCapability(payload?.capability);
+				break;
+
 			case "ECOSYSTEM_GET_STATUS":
 				this.sendStatus();
+				break;
+
+			// Both return their promise so a caller can wait for the state to be
+			// persisted and reported; each handles its own errors.
+			case "ECOSYSTEM_GET_POLICY_STATE":
+				return this.fetchPolicyState();
+
+			case "ECOSYSTEM_REQUEST_FREEZE":
+				return this.requestFreeze(payload);
+
+			// Strict privilege guard: unauthenticated wall display CANNOT resume, approve, deny, or disable restrictions
+			case "ECOSYSTEM_POLICY_RESUME":
+			case "ECOSYSTEM_POLICY_RESTRICTIONS_OFF":
+			case "ECOSYSTEM_APPROVE":
+			case "ECOSYSTEM_DENY":
+				Log.warn(`[${this.name}] Security rejection: ${notification} forbidden on unauthenticated wall display`);
+				this.sendSocketNotification("ECOSYSTEM_POLICY_FORBIDDEN", {
+					action: notification,
+					reason: "Privileged policy operations (resume, approve, deny, restrictions off) are forbidden from unauthenticated wall display"
+				});
 				break;
 		}
 	},
@@ -515,6 +712,18 @@ module.exports = NodeHelper.create({
 			return;
 		}
 
+		// View-only boundary: the wall display may pull integration settings but
+		// must not push them into another app. Reject push/bidirectional so a
+		// mutation cannot originate from the unauthenticated display.
+		if (direction === "push" || direction === "bidirectional") {
+			Log.warn(`[${this.name}] Security rejection: integration '${direction}' forbidden on view-only wall display`);
+			this.sendSocketNotification("ECOSYSTEM_POLICY_FORBIDDEN", {
+				action: "ECOSYSTEM_SYNC_INTEGRATIONS",
+				reason: "Writing integration settings to another app is forbidden from the view-only wall display; only 'pull' is permitted"
+			});
+			return;
+		}
+
 		try {
 			// Get our integrations
 			const secretsPath = path.join(this.configPath, "secrets.json");
@@ -588,7 +797,32 @@ module.exports = NodeHelper.create({
 	 * Relay notification to companion apps
 	 */
 	relayNotification: async function (notification, targets, methods) {
-		for (const appId of targets) {
+		// Publish to the shared hub feed only when hub delivery is explicitly
+		// requested. Previously any relay (even one meant only for OpenEye, or
+		// with no targets) also broadcast its title/message to the hub.
+		const hubRequested = methods?.hub?.enabled === true
+			|| (Array.isArray(targets) && (targets.includes("hub") || targets.includes("ecosystem")));
+		if (this._hubClient && notification && hubRequested) {
+			try {
+				const sev = notification.urgent ? "high" : (notification.severity || "medium");
+				const type = String(notification.type || "notify.system").startsWith("notify.")
+					? notification.type
+					: "notify.system";
+				await this._hubClient.notify(
+					type,
+					sev,
+					notification.title || "MagicMirror Alert",
+					notification.message || "",
+					{
+						dedupeKey: notification.dedupeKey || `magicmirror:${type}:${notification.title || "alert"}`
+					}
+				);
+			} catch (err) {
+				Log.debug(`[${this.name}] Hub notification publish skipped: ${err.message}`);
+			}
+		}
+
+		for (const appId of targets || []) {
 			const app = this.connectedApps[appId];
 			if (!app) continue;
 
@@ -597,6 +831,225 @@ module.exports = NodeHelper.create({
 				await this.relayToOpenEye(app, notification);
 			}
 		}
+	},
+
+	publishHubNotification: async function (payload = {}) {
+		if (!this._hubClient) {
+			this.sendSocketNotification("ECOSYSTEM_NOTIFICATION_PUBLISHED", { status: "unavailable" });
+			return;
+		}
+		try {
+			const result = await this._hubClient.notify(
+				payload.type || "notify.system",
+				payload.severity || "medium",
+				payload.title || "MagicMirror Alert",
+				payload.body || "",
+				{
+					dedupeKey: payload.dedupeKey,
+					privacy: payload.privacy || "redacted",
+					ttl: payload.ttl || "24h",
+					deepLink: payload.deepLink || null
+				}
+			);
+			this.sendSocketNotification("ECOSYSTEM_NOTIFICATION_PUBLISHED", result);
+		} catch (error) {
+			this.sendSocketNotification("ECOSYSTEM_ERROR", {
+				message: `Hub notification publish failed: ${error.message}`
+			});
+		}
+	},
+
+	fetchHubNotifications: async function (opts = {}) {
+		if (!this._hubClient) {
+			this.sendSocketNotification("ECOSYSTEM_NOTIFICATIONS_FEED", { notifications: [] });
+			return;
+		}
+		const notifications = await this._hubClient.fetchRecentNotifications({
+			limit: opts.limit || 25,
+			minSeverity: opts.minSeverity
+		});
+		this.sendSocketNotification("ECOSYSTEM_NOTIFICATIONS_FEED", { notifications });
+	},
+
+	resolveHubCapability: async function (capabilityName) {
+		if (!capabilityName || !this._hubClient) {
+			this.sendSocketNotification("ECOSYSTEM_CAPABILITY_RESOLVED", {
+				capability: capabilityName || "",
+				available: false,
+				providers: [],
+				unavailable_reason: "HubClient is not initialized"
+			});
+			return;
+		}
+		const resolution = await this._hubClient.resolveCapability(capabilityName);
+		this.sendSocketNotification("ECOSYSTEM_CAPABILITY_RESOLVED", resolution);
+	},
+
+	/**
+	 * Policy state as this display knows it when the hub cannot be asked (or its
+	 * answer must not be used).
+	 * @returns {object} standalone policy state
+	 */
+	/**
+	 * Change the hub-acknowledged flag. Every change bumps a generation counter
+	 * so a policy poll can tell that its snapshot of the hub predates the
+	 * current acknowledgement and must not be acted on.
+	 * @param {boolean} value whether the hub has acknowledged the current freeze
+	 */
+	_setHubAcked: function (value) {
+		const next = Boolean(value);
+		if (next !== Boolean(this._freezeHubAcked)) {
+			this._freezeAckGen = (this._freezeAckGen || 0) + 1;
+		}
+		this._freezeHubAcked = next;
+	},
+
+	_localFallbackState: function () {
+		const state = {
+			policy_version: 1,
+			mode: this._localFrozen ? "freeze" : "normal",
+			authority: "standalone_local",
+			frozen: Boolean(this._localFrozen),
+			freeze_info: this._localFreezeInfo || null,
+			active_override: null,
+			overrides: [],
+			enrolled_devices_count: 1,
+			auto_scan_grants_count: 0
+		};
+		if (this._localFrozen) {
+			// Tell the bar whether the mesh confirmed this freeze. `false` renders
+			// as "FROZEN (LOCAL ONLY)" with a Retry Freeze control instead of
+			// claiming that automations everywhere are halted.
+			state.freeze_confirmed = Boolean(this._freezeHubAcked);
+			if (this._freezeDurable === false) {
+				// The last write of this freeze failed: it holds for this run
+				// only and will be lost on restart.
+				state.freeze_durable = false;
+			}
+		}
+		return state;
+	},
+
+	/**
+	 * Send the current local freeze to the hub. Only a hub answer that is itself
+	 * frozen counts as acknowledgement. Never changes the freeze's own details
+	 * (reason, channel, since), so a re-delivery after an outage or a restart
+	 * carries what the operator originally asked for.
+	 * @returns {Promise<object|null>} the hub's frozen state, or null if not acknowledged
+	 */
+	_deliverFreezeToHub: async function () {
+		if (!this._hubClient || typeof this._hubClient.requestFreeze !== "function" || !this._localFreezeInfo) {
+			return null;
+		}
+		// An acknowledgement belongs to the freeze it was requested for. If a
+		// newer freeze replaced that one while the hub was answering, the answer
+		// says nothing about the newer freeze and must not mark it acknowledged.
+		const seq = this._freezeSeq || 0;
+		try {
+			const state = await this._hubClient.requestFreeze(this._localFreezeInfo.reason, this._localFreezeInfo.channel);
+			if (state && state.frozen === true && this._localFrozen && (this._freezeSeq || 0) === seq) {
+				this._setHubAcked(true);
+				await this._persistFreezeState();
+				return state;
+			}
+		} catch (err) {
+			Log.debug(`[${this.name}] Hub freeze broadcast error: ${err.message}`);
+		}
+		return null;
+	},
+
+	fetchPolicyState: async function () {
+		await (this._freezeRestorePromise || Promise.resolve());
+		if (this._hubClient && typeof this._hubClient.getPolicyState === "function") {
+			// Capture the freeze sequence before the (awaited) poll so a stale
+			// response cannot clear a freeze that was requested while it was in flight.
+			const seqAtPoll = this._freezeSeq || 0;
+			const ackGenAtPoll = this._freezeAckGen || 0;
+			let state = null;
+			try {
+				state = await this._hubClient.getPolicyState();
+			} catch (err) {
+				Log.debug(`[${this.name}] Hub policy fetch error: ${err.message}`);
+			}
+			if (state) {
+				if (!this._localFrozen) {
+					this.sendSocketNotification("ECOSYSTEM_POLICY_STATE", state);
+					return;
+				}
+				// Stale = the freeze, or its acknowledgement, changed while this
+				// poll was in flight (a newer freeze, or another poll / a retry tap
+				// that got it acknowledged). The hub's answer was taken before
+				// that, so it must neither acknowledge nor clear anything.
+				const stale = (this._freezeSeq || 0) !== seqAtPoll || (this._freezeAckGen || 0) !== ackGenAtPoll;
+				if (state.frozen && !stale) {
+					// The hub is frozen too: that is the acknowledgement — for
+					// the freeze this poll started with, not a newer one.
+					if (!this._freezeHubAcked) {
+						this._setHubAcked(true);
+						await this._persistFreezeState();
+					}
+					this.sendSocketNotification("ECOSYSTEM_POLICY_STATE", state);
+					return;
+				}
+				if (stale) {
+					// Whatever the hub said describes an earlier moment. Show our own.
+					this.sendSocketNotification("ECOSYSTEM_POLICY_STATE", this._localFallbackState());
+					return;
+				}
+				// The hub says "not frozen" while this display holds a freeze.
+				if (!this._freezeHubAcked) {
+					// The hub never confirmed receiving it — it cannot overrule a
+					// freeze it has not heard of. Deliver it (again) instead.
+					const delivered = await this._deliverFreezeToHub();
+					this.sendSocketNotification("ECOSYSTEM_POLICY_STATE", delivered || this._localFallbackState());
+					return;
+				}
+				// Acknowledged earlier and since lifted at the hub, which is the
+				// authority once it has acknowledged. This is the ONLY place a
+				// local freeze is cleared.
+				this._localFrozen = false;
+				this._localFreezeInfo = null;
+				this._setHubAcked(false);
+				await this._persistFreezeState();
+				this.sendSocketNotification("ECOSYSTEM_POLICY_STATE", state);
+				return;
+			}
+		}
+
+		this.sendSocketNotification("ECOSYSTEM_POLICY_STATE", this._localFallbackState());
+	},
+
+	requestFreeze: async function (payload) {
+		await (this._freezeRestorePromise || Promise.resolve());
+		if (!this._localFrozen) {
+			const reason = payload?.reason || "Emergency wall display freeze";
+			const channel = payload?.channel || "magicmirror_display";
+			this._freezeSeq = (this._freezeSeq || 0) + 1;
+			this._localFrozen = true;
+			this._setHubAcked(false);
+			this._localFreezeInfo = {
+				initiated_by: "magicmirror_display",
+				channel: channel,
+				reason: reason,
+				since: new Date().toISOString()
+			};
+			// Persist BEFORE telling the display it is frozen: a restart (or power
+			// loss) right after the operator sees "frozen" must come back frozen.
+			await this._persistFreezeState();
+		} else if (this._freezeHubAcked) {
+			// Already frozen and acknowledged, and the operator asks again. This
+			// request has not reached the hub yet: drop the old acknowledgement
+			// (durably) so a hub that was resumed in the meantime cannot clear the
+			// freeze until it has acknowledged THIS request.
+			this._setHubAcked(false);
+			await this._persistFreezeState();
+		}
+		// Already frozen (a "Retry Freeze" tap, or a tap after a restart restored
+		// the freeze): the freeze keeps its original reason, time and sequence —
+		// only the delivery to the hub is repeated.
+
+		const delivered = await this._deliverFreezeToHub();
+		this.sendSocketNotification("ECOSYSTEM_POLICY_STATE", delivered || this._localFallbackState());
 	},
 
 	/**
@@ -660,7 +1113,16 @@ module.exports = NodeHelper.create({
 		this.sendSocketNotification("ECOSYSTEM_SYNC_STATUS", {
 			discovered: Object.keys(this.discoveredApps).length,
 			connected: Object.keys(this.connectedApps).length,
-			apps: this.connectedApps
+			apps: this.connectedApps,
+			hub: this._hubClient
+				? {
+					joined: this._hubClient.isJoined,
+					registryUrl: this._hubClient.registryUrl
+				}
+				: null
 		});
 	}
 });
+
+module.exports.buildMagicMirrorCapabilities = buildMagicMirrorCapabilities;
+module.exports._loadEcosystemClient = loadEcosystemClient;
