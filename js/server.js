@@ -151,6 +151,7 @@ function Server (config) {
 			});
 
 			app.use(helmet(config.httpHeaders));
+			app.get("/favicon.ico", (req, res) => res.status(204).end());
 			app.use("/js", express.static(__dirname));
 
 			let directories = [

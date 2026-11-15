@@ -23,8 +23,8 @@ Module.register("openeye-events", {
 	 * Default configuration
 	 */
 	defaults: {
-		// OpenEye connection
-		openeyeHost: "http://localhost:8000",
+		// OpenEye connection (port 8200 in ecosystem mode)
+		openeyeHost: "http://localhost:8200",
 		ecosystemToken: "",
 
 		// Update interval

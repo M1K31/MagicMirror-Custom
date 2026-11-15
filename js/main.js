@@ -714,18 +714,8 @@ const MM = (function () {
 		 * @param {Module} sender The module that sent the notification.
 		 */
 		sendNotification (notification, payload, sender) {
-			if (arguments.length < 3) {
-				Log.error("sendNotification: Missing arguments.");
-				return;
-			}
-
-			if (typeof notification !== "string") {
-				Log.error("sendNotification: Notification should be a string.");
-				return;
-			}
-
-			if (!(sender instanceof Module)) {
-				Log.error("sendNotification: Sender should be a module.");
+			if (!notification || typeof notification !== "string") {
+				Log.error("sendNotification: Notification should be a non-empty string.");
 				return;
 			}
 
