@@ -635,6 +635,14 @@ Contributions welcome! Please:
 3. Follow existing code style
 4. Submit a pull request
 
+## 🔔 Ecosystem Federated Notifications
+
+The bundled `ecosystem` module (example block included in `config/config.js.sample`) connects MagicMirror to the `appEcosystem` control plane:
+
+- **Live Feed & Per-App Unread Badges**: Polls `/notifications/recent` respecting `minSeverity`, deduplicates both per-response and persistently, and displays per-app unread badges (e.g., `AFS · 2`, `AegisSIEM · 1`) that clear on tap.
+- **Critical Alert Escalation**: Escalates `critical` notifications through the built-in `alert` module with HTML-escaped plain-text rendering.
+- **Offline & Freeze Safety**: Falls back gracefully when the hub is offline and exposes a one-tap emergency Freeze control without ever allowing ambient displays to resume or approve privileged actions.
+
 ## 📚 Resources
 
 - **[Original MagicMirror²](https://github.com/MagicMirrorOrg/MagicMirror)** - The project this fork is based on
