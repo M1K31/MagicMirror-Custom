@@ -27,12 +27,26 @@ Module.register("ecosystem", {
 			openeye: {
 				name: "OpenEye Security",
 				icon: "fa-eye",
-				defaultPort: 8000,  // Default OpenEye port
-				alternativePorts: [5000, 8080, 3000],  // Additional ports to scan
+				defaultPort: 8200,  // Default OpenEye port (WP7)
+				alternativePorts: [5000, 8080, 3000],
 				apiPrefix: "/api",
-				description: "AI-powered home surveillance",
-				// Optional: Set explicit host to skip discovery
-				// host: "http://192.168.1.50:8000"
+				description: "AI-powered home surveillance"
+			},
+			ai_for_survival: {
+				name: "AI for Survival",
+				icon: "fa-shield-alt",
+				defaultPort: 8000,  // Default AI-for-Survival port (WP7)
+				alternativePorts: [8001],
+				apiPrefix: "/api/v1",
+				description: "Offline survival & cyber command assistant"
+			},
+			aegissiem: {
+				name: "AegisSIEM",
+				icon: "fa-lock",
+				defaultPort: 8089,
+				alternativePorts: [8088],
+				apiPrefix: "/api",
+				description: "Home SIEM & automated containment"
 			},
 			homebridge: {
 				name: "Homebridge",
@@ -47,6 +61,9 @@ Module.register("ecosystem", {
 		// Notification settings
 		notifications: {
 			enabled: true,
+			minSeverity: "medium",
+			pollInterval: 15000,
+			maxVisible: 5,
 			// Delivery methods
 			methods: {
 				openeye: { enabled: false, priority: 1 },
@@ -90,6 +107,10 @@ Module.register("ecosystem", {
 	discoveredApps: {},
 	connectedApps: {},
 	notificationHistory: [],
+	notificationFeed: [],
+	unreadByApp: {},
+	_seenNotificationKeys: null,
+	_alertedCriticalKeys: null,
 	syncStatus: {},
 	policyState: null,
 
@@ -112,6 +133,10 @@ Module.register("ecosystem", {
 	 */
 	start: function () {
 		Log.info(`[${this.name}] Starting ecosystem module...`);
+		this._seenNotificationKeys = new Set();
+		this._alertedCriticalKeys = new Set();
+		this.notificationFeed = [];
+		this.unreadByApp = {};
 
 		// Request initial discovery
 		this.sendSocketNotification("ECOSYSTEM_DISCOVER", {
@@ -124,6 +149,18 @@ Module.register("ecosystem", {
 		setInterval(() => {
 			this.sendSocketNotification("ECOSYSTEM_GET_POLICY_STATE");
 		}, this.config.policy?.pollInterval || 10000);
+
+		// Poll hub notifications feed (WP7)
+		if (this.config.notifications?.enabled !== false) {
+			const pollNotifications = () => {
+				this.sendSocketNotification("ECOSYSTEM_FETCH_NOTIFICATIONS", {
+					limit: 25,
+					minSeverity: this.config.notifications?.minSeverity || "medium"
+				});
+			};
+			pollNotifications();
+			setInterval(pollNotifications, this.config.notifications?.pollInterval || 15000);
+		}
 
 		// Set up periodic discovery
 		if (this.config.enableDiscovery) {
@@ -156,6 +193,10 @@ Module.register("ecosystem", {
 
 			case "ECOSYSTEM_NOTIFICATION":
 				this.handleIncomingNotification(payload);
+				break;
+
+			case "ECOSYSTEM_NOTIFICATIONS_FEED":
+				this.handleNotificationsFeed(payload);
 				break;
 
 			case "ECOSYSTEM_USERS_SYNCED":
@@ -391,6 +432,87 @@ Module.register("ecosystem", {
 	},
 
 	/**
+	 * Format source app name into compact Apple HIG badge label (e.g. "AFS", "AegisSIEM", "OpenEye")
+	 */
+	_formatAppLabel: function (sourceApp) {
+		const key = String(sourceApp || "ecosystem").toLowerCase();
+		if (key.includes("survival") || key === "afs") return "AFS";
+		if (key.includes("aegissiem") || key.includes("cyber")) return "AegisSIEM";
+		if (key.includes("openeye")) return "OpenEye";
+		if (key.includes("scan")) return "Scan";
+		return String(sourceApp || "Ecosystem");
+	},
+
+	/**
+	 * Escape HTML entities before forwarding untrusted text to alert renderers
+	 */
+	_escapeHtml: function (str) {
+		return String(str || "").replace(/[&<>"']/g, (ch) => ({
+			"&": "&amp;",
+			"<": "&lt;",
+			">": "&gt;",
+			'"': "&quot;",
+			"'": "&#39;"
+		}[ch]));
+	},
+
+	/**
+	 * Handle federated hub notification feed (WP7):
+	 * updates per-app unread badges, renders compact feed, and raises SHOW_ALERT for critical items.
+	 */
+	handleNotificationsFeed: function (payload) {
+		const items = Array.isArray(payload?.notifications) ? payload.notifications : [];
+		if (!this._seenNotificationKeys) this._seenNotificationKeys = new Set();
+		if (!this._alertedCriticalKeys) this._alertedCriticalKeys = new Set();
+
+		const minRankMap = { low: 1, medium: 2, high: 3, critical: 4 };
+		const minSeverity = String(this.config.notifications?.minSeverity || "medium").toLowerCase();
+		const minRank = minRankMap[minSeverity] || 2;
+
+		const filtered = [];
+		const responseKeys = new Set();
+		for (const item of items) {
+			if (!item || typeof item !== "object") continue;
+			const sev = String(item.severity || "low").toLowerCase();
+			if ((minRankMap[sev] || 1) < minRank) continue;
+
+			const src = item.source_app || item.source || "";
+			const key = String(item.dedupe_key || item.id || `${src}:${item.title || ""}`);
+			if (responseKeys.has(key)) continue;
+			responseKeys.add(key);
+			filtered.push(item);
+
+			if (!this._seenNotificationKeys.has(key)) {
+				this._seenNotificationKeys.add(key);
+				const label = this._formatAppLabel(src);
+				this.unreadByApp[label] = (this.unreadByApp[label] || 0) + 1;
+			}
+			if (sev === "critical" && !this._alertedCriticalKeys.has(key)) {
+				this._alertedCriticalKeys.add(key);
+				this.sendNotification("SHOW_ALERT", {
+					type: "alert",
+					titleType: "text",
+					messageType: "text",
+					title: this._escapeHtml(item.title || "Critical Ecosystem Alert"),
+					message: this._escapeHtml(item.body || item.message || ""),
+					timer: 12000
+				});
+			}
+		}
+
+		this.notificationFeed = filtered.slice(0, this.config.notifications?.maxVisible || 5);
+		this.updateDom();
+	},
+
+	/**
+	 * Clear unread badges when operator views the feed
+	 */
+	markFeedRead: function () {
+		this.unreadByApp = {};
+		this.updateDom();
+	},
+
+	/**
 	 * Generate DOM
 	 */
 	getDom: function () {
@@ -420,15 +542,76 @@ Module.register("ecosystem", {
 		}
 		wrapper.appendChild(policyContainer);
 
-		// This module primarily works in the background
-		// Status is shown in settings panel
+		// WP7: Per-app unread badges ("AFS · 2", "AegisSIEM · 1") — cleared when viewed
+		const unreadEntries = Object.entries(this.unreadByApp || {}).filter(([, count]) => count > 0);
+		if (unreadEntries.length > 0) {
+			const badgeRow = document.createElement("div");
+			badgeRow.className = "ecosystem-unread-badges";
+			badgeRow.style.display = "flex";
+			badgeRow.style.flexWrap = "wrap";
+			badgeRow.style.gap = "6px";
+			badgeRow.style.marginBottom = "0.5rem";
+			badgeRow.title = "Tap to clear unread counts";
+			badgeRow.addEventListener("click", () => this.markFeedRead());
+
+			for (const [label, count] of unreadEntries) {
+				const pill = document.createElement("span");
+				pill.className = "ecosystem-unread-pill";
+				pill.style.fontSize = "11px";
+				pill.style.padding = "2px 8px";
+				pill.style.borderRadius = "999px";
+				pill.style.background = "rgba(0, 122, 255, 0.22)";
+				pill.style.color = "#fff";
+				pill.textContent = `${label} · ${count}`;
+				badgeRow.appendChild(pill);
+			}
+			wrapper.appendChild(badgeRow);
+		}
+
+		// WP7: Compact federated notifications feed
+		if (Array.isArray(this.notificationFeed) && this.notificationFeed.length > 0) {
+			const feedBox = document.createElement("div");
+			feedBox.className = "ecosystem-notifications-feed";
+			feedBox.style.display = "flex";
+			feedBox.style.flexDirection = "column";
+			feedBox.style.gap = "6px";
+			feedBox.style.marginBottom = "0.5rem";
+
+			for (const item of this.notificationFeed) {
+				const row = document.createElement("div");
+				row.className = `ecosystem-feed-item severity-${String(item.severity || "low").toLowerCase()}`;
+				row.style.fontSize = "12px";
+				row.style.padding = "6px 8px";
+				row.style.borderRadius = "8px";
+				row.style.background = "rgba(255, 255, 255, 0.06)";
+
+				const titleEl = document.createElement("div");
+				titleEl.style.fontWeight = "600";
+				titleEl.textContent = `[${this._formatAppLabel(item.source_app || item.source)}] ${item.title || "Notification"}`;
+				row.appendChild(titleEl);
+
+				if (item.body || item.message) {
+					const bodyEl = document.createElement("div");
+					bodyEl.style.opacity = "0.8";
+					bodyEl.style.fontSize = "11px";
+					bodyEl.textContent = String(item.body || item.message).slice(0, 120);
+					row.appendChild(bodyEl);
+				}
+				feedBox.appendChild(row);
+			}
+			wrapper.appendChild(feedBox);
+		}
+
+		// Connected apps status
 		if (Object.keys(this.connectedApps).length > 0) {
 			const status = document.createElement("div");
 			status.className = "ecosystem-status";
-			status.innerHTML = `
-				<i class="fas fa-link"></i>
-				<span>${Object.keys(this.connectedApps).length} apps connected</span>
-			`;
+			const icon = document.createElement("i");
+			icon.className = "fas fa-link";
+			const span = document.createElement("span");
+			span.textContent = `${Object.keys(this.connectedApps).length} apps connected`;
+			status.appendChild(icon);
+			status.appendChild(span);
 			wrapper.appendChild(status);
 		}
 
