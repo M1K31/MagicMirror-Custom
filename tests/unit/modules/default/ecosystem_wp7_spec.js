@@ -80,6 +80,21 @@ describe("WP7: MagicMirror Ecosystem Notifications Feed & Known Apps", () => {
 		// Clearing unread works
 		inst.markFeedRead();
 		assert.deepStrictEqual(inst.unreadByApp, {});
+
+		// Deduplicates duplicate items within one poll and escapes HTML in SHOW_ALERT
+		alerts.length = 0;
+		inst.handleNotificationsFeed({
+			notifications: [
+				{ dedupe_key: "dup", source: "openeye", severity: "critical", title: "<img src=x onerror=alert(1)>", body: "<b>Alert</b>" },
+				{ dedupe_key: "dup", source: "openeye", severity: "critical", title: "<img src=x onerror=alert(1)>", body: "<b>Alert</b>" }
+			]
+		});
+		assert.strictEqual(inst.notificationFeed.length, 1);
+		assert.strictEqual(alerts.length, 1);
+		assert.ok(!alerts[0].payload.title.includes("<img"));
+		assert.ok(!alerts[0].payload.message.includes("<b>"));
+		assert.strictEqual(alerts[0].payload.titleType, "text");
+		assert.strictEqual(alerts[0].payload.messageType, "text");
 	});
 
 	it("polls hub notifications with minSeverity and handles hub errors gracefully", async () => {

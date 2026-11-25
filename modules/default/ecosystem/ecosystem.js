@@ -444,6 +444,19 @@ Module.register("ecosystem", {
 	},
 
 	/**
+	 * Escape HTML entities before forwarding untrusted text to alert renderers
+	 */
+	_escapeHtml: function (str) {
+		return String(str || "").replace(/[&<>"']/g, (ch) => ({
+			"&": "&amp;",
+			"<": "&lt;",
+			">": "&gt;",
+			'"': "&quot;",
+			"'": "&#39;"
+		}[ch]));
+	},
+
+	/**
 	 * Handle federated hub notification feed (WP7):
 	 * updates per-app unread badges, renders compact feed, and raises SHOW_ALERT for critical items.
 	 */
@@ -457,24 +470,31 @@ Module.register("ecosystem", {
 		const minRank = minRankMap[minSeverity] || 2;
 
 		const filtered = [];
+		const responseKeys = new Set();
 		for (const item of items) {
 			if (!item || typeof item !== "object") continue;
 			const sev = String(item.severity || "low").toLowerCase();
 			if ((minRankMap[sev] || 1) < minRank) continue;
+
+			const src = item.source_app || item.source || "";
+			const key = String(item.dedupe_key || item.id || `${src}:${item.title || ""}`);
+			if (responseKeys.has(key)) continue;
+			responseKeys.add(key);
 			filtered.push(item);
 
-			const key = String(item.dedupe_key || item.id || `${item.source_app || ""}:${item.title || ""}`);
 			if (!this._seenNotificationKeys.has(key)) {
 				this._seenNotificationKeys.add(key);
-				const label = this._formatAppLabel(item.source_app || item.source);
+				const label = this._formatAppLabel(src);
 				this.unreadByApp[label] = (this.unreadByApp[label] || 0) + 1;
 			}
 			if (sev === "critical" && !this._alertedCriticalKeys.has(key)) {
 				this._alertedCriticalKeys.add(key);
 				this.sendNotification("SHOW_ALERT", {
 					type: "alert",
-					title: item.title || "Critical Ecosystem Alert",
-					message: item.body || item.message || "",
+					titleType: "text",
+					messageType: "text",
+					title: this._escapeHtml(item.title || "Critical Ecosystem Alert"),
+					message: this._escapeHtml(item.body || item.message || ""),
 					timer: 12000
 				});
 			}
