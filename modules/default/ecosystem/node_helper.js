@@ -864,11 +864,22 @@ module.exports = NodeHelper.create({
 			this.sendSocketNotification("ECOSYSTEM_NOTIFICATIONS_FEED", { notifications: [] });
 			return;
 		}
-		const notifications = await this._hubClient.fetchRecentNotifications({
-			limit: opts.limit || 25,
-			minSeverity: opts.minSeverity
-		});
-		this.sendSocketNotification("ECOSYSTEM_NOTIFICATIONS_FEED", { notifications });
+		try {
+			const notifications = await this._hubClient.fetchRecentNotifications({
+				limit: opts.limit || 25,
+				minSeverity: opts.minSeverity
+			});
+			this.sendSocketNotification("ECOSYSTEM_NOTIFICATIONS_FEED", {
+				notifications: Array.isArray(notifications) ? notifications : [],
+				minSeverity: opts.minSeverity || null
+			});
+		} catch (err) {
+			Log.debug(`[${this.name}] Could not fetch hub notifications: ${err.message}`);
+			this.sendSocketNotification("ECOSYSTEM_NOTIFICATIONS_FEED", {
+				notifications: [],
+				minSeverity: opts.minSeverity || null
+			});
+		}
 	},
 
 	resolveHubCapability: async function (capabilityName) {

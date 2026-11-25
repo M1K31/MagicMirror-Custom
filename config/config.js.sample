@@ -100,6 +100,19 @@ let config = {
 			}
 		},
 		{
+			module: "ecosystem",
+			position: "top_right",
+			config: {
+				enableDiscovery: true,
+				notifications: {
+					enabled: true,
+					minSeverity: "medium",
+					pollInterval: 15000,
+					maxVisible: 5
+				}
+			}
+		},
+		{
 			module: "newsfeed",
 			position: "bottom_bar",
 			config: {
